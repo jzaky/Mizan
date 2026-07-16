@@ -168,7 +168,7 @@ const kick = await fetch("/.netlify/functions/analyze-background", {
 
         let poll;
         try {
-          poll = await (await fetch("/api/result?id=" + jobId, { cache: "no-store" })).json();
+poll = await (await fetch("/.netlify/functions/result?id=" + jobId, { cache: "no-store" })).json();
         } catch {
           setProgress("Reading, " + secs + "s");
           continue;
