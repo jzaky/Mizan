@@ -282,3 +282,246 @@ export default function App() {
               <button className="mz-btn ghost" onClick={() => window.print()}>Print working paper</button>
               <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence record</button>
             </>
+          )}
+          {file && state === "done" && <span className="mz-hint">{file.name}</span>}
+        </div>
+
+        {state === "idle" && (
+          <div className="mz-empty">
+            <p className="mz-empty-t">No document read yet.</p>
+            <p className="mz-empty-s">Load a set of financial statements as a PDF.</p>
+          </div>
+        )}
+
+        {state === "working" && (
+          <div className="mz-load">
+            <p className="mz-load-t">Reading the statements</p>
+            <p className="mz-load-s">{progress || "Extracting figures and locating sources"}</p>
+            <div className="mz-scan" />
+          </div>
+        )}
+
+        {state === "error" && (
+          <div className="mz-err">
+            <p className="mz-err-t">Reading stopped</p>
+            <p className="mz-err-b">{err}</p>
+          </div>
+        )}
+
+        {state === "done" && data && (
+          <>
+            <div className="mz-class">
+              <div>
+                <div className="mz-class-meta">Lens applied</div>
+                <div className="mz-class-lens">
+                  {data.classification?.lens === "public_sector" ? "Public sector entity" : "Corporate entity"}
+                </div>
+                <div className="mz-class-meta" style={{ marginTop: ".4rem", marginBottom: 0 }}>
+                  {data.classification?.basis} · {data.entity?.name} · {data.entity?.period}
+                </div>
+              </div>
+              <p className="mz-class-why">{data.classification?.why}</p>
+            </div>
+
+            {data.entity?.auditOpinion && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Audit opinion</h2>
+                  <span className="mz-sec-note">as stated</span>
+                </div>
+                <div className="mz-row landed">
+                  <div className="mz-tick verified">{MARK.verified}</div>
+                  <div className="mz-body"><p className="mz-title">{data.entity.auditOpinion}</p></div>
+                  <div className="mz-ref">Auditor's report</div>
+                </div>
+              </section>
+            )}
+
+            {bal && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Does it balance</h2>
+                  <span className="mz-sec-note">arithmetic, not a model</span>
+                </div>
+                <div className="mz-arith">
+                  <div className="mz-arith-strip">
+                    <span>Computed in this browser</span>
+                    <span>{data.entity?.currency} {data.entity?.scale}</span>
+                  </div>
+                  <div className="mz-eq">
+                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total assets</span><span className="mz-eq-val">{fmt(data.balance.totalAssets)}</span></div>
+                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total liabilities</span><span className="mz-eq-val">{fmt(data.balance.totalLiabilities)}</span></div>
+                    <div className="mz-eq-line">
+                      <span className="mz-eq-lbl">{data.classification?.lens === "public_sector" ? "Net assets" : "Total equity"}</span>
+                      <span className="mz-eq-val">{fmt(data.balance.totalNetAssets)}</span>
+                    </div>
+                    <div className="mz-eq-rule" />
+                    <div className="mz-eq-line">
+                      <span className="mz-eq-lbl">Difference</span>
+                      <span className="mz-eq-val" style={{ color: bal.ok ? "var(--tick)" : "var(--esc)" }}>{fmt(bal.delta)}</span>
+                    </div>
+                  </div>
+                  <div className={"mz-verdict " + (bal.ok ? "pass" : "fail")}>
+                    {bal.ok
+                      ? MARK.verified + "  Assets equal liabilities plus net assets. Nothing here rests on judgement."
+                      : MARK.escalate + "  Off by " + fmt(Math.abs(bal.delta)) + ". Reported as-is. No figure on this page should be relied on until a person finds the cause."}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {data.tieOut?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Tie-out</h2>
+                  <span className="mz-sec-note">{data.tieOut.length} checks</span>
+                </div>
+                {data.tieOut.map((t, i) => {
+                  const st = t.result === "pass" ? "verified" : t.result === "fail" ? "escalate" : "review";
+                  return (
+                    <div key={i} className="mz-row landed" style={{ animationDelay: i * 70 + "ms" }}>
+                      <div className={"mz-tick " + st}>{MARK[st]}</div>
+                      <div className="mz-body"><p className="mz-title">{t.check}</p><p className="mz-detail">{t.detail}</p></div>
+                      <div className="mz-ref">{t.ref}</div>
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+
+            {data.figures?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Figures</h2>
+                  <span className="mz-sec-note">every one carries its source</span>
+                </div>
+                <div className="mz-figs">
+                  {data.figures.map((f, i) => (
+                    <div key={i} className={"mz-fig " + (f.state || "review")}>
+                      <div className="mz-fig-lbl">{f.label}</div>
+                      <div className="mz-fig-val">{f.value}</div>
+                      <div className="mz-fig-ref">{f.ref}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {data.variance?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Budget against actual</h2>
+                  <span className="mz-sec-note">bar shows spend against approved</span>
+                </div>
+                {data.variance.map((v, i) => {
+                  const pct = v.budget ? (v.actual / v.budget) * 100 : 0;
+                  const under = pct < 90;
+                  return (
+                    <div key={i} className="mz-var-row">
+                      <div>
+                        <div className="mz-var-lbl">{v.label}</div>
+                        <div className="mz-var-track">
+                          <div className={"mz-var-fill" + (under ? " under" : "")} style={{ width: Math.min(pct, 100) + "%" }} />
+                        </div>
+                      </div>
+                      <div className="mz-var-pct" style={{ color: under ? "var(--query)" : "var(--ink)" }}>{pct.toFixed(0)}%</div>
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+
+            {data.findings?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Findings</h2>
+                  <span className="mz-sec-note">read the tick column first</span>
+                </div>
+                {data.findings.map((f, i) => (
+                  <div key={i} className="mz-row landed" style={{ animationDelay: i * 70 + "ms" }}>
+                    <div className={"mz-tick " + (f.state || "review")}>{MARK[f.state] || "?"}</div>
+                    <div className="mz-body">
+                      <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
+                      <p className="mz-detail">{f.detail}</p>
+                      {f.metric && <p className="mz-metric">{f.metric}</p>}
+                    </div>
+                    <div className="mz-ref">{f.ref}</div>
+                  </div>
+                ))}
+                <div className="mz-legend">
+                  <span><b style={{ color: "var(--tick)" }}>{MARK.verified}</b> read from the document</span>
+                  <span><b style={{ color: "var(--query)" }}>{MARK.review}</b> derived, confirm it</span>
+                  <span><b style={{ color: "var(--esc)" }}>{MARK.escalate}</b> a person decides</span>
+                </div>
+              </section>
+            )}
+
+            {data.escalations?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Held for a person</h2>
+                  <span className="mz-sec-note">{unassigned ? "owner not yet named" : "owners named"}</span>
+                </div>
+                {data.escalations.map((e, i) => (
+                  <div key={i} className="mz-esc-card">
+                    <p className="mz-esc-t">{e.title}</p>
+                    <p className="mz-esc-w">{e.why}</p>
+                    <div className="mz-esc-d">
+                      <b>Decision needed</b>
+                      {e.decisionNeeded}
+                      <div className="mz-owner">
+                        <label htmlFor={"own" + i}>Accountable owner</label>
+                        <input
+                          id={"own" + i} className="mz-in" placeholder="Name the person"
+                          value={owners[i] || ""}
+                          onChange={(ev) => setOwners({ ...owners, [i]: ev.target.value })}
+                        />
+                      </div>
+                      <span style={{ display: "block", marginTop: ".5rem", fontFamily: "'IBM Plex Mono',monospace", fontSize: ".63rem", color: "var(--ink-soft)" }}>{e.ref}</span>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {meta && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Evidence record</h2>
+                  <span className="mz-sec-note">emitted for every reading</span>
+                </div>
+                <div className="mz-ev">
+                  <div><b>Document</b> {meta.name}</div>
+                  <div><b>SHA-256</b> {meta.hash}</div>
+                  <div><b>Read at</b> {meta.at}</div>
+                  <div><b>System</b> Mizan {VERSION} · {meta.model}</div>
+                  <div>
+                    <b>Cost of this reading</b> ${meta.cost_usd?.toFixed(4)} ·{" "}
+                    {(meta.input_tokens || 0).toLocaleString()} in / {(meta.output_tokens || 0).toLocaleString()} out
+                    {meta.stop_reason === "max_tokens" && (
+                      <span style={{ color: "var(--esc)" }}> · truncated, raise max_tokens</span>
+                    )}
+                  </div>
+                  <div><b>Operator</b> {operator || "UNRECORDED"}</div>
+                  <div><b>Escalations open</b> {(data.escalations || []).length} · owners named {(data.escalations || []).filter((_, i) => owners[i]).length}</div>
+                </div>
+              </section>
+            )}
+
+            <footer className="mz-foot">
+              <div>
+                <b>Mizan</b> {VERSION} · reading of {file?.name || "document"}<br />
+                Figures are read from the document. Nothing here is an opinion on the accounts.
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <b>Jonathan Z</b><br />
+                Nexus AI Assurance FZCO · Dubai<br />
+                [contact] · nexusai.ae
+              </div>
+            </footer>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
