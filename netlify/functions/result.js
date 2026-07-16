@@ -22,5 +22,3 @@ export default async (req) => {
     return json({ status: "error", error: String(e.message || e) }, 500);
   }
 };
-
-export const config = { path: "/api/result" };
