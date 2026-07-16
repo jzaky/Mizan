@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+fimport React, { useState, useRef, useCallback } from "react";
 
 const VERSION = "0.9.0";
 
@@ -149,8 +149,8 @@ export default function App() {
       const jobId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
 
       setProgress("Sending it over");
-      const kick = await fetch("/api/start", {
-        method: "POST",
+const kick = await fetch("/.netlify/functions/analyze-background", {
+  method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pdf: b64, jobId })
       });
