@@ -117,6 +117,7 @@ export default function App() {
   const [file, setFile] = useState(null);
   const [owners, setOwners] = useState({});
   const [operator, setOperator] = useState("");
+  const [progress, setProgress] = useState("");
   const inputRef = useRef(null);
 
   const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
@@ -135,7 +136,7 @@ export default function App() {
   };
 
   const run = useCallback(async (f) => {
-    setState("working"); setErr(""); setData(null);
+    setState("working"); setErr(""); setData(null); setProgress("Preparing the document");
     try {
       const buf = await f.arrayBuffer();
       const hash = await sha256(buf);
@@ -145,16 +146,45 @@ export default function App() {
       }
       const b64 = btoa(bin);
 
-      const res = await fetch("/api/analyze", {
+      const jobId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
+
+      setProgress("Sending it over");
+      const kick = await fetch("/api/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pdf: b64 })
+        body: JSON.stringify({ pdf: b64, jobId })
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "The analysis service refused the request.");
+      if (kick.status >= 400) {
+        throw new Error("The reading would not start. Netlify said " + kick.status + ".");
+      }
 
-      setData(json.reading);
-      setMeta({ ...json.meta, hash, name: f.name, size: f.size, at: new Date().toISOString() });
+      const began = Date.now();
+      const LIMIT = 10 * 60 * 1000;
+      let rec = null;
+
+      while (Date.now() - began < LIMIT) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const secs = Math.round((Date.now() - began) / 1000);
+
+        let poll;
+        try {
+          poll = await (await fetch("/api/result?id=" + jobId, { cache: "no-store" })).json();
+        } catch {
+          setProgress("Reading, " + secs + "s");
+          continue;
+        }
+
+        if (poll.status === "done") { rec = poll; break; }
+        if (poll.status === "error") {
+          throw new Error([poll.error, poll.detail].filter(Boolean).join(" \u00b7 "));
+        }
+        setProgress("Reading, " + secs + "s");
+      }
+
+      if (!rec) throw new Error("Still reading after 10 minutes. Abandoned.");
+
+      setData(rec.reading);
+      setMeta({ ...rec.meta, hash, name: f.name, size: f.size, at: new Date().toISOString() });
       setOwners({});
       setState("done");
     } catch (e) {
@@ -266,7 +296,7 @@ export default function App() {
         {state === "working" && (
           <div className="mz-load">
             <p className="mz-load-t">Reading the statements</p>
-            <p className="mz-load-s">Extracting figures and locating sources</p>
+            <p className="mz-load-s">{progress || "Extracting figures and locating sources"}</p>
             <div className="mz-scan" />
           </div>
         )}
@@ -274,7 +304,7 @@ export default function App() {
         {state === "error" && (
           <div className="mz-err">
             <p className="mz-err-t">Reading stopped</p>
-            <p className="mz-err-b">{err} Try a text-based PDF rather than a scan.</p>
+            <p className="mz-err-b">{err}</p>
           </div>
         )}
 
