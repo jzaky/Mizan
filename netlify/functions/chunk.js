@@ -1,7 +1,7 @@
 // netlify/functions/chunk.js
 //
-// Reads ONE slice of a document. Small input, small output, so every
-// invocation lands well inside the free-tier 10 second ceiling.
+// Reads ONE slice of a document. Small ask, small answer, so every
+// invocation finishes inside the free-tier 10 second ceiling.
 // The browser splits the PDF and calls this many times in parallel.
 //
 // The key lives here. It never reaches the browser.
@@ -14,8 +14,8 @@ const RULES = `You are an audit-grade financial statement analyst preparing a wo
 HARD RULES
 - Never invent a figure. Every figure must trace to a page you can actually see.
 - If something is not on these pages, do not estimate it and do not mention it.
-- Page numbers you cite must be ABSOLUTE numbers in the full document. The first
-  page you are shown is page {OFFSET}. Count up from there.
+- Page numbers must be ABSOLUTE numbers in the full document. The first page you
+  are shown is page {OFFSET}. Count up from there.
 - Where you derive a number, say what you derived it from.
 - Report the audit opinion type exactly as stated.
 
@@ -36,7 +36,7 @@ Corporate (IFRS): liquidity, leverage, net debt to EBITDA, interest coverage, ma
 trend, working capital cycle, cash conversion, going concern indicators, audit opinion
 modification, related party exposure, covenant headroom where disclosed.`;
 
-const SHAPE = `Return ONLY valid JSON. No fences, no preamble. Omit any array you have nothing for.
+const SHAPE = `Return ONLY valid JSON. No fences, no preamble.
 
 {
  "entity":{"name":"","period":"","currency":"","scale":"","auditOpinion":""},
@@ -57,19 +57,50 @@ you do not see. Never estimate. These feed a ratio calculator:
  ebitda, currentAssets, currentLiabilities, cashAndEquivalents, shortTermDeposits,
  netDebt, operatingCashFlow, sharesOutstanding, marketPrice, dividendPerShare
 "priorRevenue" is the comparative prior-year revenue if the statement shows two years.
-For Salik-style reclassified statements, operatingProfit is the EBIT / operating
-profit subtotal, and ebitda is operating profit plus depreciation and amortisation
-only if that figure is stated or explicitly reconciled.
+For Salik-style reclassified statements, operatingProfit is the EBIT / operating profit
+subtotal, and ebitda is operating profit plus depreciation and amortisation only if that
+figure is stated or explicitly reconciled.
 
-Only fill "entity", "classification" and "balance" if THESE pages actually show them.
-Leave them out entirely otherwise. Do not carry over assumptions from elsewhere.
-At most 4 findings, 2 escalations, 4 figures, 3 tie-out checks, 4 variance lines from
-this slice. Report only what is materially worth an auditor's attention. Be terse.`;
+BREVITY IS A HARD REQUIREMENT. Long answers get cut off.
+- Omit any key you have nothing for. Do not emit empty arrays or empty strings.
+- Only fill "entity", "classification" and "balance" if THESE pages actually show them.
+  Leave them out entirely otherwise. Never carry assumptions in from elsewhere.
+- Ceilings from this slice: 3 findings, 2 escalations, 4 figures, 3 tie-out checks,
+  4 variance lines. Fewer is better. Only what is materially worth an auditor's time.
+- "detail" and "why" at most 30 words. "title" at most 10 words.
+- Put the most important item first, in case the rest is lost.`;
+
+// Repair JSON cut off mid-object: keep the complete items, close what is still open.
+function salvage(s) {
+  const a = s.indexOf("{");
+  if (a === -1) return null;
+  s = s.slice(a);
+  let cut = s.lastIndexOf("},");
+  if (cut === -1) cut = s.lastIndexOf("}");
+  if (cut === -1) return null;
+  const head = s.slice(0, cut + 1);
+  let inStr = false, esc = false;
+  const opens = [];
+  for (const c of head) {
+    if (esc) { esc = false; continue; }
+    if (c === "\\") { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (c === "{" || c === "[") opens.push(c);
+    else if (c === "}" || c === "]") opens.pop();
+  }
+  const tail = opens.reverse().map((o) => (o === "{" ? "}" : "]")).join("");
+  try { return JSON.parse(head + tail); } catch { return null; }
+}
+
+const json = (obj, status = 200) =>
+  new Response(JSON.stringify(obj), {
+    status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
+  });
 
 export default async (req) => {
-  if (req.method !== "POST") {
-    return json({ error: "Use POST." }, 405);
-  }
+  if (req.method !== "POST") return json({ error: "Use POST." }, 405);
 
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return json({ error: "ANTHROPIC_API_KEY is not set on the server." }, 500);
@@ -100,7 +131,7 @@ export default async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-5",
-        max_tokens: 1600,
+        max_tokens: 4000,
         messages: [{
           role: "user",
           content: [
@@ -124,38 +155,34 @@ export default async (req) => {
     const res = await upstream.json();
     const tin = res.usage?.input_tokens || 0;
     const tout = res.usage?.output_tokens || 0;
+    const meta = {
+      model: res.model,
+      stop_reason: res.stop_reason,
+      input_tokens: tin,
+      output_tokens: tout,
+      cost_usd: Number(((tin / 1e6) * RATE_IN + (tout / 1e6) * RATE_OUT).toFixed(5))
+    };
 
     const text = (res.content || []).filter((c) => c.type === "text").map((c) => c.text).join("");
     const clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
     const a = clean.indexOf("{");
     const b = clean.lastIndexOf("}");
-    if (a === -1 || b === -1) return json({ error: "This slice came back unreadable." }, 502);
-
-    let parsed;
-    try {
-      parsed = JSON.parse(clean.slice(a, b + 1));
-    } catch {
-      // A slice cut off mid-object is survivable. Report it and let the rest proceed.
-      return json({ error: "This slice came back incomplete.", truncated: true }, 502);
+    if (a !== -1 && b !== -1) {
+      try {
+        return json({ partial: JSON.parse(clean.slice(a, b + 1)), meta });
+      } catch { /* fall through to salvage */ }
     }
 
+    const rescued = salvage(clean);
+    if (rescued) return json({ partial: rescued, meta: { ...meta, salvaged: true } });
+
     return json({
-      partial: parsed,
-      meta: {
-        model: res.model,
-        stop_reason: res.stop_reason,
-        input_tokens: tin,
-        output_tokens: tout,
-        cost_usd: Number(((tin / 1e6) * RATE_IN + (tout / 1e6) * RATE_OUT).toFixed(5))
-      }
-    });
+      error: "This slice came back unreadable" +
+        (res.stop_reason === "max_tokens" ? " and hit the output cap." : "."),
+      meta
+    }, 502);
   } catch (e) {
     return json({ error: String(e.message || e) }, 500);
   }
 };
-
-const json = (obj, status = 200) =>
-  new Response(JSON.stringify(obj), {
-    status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
-  });
