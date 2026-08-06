@@ -99,9 +99,9 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-var-fill.under{background:var(--query)}
 .mz-var-pct{font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
 .mz-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
-.mz-fig{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:#fff;padding:.85rem .9rem;border-left:3px solid transparent}
+.mz-fig{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:#fff;padding:.85rem .9rem;border-left:3px solid transparent;min-height:6rem;display:flex;flex-direction:column}
 .mz-fig.verified{border-left-color:var(--tick)}.mz-fig.review{border-left-color:var(--query)}.mz-fig.escalate{border-left-color:var(--esc)}
-.mz-fig-lbl{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-fig-lbl{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:1.7rem;line-height:.85rem}
 .mz-fig-val{font-family:'IBM Plex Mono',monospace;font-size:1.15rem;font-weight:600;margin-top:.28rem;font-variant-numeric:tabular-nums}
 .mz-fig-ref{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--ink-soft);margin-top:.3rem;line-height:1.35}
 .mz-esc-card{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:.7rem}
@@ -115,6 +115,18 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-legend b{font-size:.85rem;margin-right:.3rem}
 .mz-ev{border:1px solid var(--rule);border-top:none;background:#fff;padding:1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);line-height:1.9;word-break:break-all}
 .mz-ev b{color:var(--ink)}
+.mz-rfam{border:1px solid var(--rule);border-top:none;background:#fff}
+.mz-rfam-h{background:var(--bar);padding:.45rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--rule)}
+.mz-ratio{display:grid;grid-template-columns:1fr 6.5rem;border-bottom:1px solid var(--rule);align-items:center}
+.mz-ratio:last-child{border-bottom:none}
+.mz-ratio.missing{background:rgba(168,93,0,.03)}
+.mz-ratio-main{padding:.7rem .9rem;min-width:0}
+.mz-ratio-name{font-size:.88rem;font-weight:600}
+.mz-ratio-formula{font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);margin-top:.2rem}
+.mz-ratio-note{font-size:.78rem;color:var(--forest);margin-top:.3rem;line-height:1.4}
+.mz-ratio-miss{font-size:.76rem;color:var(--query);margin-top:.3rem;line-height:1.4}
+.mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
+.mz-ratio.missing .mz-ratio-val{color:var(--rule)}
 .mz-note{border:1px solid var(--rule);border-top:none;background:#fff;padding:.85rem .9rem;font-size:.8rem;color:var(--ink-soft);line-height:1.5}
 .mz-note{border:1px solid var(--rule);border-top:none;background:#fff;padding:.85rem .9rem;font-size:.8rem;color:var(--ink-soft);line-height:1.5}
 .mz-controls{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.7rem 0}
@@ -146,14 +158,28 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-thesis{text-align:left;max-width:none}.mz-eq-lbl{min-width:8.5rem}.mz-hint{margin-left:0;width:100%}}
 @media(prefers-reduced-motion:reduce){.mz-row.landed{animation:none}.mz-cell.busy{animation:none}}
 @media print{
-.mz{background:#fff;padding:0}
-.mz-intake,.mz-btn,.mz-thesis,.mz-panel{display:none!important}
+.mz{background:#fff;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.mz-intake,.mz-btn,.mz-thesis,.mz-panel,.mz-controls,.mz-retry,.mz-note{display:none!important}
 .mz-row,.mz-fig,.mz-esc-card,.mz-arith{break-inside:avoid;page-break-inside:avoid}
-.mz-sec{margin-top:1.2rem}
-.mz-class{background:#fff;color:var(--ink);border:1px solid var(--ink)}
-.mz-arith-strip{background:#fff;color:var(--ink);border-bottom:1px solid var(--ink)}
-.mz-foot{page-break-inside:avoid}
-}
+.mz-sec{margin-top:1.2rem;break-inside:avoid}
+.mz-sec-head{break-after:avoid}
+.mz-class{background:#fff!important;color:var(--ink)!important;border:1px solid var(--ink)}
+.mz-class-lens,.mz-class-meta,.mz-class-why{color:var(--ink)!important;opacity:1}
+.mz-arith-strip,.mz-panel-strip{background:#fff!important;color:var(--ink)!important;border-bottom:1px solid var(--ink)}
+.mz-var-track{background:#e5e5e5!important;border:1px solid var(--rule)}
+.mz-var-fill{background:var(--forest)!important}
+.mz-var-fill.under{background:var(--query)!important}
+.mz-tick{color:#000!important}
+.mz-tick.verified{color:var(--tick)!important}
+.mz-tick.escalate{color:var(--esc)!important}
+.mz-fig-input,.mz-edit-title,.mz-edit-detail{border:none!important;background:transparent!important;font-size:1.1rem;padding:0}
+.mz-edit-row,.mz-owner{display:none!important}
+.mz-header-mini{display:block!important}
+.mz-head{padding:1rem 0 .6rem}
+.mz-mark{font-size:1.8rem}
+.mz-sub{display:none}
+.mz-foot{page-break-inside:avoid;font-size:.55rem}
+}}
 `;
 
 const MARK = { verified: "\u2713", review: "?", escalate: "\u2717" };
@@ -215,6 +241,38 @@ function App() {
 
   const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
 
+  // Normalise the mixed scale words a document uses ("73,370 Million",
+  // "1.68Tn", "359Bn", "73.4 Billion") into one consistent notation so the
+  // eye can compare magnitudes down a column. Best-effort, never invents.
+  const normNum = (raw) => {
+    if (raw == null) return raw;
+    const s = String(raw).trim();
+    const mm = s.match(/([\d,]+(?:\.\d+)?)\s*(trillion|tn|billion|bn|million|mn|thousand|[mk])\b/i);
+    if (!mm) return s;
+    let val = parseFloat(mm[1].replace(/,/g, ""));
+    if (!isFinite(val)) return s;
+    const unit = (mm[2] || "").toLowerCase();
+    const mult = /^t/.test(unit) ? 1e12
+      : /^b/.test(unit) ? 1e9
+      : (/^mi/.test(unit) || /^mn/.test(unit) || unit === "m") ? 1e6
+      : (/^th/.test(unit) || unit === "k") ? 1e3 : 1;
+    const abs = val * mult;
+    // keep only trailing parenthetical context like "(+3%)", drop leftover unit words
+    const after = s.slice(mm.index + mm[0].length);
+    const paren = (after.match(/\([^)]*\)/) || [""])[0];
+    let out;
+    if (abs >= 1e12) out = +(abs / 1e12).toFixed(2) + "Tn";
+    else if (abs >= 1e9) out = +(abs / 1e9).toFixed(abs % 1e9 === 0 ? 0 : 1) + "Bn";
+    else if (abs >= 1e6) out = +(abs / 1e6).toFixed(abs % 1e6 === 0 ? 0 : 1) + "M";
+    else if (abs >= 1e3) out = +(abs / 1e3).toFixed(0) + "K";
+    else out = String(val);
+    const cur = /aed/i.test(s) ? "AED " : /\$|usd/i.test(s) ? "$" : "";
+    return (cur + out + (paren ? " " + paren : "")).trim();
+  };
+
+    // Tidy stray spacing the model sometimes leaves in refs ("pp . 84- 95").
+  const tidyRef = (r) => String(r ?? "").replace(/\s*\.\s*/g, ".").replace(/\s*-\s*/g, "-").replace(/pp\./g, "pp. ").replace(/\s+/g, " ").trim();
+
   const sha256 = async (buf) => {
     const h = await crypto.subtle.digest("SHA-256", buf);
     return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -236,14 +294,115 @@ function App() {
     return { rhs, delta, ok: Math.abs(delta) < 0.5 };
   };
 
+  // Financial ratios from the Salik training guide. Twelve ratios, five families.
+  // Every one computed here in the browser from line items the reading extracted.
+  // If an input is missing, the ratio is shown but marked as needing that source,
+  // never faked. Same discipline as the balance check.
+  const RATIO_DEFS = [
+    { family: "Liquidity", name: "Current ratio",
+      formula: "Current assets \u00f7 Current liabilities",
+      needs: ["currentAssets", "currentLiabilities"],
+      calc: (v) => v.currentAssets / v.currentLiabilities,
+      unit: "x", plain: (r) => r >= 1 ? "Can cover short-term obligations " + r.toFixed(2) + " times over." : "Below 1.0: short-term obligations exceed current assets." },
+    { family: "Liquidity", name: "Cash ratio",
+      formula: "(Cash + Short-term deposits) \u00f7 Current liabilities",
+      needs: ["cashAndEquivalents", "currentLiabilities"],
+      calc: (v) => (v.cashAndEquivalents + (v.shortTermDeposits || 0)) / v.currentLiabilities,
+      unit: "x", plain: (r) => "Most liquid assets cover " + (r * 100).toFixed(0) + "% of current liabilities." },
+    { family: "Profitability", name: "Revenue growth rate",
+      formula: "(Revenue \u2212 Prior revenue) \u00f7 Prior revenue",
+      needs: ["revenue", "priorRevenue"],
+      calc: (v) => (v.revenue - v.priorRevenue) / v.priorRevenue,
+      pct: true, plain: (r) => "Revenue " + (r >= 0 ? "grew" : "fell") + " " + (r * 100).toFixed(1) + "% year on year." },
+    { family: "Profitability", name: "Operating profit margin",
+      formula: "Operating profit \u00f7 Revenue",
+      needs: ["operatingProfit", "revenue"],
+      calc: (v) => v.operatingProfit / v.revenue,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of revenue remains after operating costs, before finance and tax." },
+    { family: "Profitability", name: "Net profit margin",
+      formula: "Net profit \u00f7 Revenue",
+      needs: ["netProfit", "revenue"],
+      calc: (v) => v.netProfit / v.revenue,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + " fils of every dirham of revenue becomes final profit." },
+    { family: "Leverage", name: "Interest coverage ratio",
+      formula: "Operating profit \u00f7 Finance costs",
+      needs: ["operatingProfit", "financeCosts"],
+      calc: (v) => v.operatingProfit / v.financeCosts,
+      unit: "x", plain: (r) => "Operating profit covers finance costs " + r.toFixed(1) + " times." },
+    { family: "Leverage", name: "Net debt-to-EBITDA",
+      formula: "Net debt \u00f7 EBITDA",
+      needs: ["netDebt", "ebitda"],
+      calc: (v) => v.netDebt / v.ebitda,
+      unit: "x", plain: (r) => r.toFixed(1) + " years of EBITDA would repay net debt." },
+    { family: "Cash flow", name: "Operating cash-flow margin",
+      formula: "Operating cash flow \u00f7 Revenue",
+      needs: ["operatingCashFlow", "revenue"],
+      calc: (v) => v.operatingCashFlow / v.revenue,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of revenue converted into operating cash." },
+    { family: "Cash flow", name: "Cash conversion ratio",
+      formula: "Operating cash flow \u00f7 Net profit",
+      needs: ["operatingCashFlow", "netProfit"],
+      calc: (v) => v.operatingCashFlow / v.netProfit,
+      unit: "x", plain: (r) => "Each dirham of profit is backed by " + r.toFixed(2) + " of operating cash." },
+    { family: "Stock performance", name: "Earnings per share",
+      formula: "Profit to ordinary shareholders \u00f7 Weighted-avg shares",
+      needs: ["netProfit", "sharesOutstanding"],
+      calc: (v) => v.netProfit / v.sharesOutstanding,
+      unit: "", money: true, plain: (r) => "AED " + r.toFixed(3) + " of profit per ordinary share." },
+    { family: "Stock performance", name: "Price-to-earnings ratio",
+      formula: "Market price per share \u00f7 EPS",
+      needs: ["marketPrice", "netProfit", "sharesOutstanding"],
+      calc: (v) => v.marketPrice / (v.netProfit / v.sharesOutstanding),
+      unit: "x", plain: (r) => "Investors pay " + r.toFixed(1) + " per dirham of earnings." },
+    { family: "Stock performance", name: "Dividend yield",
+      formula: "Dividend per share \u00f7 Market price per share",
+      needs: ["dividendPerShare", "marketPrice"],
+      calc: (v) => v.dividendPerShare / v.marketPrice,
+      pct: true, plain: (r) => (r * 100).toFixed(2) + "% cash return relative to share price." }
+  ];
+
+  const NEED_LABEL = {
+    currentAssets: "current assets", currentLiabilities: "current liabilities",
+    cashAndEquivalents: "cash", shortTermDeposits: "short-term deposits",
+    revenue: "revenue", priorRevenue: "prior-year revenue",
+    operatingProfit: "operating profit", netProfit: "net profit",
+    financeCosts: "finance costs", netDebt: "net debt", ebitda: "EBITDA",
+    operatingCashFlow: "operating cash flow", sharesOutstanding: "share count",
+    marketPrice: "market price", dividendPerShare: "dividend per share"
+  };
+
+  const computeRatios = (lineItems) => {
+    if (!lineItems) return null;
+    const v = lineItems;
+    return RATIO_DEFS.map((d) => {
+      const missing = d.needs.filter((k) => v[k] == null || v[k] === 0 && k !== "priorRevenue");
+      if (missing.length) {
+        return { ...d, status: "missing", missing: missing.map((k) => NEED_LABEL[k] || k) };
+      }
+      let val;
+      try { val = d.calc(v); } catch { return { ...d, status: "missing", missing: ["valid inputs"] }; }
+      if (!isFinite(val)) return { ...d, status: "missing", missing: ["non-zero denominator"] };
+      const shown = d.pct ? (val * 100).toFixed(1) + "%"
+        : d.money ? "AED " + val.toFixed(3)
+        : val.toFixed(2) + (d.unit || "");
+      return { ...d, status: "ok", value: val, shown, note: d.plain(val) };
+    });
+  };
+
   // Deterministic merge. No second model call, so nothing can drift here.
+  // Deterministic merge. No second model call, so nothing can drift here.
+  // Two rules that matter on a full document:
+  //  1. Pick the balance sheet that actually BALANCES, not the first fragment seen.
+  //  2. A confident finding beats an absence: once any slice reports the audit
+  //     opinion, drop every "opinion not in my slice" note the others raised.
   const merge = (partials) => {
     const out = {
-      entity: {}, classification: {}, balance: null,
+      entity: {}, classification: {}, balance: null, lineItems: {},
       tieOut: [], figures: [], variance: [], findings: [], escalations: []
     };
     const seen = new Set();
     const votes = {};
+    let balScore = -1;   // higher is better: a real, balancing sheet wins
 
     for (const p of partials) {
       if (!p) continue;
@@ -260,7 +419,16 @@ function App() {
           out.classification.why = p.classification.why;
         }
       }
-      if (!out.balance && p.balance?.totalAssets) out.balance = p.balance;
+
+      // Balance selection: score each candidate. A sheet with all three
+      // components that actually ties beats one with assets only and zeros.
+      if (p.balance?.totalAssets) {
+        const b = p.balance;
+        const hasAll = b.totalLiabilities > 0 && b.totalNetAssets > 0;
+        const ties = hasAll && Math.abs(b.totalAssets - (b.totalLiabilities + b.totalNetAssets)) < Math.max(1, b.totalAssets * 0.001);
+        const score = (ties ? 100 : 0) + (hasAll ? 10 : 0) + 1;
+        if (score > balScore) { out.balance = b; balScore = score; }
+      }
 
       for (const key of ["tieOut", "figures", "variance", "findings", "escalations"]) {
         for (const item of p[key] || []) {
@@ -277,7 +445,38 @@ function App() {
         ? "public_sector"
         : votes.corporate ? "corporate" : "corporate";
 
+    // Collapse "absence of X" noise once X was actually found somewhere.
+    // If any slice reported an audit opinion, a real opinion finding, or an
+    // opinion escalation, drop every "not in my slice" opinion note.
+    const opinionFound =
+      !!out.entity.auditOpinion ||
+      out.findings.some((f) => /opinion/i.test(f.title || "") && f.state !== "escalate" && !/no |not |undisclosed|missing|absent/i.test(f.title || ""));
+
+    const isOpinionAbsence = (txt) =>
+      /opinion|auditor/i.test(txt || "") && /no |not |undisclosed|missing|absent|not found|not located|not present|not stated|not visible/i.test(txt || "");
+
+    if (opinionFound) {
+      out.findings = out.findings.filter((f) => !(isOpinionAbsence(f.title) || isOpinionAbsence(f.detail)));
+      out.escalations = out.escalations.filter((e) => !(isOpinionAbsence(e.title) || isOpinionAbsence(e.why)));
+    }
+
+    // Also collapse the generic "no financial statements in this slice" swarm:
+    // keep at most one, and only if NO slice produced a balancing sheet.
+    const noStmtRe = (txt) => /no (financial statements|balance sheet|income statement|financials|consolidated)/i.test(txt || "");
+    const haveRealBalance = balScore >= 100;
+    if (haveRealBalance) {
+      out.findings = out.findings.filter((f) => !(noStmtRe(f.title) || noStmtRe(f.detail)));
+      out.escalations = out.escalations.filter((e) => !(noStmtRe(e.title) || noStmtRe(e.why)));
+    } else {
+      let kept = false;
+      out.findings = out.findings.filter((f) => {
+        if (noStmtRe(f.title) || noStmtRe(f.detail)) { if (kept) return false; kept = true; }
+        return true;
+      });
+    }
+
     out.findings.sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
+    return out;
     return out;
   };
 
@@ -430,6 +629,8 @@ function App() {
   };
 
   const bal = data ? checkBalance(data.balance) : null;
+  const ratios = data ? computeRatios(data.lineItems) : null;
+  const ratiosOk = (ratios || []).filter((r) => r.status === "ok");
   const doneCount = slices.filter((s) => s.status === "done").length;
   const missCount = slices.filter((s) => s.status === "miss").length;
   const pagesRead = slices.filter((s) => s.status === "done").reduce((a, s) => a + (s.to - s.from + 1), 0);
@@ -746,7 +947,7 @@ function App() {
                     <div key={i} className="mz-row landed">
                       <div className={"mz-tick " + st}>{MARK[st]}</div>
                       <div className="mz-body"><p className="mz-title">{t.check}</p><p className="mz-detail">{t.detail}</p></div>
-                      <div className="mz-ref">{t.ref}</div>
+                      <div className="mz-ref">{tidyRef(t.ref)}</div>
                     </div>
                   );
                 })}
@@ -764,14 +965,14 @@ function App() {
                     const corrected = edits[f.label] != null;
                     return (
                       <div key={i} className={"mz-fig " + (f.state || "review")}>
-                        <div className="mz-fig-lbl">{f.label}{corrected && <span className="mz-corrected">corrected</span>}</div>
+                        <div className="mz-fig-lbl" title={f.label}>{f.label}{corrected && <span className="mz-corrected">corrected</span>}</div>
                         <input
                           className="mz-fig-input"
-                          value={corrected ? edits[f.label] : f.value}
+                          value={corrected ? edits[f.label] : normNum(f.value)}
                           onChange={(e) => setEdits((p) => ({ ...p, [f.label]: e.target.value }))}
                           aria-label={"Value for " + f.label}
                         />
-                        <div className="mz-fig-ref">{f.ref}{corrected && " · edited from " + f.value}</div>
+                        <div className="mz-fig-ref">{tidyRef(f.ref)}{corrected && " · edited from " + f.value}</div>
                       </div>
                     );
                   })}
@@ -800,6 +1001,42 @@ function App() {
                     </div>
                   );
                 })}
+              </section>
+            )}
+
+            {ratios && ratiosOk.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Financial ratios</h2>
+                  <span className="mz-sec-note">{ratiosOk.length} of 12 computed \u00b7 arithmetic, not a model</span>
+                </div>
+                {["Liquidity", "Profitability", "Leverage", "Cash flow", "Stock performance"].map((fam) => {
+                  const group = ratios.filter((r) => r.family === fam);
+                  if (!group.length) return null;
+                  return (
+                    <div key={fam} className="mz-rfam">
+                      <div className="mz-rfam-h">{fam}</div>
+                      {group.map((r, i) => (
+                        <div key={i} className={"mz-ratio " + (r.status === "ok" ? "ok" : "missing")}>
+                          <div className="mz-ratio-main">
+                            <div className="mz-ratio-name">{r.name}</div>
+                            <div className="mz-ratio-formula">{r.formula}</div>
+                            {r.status === "ok"
+                              ? <div className="mz-ratio-note">{r.note}</div>
+                              : <div className="mz-ratio-miss">Needs {r.missing.join(" and ")} \u2014 held for a person, not estimated.</div>}
+                          </div>
+                          <div className="mz-ratio-val">
+                            {r.status === "ok" ? r.shown : "\u2014"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+                <div className="mz-legend">
+                  <span>Every computed ratio uses figures the reading pulled from the statements.</span>
+                  <span>A ratio marked \u2014 is missing an input and is never guessed.</span>
+                </div>
               </section>
             )}
 
@@ -853,7 +1090,7 @@ function App() {
                         <p className="mz-detail">{f.detail}</p>
                         {f.metric && <p className="mz-metric">{f.metric}</p>}
                       </div>
-                      <div className="mz-ref">{f.ref}</div>
+                      <div className="mz-ref">{tidyRef(f.ref)}</div>
                     </div>
                   )
                 ))}
