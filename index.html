@@ -1008,7 +1008,7 @@ function App() {
               <section className="mz-sec">
                 <div className="mz-sec-head">
                   <h2 className="mz-sec-title">Financial ratios</h2>
-                  <span className="mz-sec-note">{ratiosOk.length} of 12 computed \u00b7 arithmetic, not a model</span>
+                  <span className="mz-sec-note">{ratiosOk.length} of 12 computed · arithmetic, not a model</span>
                 </div>
                 {["Liquidity", "Profitability", "Leverage", "Cash flow", "Stock performance"].map((fam) => {
                   const group = ratios.filter((r) => r.family === fam);
@@ -1023,7 +1023,7 @@ function App() {
                             <div className="mz-ratio-formula">{r.formula}</div>
                             {r.status === "ok"
                               ? <div className="mz-ratio-note">{r.note}</div>
-                              : <div className="mz-ratio-miss">Needs {r.missing.join(" and ")} \u2014 held for a person, not estimated.</div>}
+                              : <div className="mz-ratio-miss">Needs {r.missing.join(" and ")} — held for a person, not estimated.</div>}
                           </div>
                           <div className="mz-ratio-val">
                             {r.status === "ok" ? r.shown : "\u2014"}
@@ -1035,7 +1035,7 @@ function App() {
                 })}
                 <div className="mz-legend">
                   <span>Every computed ratio uses figures the reading pulled from the statements.</span>
-                  <span>A ratio marked \u2014 is missing an input and is never guessed.</span>
+                  <span>A ratio marked — is missing an input and is never guessed.</span>
                 </div>
               </section>
             )}
