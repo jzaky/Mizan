@@ -8,6 +8,7 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body style="margin:0;background:#F2F4EF">
 <div id="root"></div>
@@ -114,6 +115,23 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-legend b{font-size:.85rem;margin-right:.3rem}
 .mz-ev{border:1px solid var(--rule);border-top:none;background:#fff;padding:1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);line-height:1.9;word-break:break-all}
 .mz-ev b{color:var(--ink)}
+.mz-note{border:1px solid var(--rule);border-top:none;background:#fff;padding:.85rem .9rem;font-size:.8rem;color:var(--ink-soft);line-height:1.5}
+.mz-note{border:1px solid var(--rule);border-top:none;background:#fff;padding:.85rem .9rem;font-size:.8rem;color:var(--ink-soft);line-height:1.5}
+.mz-controls{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.7rem 0}
+.mz-filters{display:flex;gap:.25rem}
+.mz-filter{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;padding:.4rem .6rem;border:1px solid var(--rule);background:#fff;color:var(--ink-soft);cursor:pointer}
+.mz-filter.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mz-corrected,.mz-fig-input+.mz-fig-ref{}
+.mz-corrected{font-family:'IBM Plex Mono',monospace;font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;color:var(--query);border:1px solid var(--query);padding:.05rem .3rem;margin-left:.4rem}
+.mz-fig-input{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;margin-top:.28rem;width:100%;border:none;border-bottom:1px dashed var(--rule);background:transparent;color:var(--ink);padding:.1rem 0;font-variant-numeric:tabular-nums}
+.mz-fig-input:focus{outline:none;border-bottom-color:var(--forest)}
+.mz-manual{background:rgba(168,93,0,.04)}
+.mz-edit-title{font-size:.9rem;font-weight:600;width:100%;border:1px solid var(--rule);background:#fff;padding:.35rem .5rem;font-family:inherit}
+.mz-edit-detail{font-size:.8rem;color:var(--ink);width:100%;margin-top:.4rem;min-height:2.6rem;border:1px solid var(--rule);background:#fff;padding:.35rem .5rem;font-family:inherit;resize:vertical}
+.mz-edit-row{display:flex;gap:.4rem;margin-top:.4rem;align-items:center;flex-wrap:wrap}
+.mz-edit-row select{font-family:'IBM Plex Mono',monospace;font-size:.62rem;padding:.3rem .4rem;border:1px solid var(--rule);background:#fff}
+.mz-del{font-family:'IBM Plex Mono',monospace;font-size:.6rem;text-transform:uppercase;color:var(--esc);background:none;border:1px solid var(--esc);padding:.3rem .5rem;cursor:pointer}
+.mz-retry{border:1px solid var(--query);border-left-width:3px;background:#fff;padding:.85rem 1.05rem;margin-top:1rem;display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:.82rem}
 .mz-err{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
 .mz-err-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--esc)}
 .mz-err-b{font-size:.83rem;margin-top:.4rem;line-height:1.5}
@@ -150,7 +168,50 @@ function App() {
   const [file, setFile] = useState(null);
   const [owners, setOwners] = useState({});
   const [operator, setOperator] = useState("");
+  const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState("");
+  const [filterState, setFilterState] = useState("all");   // all|verified|review|escalate
+  const [collapsed, setCollapsed] = useState({});
+  const [edits, setEdits] = useState({});                  // figure label -> corrected value
+  const [manual, setManual] = useState([]);                // operator-added findings
+  const [restored, setRestored] = useState(false);
+  const cacheRef = useRef({});
+  const builtRef = useRef([]);
   const inputRef = useRef(null);
+
+  const PERSIST_KEY = "mizan.session.v1";
+
+  // Restore the last reading so a refresh never destroys review work.
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.data) {
+        setData(s.data); setMeta(s.meta || null); setOwners(s.owners || {});
+        setOperator(s.operator || ""); setEdits(s.edits || {}); setManual(s.manual || []);
+        setSlices(s.slices || []);
+        setState("done"); setRestored(true);
+        setNotice("Restored your last reading from this browser. Upload a new document to start fresh.");
+      }
+    } catch {}
+  }, []);
+
+  React.useEffect(() => {
+    if (state !== "done" || !data) return;
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify({
+        data, meta, owners, operator, edits, manual,
+        slices: (slices || []).map((s) => ({ ...s, pdf: undefined }))  // never persist the raw PDF bytes
+      }));
+    } catch {}
+  }, [state, data, meta, owners, operator, edits, manual]);
+
+  const clearSession = () => {
+    try { localStorage.removeItem(PERSIST_KEY); } catch {}
+    setData(null); setMeta(null); setOwners({}); setEdits({}); setManual([]);
+    setSlices([]); setState("idle"); setRestored(false); setNotice("");
+  };
 
   const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
 
@@ -239,22 +300,85 @@ function App() {
     return { error: "Unreachable." };
   };
 
+  const dispatch = useCallback(async (built, pageCount, began, seedPartials) => {
+    const partials = seedPartials || new Array(built.length).fill(null);
+    const costs = [];
+    const failures = [];
+    let cursor = 0;
+    let modelSeen = null;
+
+    const worker = async () => {
+      while (cursor < built.length) {
+        const i = cursor++;
+        if (partials[i]) continue;              // already have this slice, skip
+        const s = built[i];
+        setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy" } : x)));
+
+        const res = await readSlice({ pdf: s.pdf, offset: s.from, total: pageCount });
+
+        if (res.partial) {
+          partials[i] = res.partial;
+          if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
+          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "done" } : x)));
+          setData(merge(partials.filter(Boolean)));
+        } else {
+          failures.push(res.error);
+          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "miss", why: res.error } : x)));
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, built.length) }, worker));
+    return { partials, costs, failures, modelSeen };
+  }, []);
+
+  const finish = (f, hash, pageCount, built, partials, costs, modelSeen, began) => {
+    const got = partials.filter(Boolean);
+    const reading = merge(got);
+    const m = {
+      hash, name: f.name, size: f.size, pages: pageCount,
+      slices: built.length, read: got.length, failed: built.length - got.length,
+      model: modelSeen,
+      input_tokens: costs.reduce((a, c) => a + (c.input_tokens || 0), 0),
+      output_tokens: costs.reduce((a, c) => a + (c.output_tokens || 0), 0),
+      cost_usd: Number(costs.reduce((a, c) => a + (c.cost_usd || 0), 0).toFixed(4)),
+      seconds: Math.round((Date.now() - began) / 1000),
+      at: new Date().toISOString()
+    };
+    setData(reading);
+    setMeta(m);
+    setState("done");
+    cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, file: { name: f.name, size: f.size } };
+  };
+
   const run = useCallback(async (f) => {
-    setState("working"); setErr(""); setData(null); setMeta(null); setSlices([]);
+    setState("working"); setErr(""); setNotice(""); setData(null); setMeta(null); setSlices([]);
+    setOwners({});
     const began = Date.now();
 
     try {
       const buf = await f.arrayBuffer();
       const hash = await sha256(buf);
 
+      // Duplicate detection: same bytes, same reading. Serve it back instantly.
+      const hit = cacheRef.current[hash];
+      if (hit) {
+        builtRef.current = hit.built;
+        setSlices(hit.built.map((b) => ({ ...b, status: "done" })));
+        setData(hit.reading);
+        setMeta(hit.meta);
+        setState("done");
+        setNotice("This exact document was already read this session. Showing the cached reading. Re-upload a changed file to force a fresh read.");
+        return;
+      }
+
       const src = await PDFDocument.load(buf, { ignoreEncryption: true });
       const pageCount = src.getPageCount();
 
-      // Cut the document into slices the free tier can actually swallow.
       const plan = [];
       for (let start = 0; start < pageCount; start += PAGES_PER_SLICE) {
         const end = Math.min(start + PAGES_PER_SLICE, pageCount);
-        plan.push({ start, end, from: start + 1, to: end });
+        plan.push({ idx: plan.length, start, end, from: start + 1, to: end });
       }
       setSlices(plan.map((p) => ({ ...p, status: "queued" })));
 
@@ -265,59 +389,39 @@ function App() {
         pages.forEach((pg) => doc.addPage(pg));
         built.push({ ...p, pdf: b64(await doc.save()) });
       }
+      builtRef.current = built;
 
-      const partials = new Array(built.length).fill(null);
-      const costs = [];
-      const failures = [];
-      let cursor = 0;
-      let modelSeen = null;
+      const { partials, costs, failures, modelSeen } = await dispatch(built, pageCount, began);
 
-      const worker = async () => {
-        while (cursor < built.length) {
-          const i = cursor++;
-          const s = built[i];
-          setSlices((prev) => prev.map((x, ix) => (ix === i ? { ...x, status: "busy" } : x)));
-
-          const res = await readSlice({ pdf: s.pdf, offset: s.from, total: pageCount });
-
-          if (res.partial) {
-            partials[i] = res.partial;
-            if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
-            setSlices((prev) => prev.map((x, ix) => (ix === i ? { ...x, status: "done" } : x)));
-            setData(merge(partials.filter(Boolean)));
-          } else {
-            failures.push(res.error);
-            setSlices((prev) => prev.map((x, ix) => (ix === i ? { ...x, status: "miss", why: res.error } : x)));
-          }
-        }
-      };
-
-      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, built.length) }, worker));
-
-      const got = partials.filter(Boolean);
-      if (!got.length) {
-        throw new Error("No part of this document could be read. First failure: " +
-          (failures[0] || "unknown."));
+      if (!partials.filter(Boolean).length) {
+        throw new Error("No part of this document could be read. First failure: " + (failures[0] || "unknown."));
       }
-
-      setData(merge(got));
-      setMeta({
-        hash, name: f.name, size: f.size, pages: pageCount,
-        slices: built.length, read: got.length, failed: built.length - got.length,
-        model: modelSeen,
-        input_tokens: costs.reduce((a, c) => a + (c.input_tokens || 0), 0),
-        output_tokens: costs.reduce((a, c) => a + (c.output_tokens || 0), 0),
-        cost_usd: Number(costs.reduce((a, c) => a + (c.cost_usd || 0), 0).toFixed(4)),
-        seconds: Math.round((Date.now() - began) / 1000),
-        at: new Date().toISOString()
-      });
-      setOwners({});
-      setState("done");
+      finish(f, hash, pageCount, built, partials, costs, modelSeen, began);
     } catch (e) {
       setErr(e.message || "Something went wrong reading this document.");
       setState("error");
     }
-  }, []);
+  }, [dispatch]);
+
+  const retryFailed = useCallback(async () => {
+    const built = builtRef.current;
+    if (!built.length || !meta) return;
+    const cached = cacheRef.current[meta.hash];
+    const partials = cached ? cached.partials.slice() : new Array(built.length).fill(null);
+    // wipe only the misses so the runner re-fires exactly those
+    setSlices((prev) => prev.map((x) => (x.status === "miss" ? { ...x, status: "queued" } : x)));
+    setState("working"); setErr(""); setNotice("");
+    const began = Date.now() - (meta.seconds * 1000);
+
+    try {
+      const { partials: filled, costs, modelSeen } = await dispatch(built, meta.pages, began, partials);
+      const priorCosts = cached ? cached.costs : [];
+      finish({ name: meta.name, size: meta.size }, meta.hash, meta.pages, built, filled, priorCosts.concat(costs), modelSeen || meta.model, began);
+    } catch (e) {
+      setErr(e.message || "Retry failed.");
+      setState("error");
+    }
+  }, [dispatch, meta]);
 
   const onPick = (e) => {
     const f = e.target.files?.[0];
@@ -373,6 +477,55 @@ function App() {
     };
   };
 
+  const downloadExcel = () => {
+    if (!data || typeof XLSX === "undefined") return;
+    const wb = XLSX.utils.book_new();
+
+    const figRows = (data.figures || []).map((f) => ({
+      Label: f.label,
+      Value: edits[f.label] != null ? edits[f.label] : f.value,
+      Corrected: edits[f.label] != null ? "yes" : "",
+      State: f.state, Source: f.ref
+    }));
+    if (figRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(figRows), "Figures");
+
+    const allFindings = (data.findings || []).concat(manual).map((f) => ({
+      State: f.state, Severity: f.severity || "", Finding: f.title,
+      Detail: f.detail || "", Metric: f.metric || "", Source: f.ref || "",
+      Origin: f.manual ? "operator" : "model"
+    }));
+    if (allFindings.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allFindings), "Findings");
+
+    if ((data.escalations || []).length) {
+      const esc = data.escalations.map((e, i) => ({
+        Item: e.title, Why: e.why, "Decision needed": e.decisionNeeded,
+        "Accountable owner": owners[i] || "UNASSIGNED", Source: e.ref, Decision: "PENDING"
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(esc), "Escalations");
+    }
+
+    if (bal) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{
+        "Total assets": data.balance.totalAssets,
+        "Total liabilities": data.balance.totalLiabilities,
+        "Net assets / equity": data.balance.totalNetAssets,
+        Difference: bal.delta, Result: bal.ok ? "balances" : "does not balance"
+      }]), "Balance");
+    }
+
+    const info = [
+      { Field: "Document", Value: meta?.name }, { Field: "Pages", Value: meta?.pages },
+      { Field: "SHA-256", Value: meta?.hash }, { Field: "Read at", Value: meta?.at },
+      { Field: "System", Value: "Mizan " + VERSION + " · " + (meta?.model || "") },
+      { Field: "Operator", Value: operator || "UNRECORDED" },
+      { Field: "Coverage", Value: (meta?.read || 0) + "/" + (meta?.slices || 0) + " slices" + (meta?.failed ? " (INCOMPLETE)" : "") },
+      { Field: "Cost USD", Value: meta?.cost_usd }
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(info), "Record");
+
+    XLSX.writeFile(wb, "mizan-" + (meta?.hash || "reading").slice(0, 12) + ".xlsx");
+  };
+
   const downloadEvidence = () => {
     const rec = evidence(); if (!rec) return;
     const blob = new Blob([JSON.stringify(rec, null, 2)], { type: "application/json" });
@@ -381,6 +534,39 @@ function App() {
     a.download = "mizan-evidence-" + (meta?.hash || "").slice(0, 12) + ".json";
     a.click(); URL.revokeObjectURL(a.href);
   };
+
+  React.useEffect(() => {
+    const onKey = (e) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "u") { e.preventDefault(); inputRef.current?.click(); }
+      if (mod && e.key.toLowerCase() === "p") { e.preventDefault(); window.print(); }
+      if (mod && e.key.toLowerCase() === "e" && data) { e.preventDefault(); downloadExcel(); }
+      if (mod && e.key.toLowerCase() === "s" && data) { e.preventDefault(); downloadEvidence(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [data, meta, edits, manual, owners, operator]);
+
+  // Findings shown = model findings + operator findings, filtered and searched.
+  const shownFindings = [...(data?.findings || []), ...manual].filter((f) => {
+    if (filterState !== "all" && f.state !== filterState) return false;
+    if (!query.trim()) return true;
+    const hay = (f.title + " " + (f.detail || "") + " " + (f.ref || "") + " " + (f.metric || "")).toLowerCase();
+    return hay.includes(query.toLowerCase());
+  });
+
+  const addManualFinding = () => {
+    setManual((prev) => [...prev, {
+      manual: true, state: "review", severity: "medium",
+      title: "New finding", detail: "", metric: "", ref: "operator entry"
+    }]);
+  };
+  const updateManual = (i, field, val) => {
+    setManual((prev) => prev.map((f, ix) => (ix === i ? { ...f, [field]: val } : f)));
+  };
+  const removeManual = (i) => setManual((prev) => prev.filter((_, ix) => ix !== i));
+
+  const toggle = (id) => setCollapsed((p) => ({ ...p, [id]: !p[id] }));
 
   const working = state === "working";
 
@@ -406,8 +592,10 @@ function App() {
             value={operator} onChange={(e) => setOperator(e.target.value)} aria-label="Operator name" />
           {state === "done" && (
             <>
-              <button className="mz-btn ghost" onClick={() => window.print()}>Print working paper</button>
-              <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence record</button>
+              <button className="mz-btn ghost" onClick={() => window.print()}>Print</button>
+              <button className="mz-btn ghost" onClick={downloadExcel}>Excel</button>
+              <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence JSON</button>
+              <button className="mz-btn ghost" onClick={clearSession}>New document</button>
             </>
           )}
           {file && state === "done" && <span className="mz-hint">{file.name}</span>}
@@ -451,12 +639,23 @@ function App() {
             </div>
             <div className="mz-grid">
               {slices.map((s, i) => (
-                <div key={i} className={"mz-cell " + s.status}
+                <div key={s.idx ?? i} className={"mz-cell " + s.status}
                   title={"pages " + s.from + " to " + s.to + (s.why ? " · " + s.why : "")}>
                   {s.from}
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {notice && (
+          <div className="mz-note">{notice}</div>
+        )}
+
+        {state === "done" && meta && meta.failed > 0 && (
+          <div className="mz-retry">
+            <span>{meta.failed} of {meta.slices} slices did not read. This reading is marked incomplete.</span>
+            <button className="mz-btn ghost" onClick={retryFailed}>Retry failed slices</button>
           </div>
         )}
 
@@ -561,13 +760,21 @@ function App() {
                   <span className="mz-sec-note">every one carries its page</span>
                 </div>
                 <div className="mz-figs">
-                  {data.figures.map((f, i) => (
-                    <div key={i} className={"mz-fig " + (f.state || "review")}>
-                      <div className="mz-fig-lbl">{f.label}</div>
-                      <div className="mz-fig-val">{f.value}</div>
-                      <div className="mz-fig-ref">{f.ref}</div>
-                    </div>
-                  ))}
+                  {data.figures.map((f, i) => {
+                    const corrected = edits[f.label] != null;
+                    return (
+                      <div key={i} className={"mz-fig " + (f.state || "review")}>
+                        <div className="mz-fig-lbl">{f.label}{corrected && <span className="mz-corrected">corrected</span>}</div>
+                        <input
+                          className="mz-fig-input"
+                          value={corrected ? edits[f.label] : f.value}
+                          onChange={(e) => setEdits((p) => ({ ...p, [f.label]: e.target.value }))}
+                          aria-label={"Value for " + f.label}
+                        />
+                        <div className="mz-fig-ref">{f.ref}{corrected && " · edited from " + f.value}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -596,23 +803,65 @@ function App() {
               </section>
             )}
 
-            {data.findings?.length > 0 && (
+            {((data.findings?.length > 0) || manual.length > 0) && (
               <section className="mz-sec">
                 <div className="mz-sec-head">
                   <h2 className="mz-sec-title">Findings</h2>
-                  <span className="mz-sec-note">read the tick column first</span>
+                  <span className="mz-sec-note">{shownFindings.length} shown</span>
                 </div>
-                {data.findings.map((f, i) => (
-                  <div key={i} className="mz-row landed">
-                    <div className={"mz-tick " + (f.state || "review")}>{MARK[f.state] || "?"}</div>
-                    <div className="mz-body">
-                      <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
-                      <p className="mz-detail">{f.detail}</p>
-                      {f.metric && <p className="mz-metric">{f.metric}</p>}
-                    </div>
-                    <div className="mz-ref">{f.ref}</div>
+                <div className="mz-controls">
+                  <input className="mz-in" placeholder="Search findings" value={query}
+                    onChange={(e) => setQuery(e.target.value)} aria-label="Search findings" />
+                  <div className="mz-filters">
+                    {["all", "verified", "review", "escalate"].map((k) => (
+                      <button key={k} className={"mz-filter" + (filterState === k ? " on" : "")}
+                        onClick={() => setFilterState(k)}>{k}</button>
+                    ))}
                   </div>
+                  <button className="mz-btn ghost" onClick={addManualFinding}>+ Add finding</button>
+                </div>
+                {shownFindings.map((f, i) => (
+                  f.manual ? (
+                    <div key={"m" + i} className="mz-row mz-manual landed">
+                      <div className={"mz-tick " + (f.state || "review")}>{MARK[f.state] || "?"}</div>
+                      <div className="mz-body">
+                        <input className="mz-edit-title" value={f.title}
+                          onChange={(e) => updateManual(manual.indexOf(f), "title", e.target.value)} />
+                        <textarea className="mz-edit-detail" value={f.detail} placeholder="Detail"
+                          onChange={(e) => updateManual(manual.indexOf(f), "detail", e.target.value)} />
+                        <div className="mz-edit-row">
+                          <select value={f.state} onChange={(e) => updateManual(manual.indexOf(f), "state", e.target.value)}>
+                            <option value="verified">verified</option>
+                            <option value="review">review</option>
+                            <option value="escalate">escalate</option>
+                          </select>
+                          <select value={f.severity} onChange={(e) => updateManual(manual.indexOf(f), "severity", e.target.value)}>
+                            <option value="high">high</option>
+                            <option value="medium">medium</option>
+                            <option value="low">low</option>
+                          </select>
+                          <button className="mz-del" onClick={() => removeManual(manual.indexOf(f))}>remove</button>
+                        </div>
+                      </div>
+                      <div className="mz-ref">operator entry</div>
+                    </div>
+                  ) : (
+                    <div key={"f" + i} className="mz-row landed">
+                      <div className={"mz-tick " + (f.state || "review")}>{MARK[f.state] || "?"}</div>
+                      <div className="mz-body">
+                        <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
+                        <p className="mz-detail">{f.detail}</p>
+                        {f.metric && <p className="mz-metric">{f.metric}</p>}
+                      </div>
+                      <div className="mz-ref">{f.ref}</div>
+                    </div>
+                  )
                 ))}
+                {shownFindings.length === 0 && (
+                  <div className="mz-row"><div className="mz-tick"></div>
+                    <div className="mz-body"><p className="mz-detail">No findings match this filter or search.</p></div>
+                    <div className="mz-ref"></div></div>
+                )}
                 <div className="mz-legend">
                   <span><b style={{ color: "var(--tick)" }}>{MARK.verified}</b> read from the document</span>
                   <span><b style={{ color: "var(--query)" }}>{MARK.review}</b> derived, confirm it</span>
