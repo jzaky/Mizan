@@ -19,6 +19,21 @@ const { PDFDocument } = PDFLib;
 
 
 const VERSION = "1.0.0";
+
+// The same reading, written for a different reader. The lens never changes the
+// arithmetic or the extracted figures — only who the evaluation is addressed to.
+const LENSES = [
+  { key: "", label: "General", blurb: "Balanced analyst view, no particular audience." },
+  { key: "investor", label: "Investor lens", blurb: "Return, growth runway, dividend safety, valuation." },
+  { key: "bank", label: "Bank lending lens", blurb: "Debt service capacity, coverage, downside resilience." },
+  { key: "audit", label: "Audit lens", blurb: "Misstatement risk, estimate-heavy balances, what to test." },
+  { key: "cfo", label: "CFO lens", blurb: "Operational levers, working capital, what to act on." },
+  { key: "board", label: "Board lens", blurb: "Strategy, oversight, the decisions actually in front of you." },
+  { key: "student", label: "Student lens", blurb: "Explains each measure before interpreting it." },
+  { key: "credit", label: "Credit rating lens", blurb: "Indicative rating band and what would move it." }
+];
+const LENS_LABEL = LENSES.reduce((a, l) => { a[l.key] = l.label; return a; }, {});
+
 const PAGES_PER_SLICE = 6;   // small enough that one call clears 10s comfortably
 const CONCURRENCY = 4;       // slices in flight at once
 const RETRIES = 2;
@@ -115,6 +130,25 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-legend b{font-size:.85rem;margin-right:.3rem}
 .mz-ev{border:1px solid var(--rule);border-top:none;background:#fff;padding:1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);line-height:1.9;word-break:break-all}
 .mz-ev b{color:var(--ink)}
+.mz-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-dash-cell{padding:.9rem;border-right:1px solid var(--rule);text-align:center}
+.mz-dash-v{font-family:'IBM Plex Mono',monospace;font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums}
+.mz-dash-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-top:.25rem}
+.mz-dash-cell.good .mz-dash-v{color:var(--tick)}
+.mz-dash-cell.warn .mz-dash-v{color:var(--query)}
+.mz-dash-cell.bad .mz-dash-v{color:var(--esc)}
+.mz-ratio-right{padding:.7rem .9rem;text-align:right}
+.mz-ratio-right .mz-ratio-val{padding:0}
+.mz-ratio-bar{height:4px;background:var(--rule);margin-top:.4rem;width:5.2rem;margin-left:auto}
+.mz-ratio-bar-fill{height:100%;background:var(--forest)}
+.mz-fig-comp{margin-top:.45rem}
+.mz-fig-comp-row{display:flex;align-items:center;gap:.4rem;margin-top:.2rem}
+.mz-fig-comp-row span{font-family:'IBM Plex Mono',monospace;font-size:.52rem;color:var(--ink-soft);width:2.1rem;text-transform:uppercase;letter-spacing:.05em}
+.mz-fig-comp-track{flex:1;height:4px;background:var(--rule)}
+.mz-fig-comp-fill{height:100%}
+.mz-fig-comp-fill.up{background:var(--tick)}
+.mz-fig-comp-fill.dn{background:var(--query)}
+.mz-fig-comp-fill.pri{background:var(--ink-soft);opacity:.45}
 .mz-eval-load{padding:2.4rem 1rem;text-align:center;border:1px solid var(--rule);border-top:none;background:#fff}
 .mz-eval-load-t{font-family:'Instrument Serif',Georgia,serif;font-size:1.3rem;color:var(--forest)}
 .mz-eval{border:1px solid var(--rule);border-top:none;background:#fff;padding:0 0 1rem}
@@ -154,7 +188,7 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 @media(max-width:620px){.mz-eval-sc{grid-template-columns:1fr}}
 .mz-rfam{border:1px solid var(--rule);border-top:none;background:#fff}
 .mz-rfam-h{background:var(--bar);padding:.45rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--rule)}
-.mz-ratio{display:grid;grid-template-columns:1fr 6.5rem;border-bottom:1px solid var(--rule);align-items:center}
+.mz-ratio{display:grid;grid-template-columns:1fr 8rem;border-bottom:1px solid var(--rule);align-items:center}
 .mz-ratio:last-child{border-bottom:none}
 .mz-ratio.missing{background:rgba(168,93,0,.03)}
 .mz-ratio-main{padding:.7rem .9rem;min-width:0}
@@ -162,6 +196,7 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ratio-formula{font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);margin-top:.2rem}
 .mz-ratio-note{font-size:.78rem;color:var(--forest);margin-top:.3rem;line-height:1.4}
 .mz-ratio-miss{font-size:.76rem;color:var(--query);margin-top:.3rem;line-height:1.4}
+.mz-ratio-typ{font-size:.7rem;color:var(--ink-soft);margin-top:.22rem;line-height:1.45}
 .mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
 .mz-ratio.missing .mz-ratio-val{color:var(--rule)}
 .mz-note{border:1px solid var(--rule);border-top:none;background:#fff;padding:.85rem .9rem;font-size:.8rem;color:var(--ink-soft);line-height:1.5}
@@ -184,6 +219,22 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-err{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
 .mz-err-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--esc)}
 .mz-err-b{font-size:.83rem;margin-top:.4rem;line-height:1.5}
+.mz-docs{border:1px solid var(--rule);border-top:none;background:#fff;display:flex;flex-wrap:wrap;gap:.1rem 1.6rem;padding:.7rem .9rem}
+.mz-doc{display:flex;gap:.55rem;align-items:baseline;min-width:min(100%,22rem)}
+.mz-doc-n{font-size:.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mz-doc-m{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
+.mz-mixed{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
+.mz-mixed-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--esc)}
+.mz-mixed-b{font-size:.83rem;margin-top:.4rem;line-height:1.5}
+.mz-mixed-l{margin-top:.6rem;font-size:.76rem;line-height:1.7;color:var(--ink-soft)}
+.mz-conf{border:1px solid var(--query);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
+.mz-conf-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--query)}
+.mz-conf-b{font-size:.83rem;margin-top:.4rem;line-height:1.5;color:var(--ink-soft)}
+.mz-conf-r{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;align-items:baseline;padding:.5rem 0;border-bottom:1px solid var(--rule)}
+.mz-conf-r:last-child{border-bottom:none}
+.mz-conf-k{font-size:.8rem;font-weight:600;min-width:11rem}
+.mz-conf-v{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-soft)}
+.mz-conf-v em{font-style:normal;font-size:.62rem;opacity:.8}
 .mz-empty{padding:3.4rem 1rem;text-align:center;border:1px solid var(--rule);border-top:none;background:#fff}
 .mz-empty-t{font-family:'Instrument Serif',Georgia,serif;font-size:1.35rem;color:var(--ink-soft);font-style:italic}
 .mz-empty-s{font-size:.83rem;color:var(--ink-soft);margin-top:.5rem}
@@ -218,10 +269,166 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-sub{display:none}
 .mz-foot{page-break-inside:avoid;font-size:.55rem}
 }}
+
+/* ---- Confidence ---------------------------------------------------------- */
+.mz-conf{display:inline-flex;align-items:center;gap:.3rem;font-family:'IBM Plex Mono',monospace;font-size:.55rem;letter-spacing:.06em;white-space:nowrap}
+.mz-conf-dot{width:.42rem;height:.42rem;border-radius:50%;flex:none}
+.mz-conf.hi .mz-conf-dot{background:var(--tick)}
+.mz-conf.mid .mz-conf-dot{background:var(--query)}
+.mz-conf.lo .mz-conf-dot{background:var(--esc)}
+.mz-conf.hi{color:var(--tick)}.mz-conf.mid{color:var(--query)}.mz-conf.lo{color:var(--esc)}
+.mz-origin{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);border:1px solid var(--rule);padding:.03rem .25rem;margin-left:.35rem}
+.mz-origin.narrative{color:var(--query);border-color:var(--query)}
+.mz-origin.derived{color:var(--forest);border-color:var(--forest)}
+.mz-conf-track{height:3px;background:var(--rule);width:3.6rem;margin-top:.25rem}
+.mz-conf-fill{height:100%}
+.mz-conf-fill.hi{background:var(--tick)}.mz-conf-fill.mid{background:var(--query)}.mz-conf-fill.lo{background:var(--esc)}
+
+/* ---- Health scorecard ---------------------------------------------------- */
+.mz-score{border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-score-top{display:flex;align-items:center;gap:1.2rem;padding:1rem;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.mz-score-big{font-family:'IBM Plex Mono',monospace;font-size:2.6rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.mz-score-big.good{color:var(--tick)}.mz-score-big.warn{color:var(--query)}.mz-score-big.bad{color:var(--esc)}.mz-score-big.none{color:var(--ink-soft)}
+.mz-score-lab{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-score-verdict{font-family:'Instrument Serif',serif;font-size:1.5rem}
+.mz-score-row{display:grid;grid-template-columns:9.5rem 1fr 5.5rem;gap:.8rem;align-items:center;padding:.6rem 1rem;border-bottom:1px solid var(--rule)}
+.mz-score-row:last-child{border-bottom:none}
+.mz-score-name{font-weight:500;font-size:.85rem}
+.mz-score-sub{font-family:'IBM Plex Mono',monospace;font-size:.55rem;color:var(--ink-soft);letter-spacing:.05em}
+.mz-score-track{height:8px;background:var(--bar);position:relative}
+.mz-score-fill{height:100%}
+.mz-score-fill.good{background:var(--tick)}.mz-score-fill.warn{background:var(--query)}.mz-score-fill.bad{background:var(--esc)}
+.mz-score-tag{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;text-align:right}
+.mz-score-tag.good{color:var(--tick)}.mz-score-tag.warn{color:var(--query)}.mz-score-tag.bad{color:var(--esc)}.mz-score-tag.none{color:var(--ink-soft)}
+
+/* ---- Risk meters --------------------------------------------------------- */
+.mz-risk{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-risk-cell{padding:.9rem;border-right:1px solid var(--rule)}
+.mz-risk-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-risk-blocks{display:flex;gap:.22rem;margin:.45rem 0 .35rem}
+.mz-risk-b{width:1.05rem;height:.85rem;background:var(--bar);border:1px solid var(--rule)}
+.mz-risk-b.on.l1,.mz-risk-b.on.l2{background:var(--tick);border-color:var(--tick)}
+.mz-risk-b.on.l3{background:var(--query);border-color:var(--query)}
+.mz-risk-b.on.l4,.mz-risk-b.on.l5{background:var(--esc);border-color:var(--esc)}
+.mz-risk-why{font-size:.72rem;color:var(--ink-soft);line-height:1.45}
+
+/* ---- Coverage map -------------------------------------------------------- */
+.mz-cov{border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-cov-row{display:grid;grid-template-columns:11rem 1fr 3.2rem;gap:.8rem;align-items:center;padding:.55rem 1rem;border-bottom:1px solid var(--rule)}
+.mz-cov-row:last-child{border-bottom:none}
+.mz-cov-n{font-size:.82rem}
+.mz-cov-sub{font-family:'IBM Plex Mono',monospace;font-size:.52rem;color:var(--ink-soft);letter-spacing:.04em}
+.mz-cov-track{height:7px;background:var(--bar)}
+.mz-cov-fill{height:100%;background:var(--forest)}
+.mz-cov-fill.zero{background:var(--esc)}
+.mz-cov-fill.part{background:var(--query)}
+.mz-cov-p{font-family:'IBM Plex Mono',monospace;font-size:.72rem;text-align:right;font-variant-numeric:tabular-nums}
+.mz-cov-p.zero{color:var(--esc)}.mz-cov-p.part{color:var(--query)}.mz-cov-p.full{color:var(--tick)}
+
+/* ---- Reasoning chain ----------------------------------------------------- */
+.mz-why{margin-top:.6rem;border-top:1px solid var(--rule);padding-top:.55rem}
+.mz-why-h{font-family:'IBM Plex Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.35rem}
+.mz-why-d{display:flex;gap:.45rem;align-items:flex-start;font-size:.78rem;margin-bottom:.22rem;line-height:1.45}
+.mz-why-d span:first-child{color:var(--tick);flex:none;font-weight:600}
+.mz-why-c{margin-top:.5rem;padding:.5rem .6rem;background:var(--bar);font-size:.78rem;line-height:1.5}
+.mz-why-c b{font-family:'IBM Plex Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;display:block;color:var(--ink-soft);margin-bottom:.2rem;font-weight:500}
+
+/* ---- Contradictions ------------------------------------------------------ */
+.mz-contra{border:1px solid var(--esc);margin-bottom:.7rem;background:#fff}
+.mz-contra-h{background:var(--esc);color:#fff;padding:.4rem .7rem;font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.11em;text-transform:uppercase;display:flex;justify-content:space-between}
+.mz-contra-b{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:center;padding:.75rem}
+.mz-contra-side{font-size:.82rem;line-height:1.5}
+.mz-contra-side .mz-contra-lab{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-bottom:.25rem}
+.mz-contra-v{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--esc);letter-spacing:.08em}
+.mz-contra-t{padding:.55rem .75rem;border-top:1px solid var(--rule);font-size:.78rem;color:var(--ink-soft);line-height:1.5}
+@media(max-width:640px){.mz-contra-b{grid-template-columns:1fr}.mz-contra-v{text-align:center}}
+
+/* ---- Timeline ------------------------------------------------------------ */
+.mz-tl{border:1px solid var(--ink);border-top:none;background:#fff;padding:.4rem 0}
+.mz-tl-i{display:grid;grid-template-columns:4.2rem 1.1rem 1fr;gap:.6rem;align-items:start;padding:.3rem 1rem}
+.mz-tl-t{font-family:'IBM Plex Mono',monospace;font-size:.56rem;color:var(--ink-soft);padding-top:.2rem;font-variant-numeric:tabular-nums}
+.mz-tl-rail{position:relative;display:flex;justify-content:center;align-self:stretch}
+.mz-tl-rail::before{content:"";position:absolute;top:.9rem;bottom:-.45rem;width:1px;background:var(--rule)}
+.mz-tl-i:last-child .mz-tl-rail::before{display:none}
+.mz-tl-dot{width:.52rem;height:.52rem;border-radius:50%;background:var(--forest);margin-top:.3rem;z-index:1}
+.mz-tl-i.miss .mz-tl-dot{background:var(--esc)}
+.mz-tl-i.eval .mz-tl-dot,.mz-tl-i.ratio .mz-tl-dot{background:var(--query)}
+.mz-tl-txt{font-size:.82rem;line-height:1.4}
+.mz-tl-d{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--ink-soft);margin-top:.1rem;line-height:1.5}
+
+/* ---- Audit log ----------------------------------------------------------- */
+.mz-log{border:1px solid var(--ink);border-top:none;background:#fff;overflow-x:auto}
+.mz-log table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:.62rem}
+.mz-log th{text-align:left;padding:.45rem .7rem;border-bottom:1px solid var(--ink);font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:500;white-space:nowrap}
+.mz-log td{padding:.4rem .7rem;border-bottom:1px solid var(--rule);white-space:nowrap}
+.mz-log tr:last-child td{border-bottom:none}
+.mz-log td.n{text-align:right;font-variant-numeric:tabular-nums}
+.mz-log tfoot td{border-top:1px solid var(--ink);font-weight:600;background:var(--bar)}
+
+/* ---- Lens picker --------------------------------------------------------- */
+.mz-lens{display:flex;gap:.35rem;flex-wrap:wrap;padding:.7rem 0}
+.mz-lens-b{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;padding:.35rem .6rem;border:1px solid var(--rule);background:#fff;color:var(--ink-soft);cursor:pointer}
+.mz-lens-b:hover{border-color:var(--ink);color:var(--ink)}
+.mz-lens-b.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mz-lens-blurb{font-size:.75rem;color:var(--ink-soft);padding:0 0 .6rem;line-height:1.5}
+
+/* ---- Reference card + evidence quote ------------------------------------- */
+.mz-ratio-name.click{cursor:pointer;display:inline-block;border-bottom:1px dotted var(--ink-soft)}
+.mz-ratio-name.click:hover{color:var(--forest);border-bottom-color:var(--forest)}
+.mz-card{grid-column:1/-1;background:var(--bar);padding:.75rem .9rem;border-top:1px solid var(--rule)}
+.mz-card-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:.7rem}
+.mz-card-b .mz-card-l{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-bottom:.2rem}
+.mz-card-b p{font-size:.78rem;line-height:1.5}
+.mz-quote{margin-top:.45rem;border-left:2px solid var(--forest);padding:.35rem 0 .35rem .6rem;background:var(--bar)}
+.mz-quote-l{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-quote-t{font-family:'IBM Plex Mono',monospace;font-size:.72rem;line-height:1.55;margin-top:.15rem}
+.mz-fig-label.click{cursor:pointer}
+.mz-fig-label.click:hover{color:var(--forest)}
+
+/* ---- Download menu ------------------------------------------------------- */
+.mz-dl{display:flex;gap:.35rem;flex-wrap:wrap}
 `;
 
 const MARK = { verified: "\u2713", review: "?", escalate: "\u2717" };
 const SEV_RANK = { high: 0, medium: 1, low: 2 };
+
+// Which statements a complete reading would contain. Order is the order a
+// reader expects them in, not the order they happen to appear in the PDF.
+const STATEMENTS = [
+  { key: "income_statement", label: "Income statement" },
+  { key: "balance_sheet", label: "Balance sheet" },
+  { key: "cash_flow", label: "Cash flow" },
+  { key: "equity_statement", label: "Changes in equity" },
+  { key: "notes", label: "Notes" },
+  { key: "auditor_report", label: "Auditor report" },
+  { key: "management_discussion", label: "Management discussion" }
+];
+
+// Line items that prove a statement was genuinely read, not merely glimpsed.
+const STATEMENT_PROOF = {
+  income_statement: ["revenue", "operatingProfit", "netProfit", "costOfSales", "grossProfit"],
+  balance_sheet: ["totalAssets", "totalLiabilities", "totalEquity", "currentAssets", "currentLiabilities"],
+  cash_flow: ["operatingCashFlow", "capex", "dividendsPaid"]
+};
+
+// Slice coverage tells you how much of the PDF was processed; this tells you
+// whether the parts that matter were among it. Module scope, because both the
+// coverage map and the evaluation prompt must be looking at the same answer.
+const coverageOf = (d) => STATEMENTS.map((s) => {
+  const seen = (d.sections || []).filter((x) => x.kind === s.key);
+  const proof = STATEMENT_PROOF[s.key] || [];
+  const got = proof.filter((k) => d.lineItems && d.lineItems[k] != null).length;
+  // Where we have proof fields, the share of them found is a truer read than a
+  // self-reported sighting. Elsewhere fall back to whether it was seen at all.
+  const pct = proof.length ? Math.round((got / proof.length) * 100) : (seen.length ? 100 : 0);
+  return {
+    ...s, pct, seen: seen.length > 0,
+    // A page range means nothing on its own once several files are open, so the
+    // document name travels with it wherever the range is shown.
+    pages: seen.map((x) => ((x.doc ? x.doc + " " : "") + (x.pages || "")).trim()).filter(Boolean).join(", "),
+    proven: proof.length ? got + "/" + proof.length + " key lines" : (seen.length ? "seen" : "not seen")
+  };
+});
 
 function App() {
   const [state, setState] = useState("idle");
@@ -229,7 +436,7 @@ function App() {
   const [meta, setMeta] = useState(null);
   const [slices, setSlices] = useState([]);
   const [err, setErr] = useState("");
-  const [file, setFile] = useState(null);
+  const [docs, setDocs] = useState([]);   // every PDF in this reading, in upload order
   const [owners, setOwners] = useState({});
   const [operator, setOperator] = useState("");
   const [notice, setNotice] = useState("");
@@ -242,7 +449,12 @@ function App() {
   const [evaluation, setEvaluation] = useState(null);
   const [evalState, setEvalState] = useState("idle");   // idle|working|done|error
   const [evalErr, setEvalErr] = useState("");
+  const [trail, setTrail] = useState([]);              // reading timeline, newest last
+  const [lens, setLens] = useState("");                // evaluation lens in force
+  const [openRatio, setOpenRatio] = useState(null);    // ratio whose reference card is open
+  const [openFig, setOpenFig] = useState(null);        // figure whose source quote is open
   const cacheRef = useRef({});
+  const evalCostRef = useRef(null);   // token cost of the evaluation call, for the audit log
   const builtRef = useRef([]);
   const inputRef = useRef(null);
 
@@ -258,7 +470,12 @@ function App() {
         setData(s.data); setMeta(s.meta || null); setOwners(s.owners || {});
         setOperator(s.operator || ""); setEdits(s.edits || {}); setManual(s.manual || []);
         setSlices(s.slices || []);
+        setDocs(s.docs || []);
+        setTrail(s.trail || []); setLens(s.lens || "");
         if (s.evaluation) { setEvaluation(s.evaluation); setEvalState("done"); }
+        // The evaluation's token cost belongs to the audit log. Without this the
+        // log loses a row on refresh and quietly under-reports what was spent.
+        if (s.evalCost) evalCostRef.current = s.evalCost;
         setState("done"); setRestored(true);
         setNotice("Restored your last reading from this browser. Upload a new document to start fresh.");
       }
@@ -269,20 +486,29 @@ function App() {
     if (state !== "done" || !data) return;
     try {
       localStorage.setItem(PERSIST_KEY, JSON.stringify({
-        data, meta, owners, operator, edits, manual, evaluation,
+        data, meta, owners, operator, edits, manual, evaluation, trail, lens, docs,
+        evalCost: evalCostRef.current,
         slices: (slices || []).map((s) => ({ ...s, pdf: undefined }))  // never persist the raw PDF bytes
       }));
     } catch {}
-  }, [state, data, meta, owners, operator, edits, manual]);
+  }, [state, data, meta, owners, operator, edits, manual, evaluation, trail, lens, docs]);
 
   const clearSession = () => {
     try { localStorage.removeItem(PERSIST_KEY); } catch {}
     setData(null); setMeta(null); setOwners({}); setEdits({}); setManual([]);
-    setSlices([]); setState("idle"); setRestored(false); setNotice("");
+    setSlices([]); setState("idle"); setRestored(false); setNotice(""); setDocs([]);
     setEvaluation(null); setEvalState("idle"); setEvalErr("");
+    setTrail([]); setLens(""); setOpenRatio(null); setOpenFig(null);
+    evalCostRef.current = null;
   };
 
   const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
+
+  // Reading timeline. Every entry is written at the moment the step actually
+  // happens, from the real result of that step — never a scripted sequence. If a
+  // slice fails, that failure is in the trail too.
+  const mark = (kind, text, detail) =>
+    setTrail((t) => t.concat([{ at: Date.now(), kind, text, detail: detail || "" }]));
 
   // Normalise the mixed scale words a document uses ("73,370 Million",
   // "1.68Tn", "359Bn", "73.4 Billion") into one consistent notation so the
@@ -313,7 +539,18 @@ function App() {
     return (cur + out + (paren ? " " + paren : "")).trim();
   };
 
-    // Tidy stray spacing the model sometimes leaves in refs ("pp . 84- 95").
+    // Pull "current (2024: prior)" pairs out of a figure value for a mini bar pair.
+  const compPair = (raw) => {
+    const s = String(raw ?? "");
+    const mm = s.match(/([\d,]+(?:\.\d+)?)\s*%?\s*\((?:FY)?20\d\d:\s*([\d,]+(?:\.\d+)?)/);
+    if (!mm) return null;
+    const cur = parseFloat(mm[1].replace(/,/g, ""));
+    const pri = parseFloat(mm[2].replace(/,/g, ""));
+    if (!isFinite(cur) || !isFinite(pri) || pri === 0) return null;
+    return { cur, pri, up: cur >= pri };
+  };
+
+  // Tidy stray spacing the model sometimes leaves in refs ("pp . 84- 95").
   const tidyRef = (r) => String(r ?? "").replace(/\s*\.\s*/g, ".").replace(/\s*-\s*/g, "-").replace(/pp\./g, "pp. ").replace(/\s+/g, " ").trim();
 
   const sha256 = async (buf) => {
@@ -352,7 +589,7 @@ function App() {
       needs: ["cashAndEquivalents", "currentLiabilities"],
       calc: (v) => (v.cashAndEquivalents + (v.shortTermDeposits || 0)) / v.currentLiabilities,
       unit: "x", plain: (r) => "Most liquid assets cover " + (r * 100).toFixed(0) + "% of current liabilities." },
-    { family: "Profitability", name: "Revenue growth rate",
+    { family: "Growth", name: "Revenue growth rate",
       formula: "(Revenue \u2212 Prior revenue) \u00f7 Prior revenue",
       needs: ["revenue", "priorRevenue"],
       calc: (v) => (v.revenue - v.priorRevenue) / v.priorRevenue,
@@ -367,42 +604,243 @@ function App() {
       needs: ["netProfit", "revenue"],
       calc: (v) => v.netProfit / v.revenue,
       pct: true, plain: (r) => (r * 100).toFixed(1) + " fils of every dirham of revenue becomes final profit." },
-    { family: "Leverage", name: "Interest coverage ratio",
+    { family: "Solvency", name: "Interest coverage ratio",
       formula: "Operating profit \u00f7 Finance costs",
       needs: ["operatingProfit", "financeCosts"],
       calc: (v) => v.operatingProfit / v.financeCosts,
       unit: "x", plain: (r) => "Operating profit covers finance costs " + r.toFixed(1) + " times." },
-    { family: "Leverage", name: "Net debt-to-EBITDA",
+    { family: "Solvency", name: "Net debt-to-EBITDA",
       formula: "Net debt \u00f7 EBITDA",
       needs: ["netDebt", "ebitda"],
       calc: (v) => v.netDebt / v.ebitda,
       unit: "x", plain: (r) => r.toFixed(1) + " years of EBITDA would repay net debt." },
-    { family: "Cash flow", name: "Operating cash-flow margin",
+    { family: "Cash conversion", name: "Operating cash-flow margin",
       formula: "Operating cash flow \u00f7 Revenue",
       needs: ["operatingCashFlow", "revenue"],
       calc: (v) => v.operatingCashFlow / v.revenue,
       pct: true, plain: (r) => (r * 100).toFixed(1) + "% of revenue converted into operating cash." },
-    { family: "Cash flow", name: "Cash conversion ratio",
+    { family: "Cash conversion", name: "Cash conversion ratio",
       formula: "Operating cash flow \u00f7 Net profit",
       needs: ["operatingCashFlow", "netProfit"],
       calc: (v) => v.operatingCashFlow / v.netProfit,
       unit: "x", plain: (r) => "Each dirham of profit is backed by " + r.toFixed(2) + " of operating cash." },
-    { family: "Stock performance", name: "Earnings per share",
+    { family: "Market value", name: "Earnings per share",
       formula: "Profit to ordinary shareholders \u00f7 Weighted-avg shares",
       needs: ["netProfit", "sharesOutstanding"],
       calc: (v) => v.netProfit / v.sharesOutstanding,
       unit: "", money: true, plain: (r) => "AED " + r.toFixed(3) + " of profit per ordinary share." },
-    { family: "Stock performance", name: "Price-to-earnings ratio",
+    { family: "Market value", name: "Price-to-earnings ratio",
       formula: "Market price per share \u00f7 EPS",
       needs: ["marketPrice", "netProfit", "sharesOutstanding"],
       calc: (v) => v.marketPrice / (v.netProfit / v.sharesOutstanding),
       unit: "x", plain: (r) => "Investors pay " + r.toFixed(1) + " per dirham of earnings." },
-    { family: "Stock performance", name: "Dividend yield",
+    { family: "Market value", name: "Dividend yield",
       formula: "Dividend per share \u00f7 Market price per share",
       needs: ["dividendPerShare", "marketPrice"],
       calc: (v) => v.dividendPerShare / v.marketPrice,
-      pct: true, plain: (r) => (r * 100).toFixed(2) + "% cash return relative to share price." }
+      pct: true, plain: (r) => (r * 100).toFixed(2) + "% cash return relative to share price." },
+
+    { family: "Liquidity", name: "Quick ratio",
+      formula: "(Current assets \u2212 Inventory) \u00f7 Current liabilities",
+      needs: ["currentAssets", "currentLiabilities"], soft: ["inventory"],
+      calc: (v) => (v.currentAssets - (v.inventory || 0)) / v.currentLiabilities,
+      unit: "x", plain: (r) => "Excluding inventory, liquid assets cover current liabilities " + r.toFixed(2) + " times." },
+    { family: "Liquidity", name: "Operating cash flow ratio",
+      formula: "Operating cash flow \u00f7 Current liabilities",
+      needs: ["operatingCashFlow", "currentLiabilities"],
+      calc: (v) => v.operatingCashFlow / v.currentLiabilities,
+      unit: "x", plain: (r) => "One year of operating cash covers current liabilities " + r.toFixed(2) + " times." },
+    { family: "Liquidity", name: "Working capital",
+      formula: "Current assets \u2212 Current liabilities",
+      needs: ["currentAssets", "currentLiabilities"],
+      calc: (v) => v.currentAssets - v.currentLiabilities,
+      raw: true, plain: (r) => r >= 0 ? "Positive working capital buffer of " + Math.abs(r).toLocaleString("en-US") + "." : "Working capital is negative by " + Math.abs(r).toLocaleString("en-US") + "." },
+
+    { family: "Profitability", name: "Gross profit margin",
+      formula: "Gross profit \u00f7 Revenue",
+      needs: ["grossProfit", "revenue"],
+      calc: (v) => v.grossProfit / v.revenue,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of revenue survives the direct cost of sales." },
+    { family: "Profitability", name: "EBITDA margin",
+      formula: "EBITDA \u00f7 Revenue",
+      needs: ["ebitda", "revenue"],
+      calc: (v) => v.ebitda / v.revenue,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of revenue converts to EBITDA." },
+    { family: "Profitability", name: "Return on assets (ROA)",
+      formula: "Net profit \u00f7 Total assets",
+      needs: ["netProfit", "totalAssets"],
+      calc: (v) => v.netProfit / v.totalAssets,
+      pct: true, plain: (r) => "Every dirham of assets produced " + (r * 100).toFixed(1) + " fils of profit." },
+    { family: "Profitability", name: "Return on equity (ROE)",
+      formula: "Net profit \u00f7 Total equity",
+      needs: ["netProfit", "totalEquity"],
+      calc: (v) => v.netProfit / v.totalEquity,
+      pct: true, plain: (r) => "Shareholders earned " + (r * 100).toFixed(1) + "% on the equity they have in the business." },
+    { family: "Profitability", name: "Return on capital employed",
+      formula: "Operating profit \u00f7 (Total assets \u2212 Current liabilities)",
+      needs: ["operatingProfit", "totalAssets", "currentLiabilities"],
+      calc: (v) => v.operatingProfit / (v.totalAssets - v.currentLiabilities),
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% operating return on the long-term capital in use." },
+
+    { family: "Solvency", name: "Debt ratio",
+      formula: "Total liabilities \u00f7 Total assets",
+      needs: ["totalLiabilities", "totalAssets"],
+      calc: (v) => v.totalLiabilities / v.totalAssets,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of the asset base is funded by liabilities." },
+    { family: "Solvency", name: "Debt-to-equity",
+      formula: "Total liabilities \u00f7 Total equity",
+      needs: ["totalLiabilities", "totalEquity"],
+      calc: (v) => v.totalLiabilities / v.totalEquity,
+      unit: "x", plain: (r) => "Creditors have put in " + r.toFixed(2) + " for every 1.00 from shareholders." },
+    { family: "Solvency", name: "Equity ratio",
+      formula: "Total equity \u00f7 Total assets",
+      needs: ["totalEquity", "totalAssets"],
+      calc: (v) => v.totalEquity / v.totalAssets,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of assets are owned outright rather than financed." },
+
+    { family: "Efficiency", name: "Asset turnover",
+      formula: "Revenue \u00f7 Total assets",
+      needs: ["revenue", "totalAssets"],
+      calc: (v) => v.revenue / v.totalAssets,
+      unit: "x", plain: (r) => "Each dirham of assets generated " + r.toFixed(2) + " of revenue." },
+    { family: "Efficiency", name: "Fixed asset turnover",
+      formula: "Revenue \u00f7 Fixed assets",
+      needs: ["revenue", "fixedAssets"],
+      calc: (v) => v.revenue / v.fixedAssets,
+      unit: "x", plain: (r) => "Each dirham of fixed assets generated " + r.toFixed(2) + " of revenue." },
+    { family: "Efficiency", name: "Inventory turnover",
+      formula: "Cost of sales \u00f7 Inventory",
+      needs: ["costOfSales", "inventory"],
+      calc: (v) => v.costOfSales / v.inventory,
+      unit: "x", plain: (r) => "Inventory turned over " + r.toFixed(1) + " times in the year." },
+    { family: "Efficiency", name: "Receivable turnover",
+      formula: "Revenue \u00f7 Trade receivables",
+      needs: ["revenue", "tradeReceivables"],
+      calc: (v) => v.revenue / v.tradeReceivables,
+      unit: "x", plain: (r) => "Receivables were collected and rebuilt " + r.toFixed(1) + " times." },
+    { family: "Efficiency", name: "Days sales outstanding",
+      formula: "(Trade receivables \u00f7 Revenue) \u00d7 365",
+      needs: ["tradeReceivables", "revenue"],
+      calc: (v) => (v.tradeReceivables / v.revenue) * 365,
+      unit: " days", plain: (r) => "On average " + r.toFixed(0) + " days pass between billing and collection." },
+
+    { family: "Cash conversion", name: "Free cash flow",
+      formula: "Operating cash flow \u2212 Capital expenditure",
+      needs: ["operatingCashFlow", "capex"],
+      calc: (v) => v.operatingCashFlow - v.capex,
+      raw: true, plain: (r) => r >= 0 ? "Generated " + Math.abs(r).toLocaleString("en-US") + " of cash after reinvestment." : "Consumed " + Math.abs(r).toLocaleString("en-US") + " of cash after reinvestment." },
+    { family: "Cash conversion", name: "Free cash flow margin",
+      formula: "(Operating cash flow \u2212 Capex) \u00f7 Revenue",
+      needs: ["operatingCashFlow", "capex", "revenue"],
+      calc: (v) => (v.operatingCashFlow - v.capex) / v.revenue,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of revenue became free cash." },
+    { family: "Cash conversion", name: "Capex to operating cash flow",
+      formula: "Capital expenditure \u00f7 Operating cash flow",
+      needs: ["capex", "operatingCashFlow"],
+      calc: (v) => v.capex / v.operatingCashFlow,
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of operating cash was reinvested in assets." },
+
+    { family: "Growth", name: "Net profit growth",
+      formula: "(Net profit \u2212 Prior net profit) \u00f7 Prior net profit",
+      needs: ["netProfit", "priorNetProfit"],
+      calc: (v) => (v.netProfit - v.priorNetProfit) / v.priorNetProfit,
+      pct: true, plain: (r) => "Net profit " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
+    { family: "Growth", name: "Asset growth",
+      formula: "(Total assets \u2212 Prior total assets) \u00f7 Prior total assets",
+      needs: ["totalAssets", "priorTotalAssets"],
+      calc: (v) => (v.totalAssets - v.priorTotalAssets) / v.priorTotalAssets,
+      pct: true, plain: (r) => "The asset base " + (r >= 0 ? "expanded" : "contracted") + " " + Math.abs(r * 100).toFixed(1) + "%." },
+
+    { family: "Market value", name: "Dividend payout ratio",
+      formula: "Dividend per share \u00f7 Earnings per share",
+      needs: ["dividendPerShare", "netProfit", "sharesOutstanding"],
+      calc: (v) => v.dividendPerShare / (v.netProfit / v.sharesOutstanding),
+      pct: true, plain: (r) => (r * 100).toFixed(1) + "% of earnings is paid out; the rest is retained." },
+    { family: "Market value", name: "Market capitalisation",
+      formula: "Market price per share \u00d7 Shares outstanding",
+      needs: ["marketPrice", "sharesOutstanding"],
+      calc: (v) => v.marketPrice * v.sharesOutstanding,
+      raw: true, plain: (r) => "The market values the equity at " + Math.round(r).toLocaleString("en-US") + "." },
+    { family: "Market value", name: "EV / EBITDA",
+      formula: "(Market cap + Net debt) \u00f7 EBITDA",
+      needs: ["marketPrice", "sharesOutstanding", "ebitda"], soft: ["netDebt"],
+      calc: (v) => (v.marketPrice * v.sharesOutstanding + (v.netDebt || 0)) / v.ebitda,
+      unit: "x", plain: (r) => "The whole business is valued at " + r.toFixed(1) + " times EBITDA." },
+    { family: "Market value", name: "PEG ratio",
+      formula: "P/E ratio \u00f7 Net profit growth rate (%)",
+      needs: ["marketPrice", "netProfit", "sharesOutstanding", "priorNetProfit"],
+      calc: (v) => {
+        const pe = v.marketPrice / (v.netProfit / v.sharesOutstanding);
+        const g = ((v.netProfit - v.priorNetProfit) / v.priorNetProfit) * 100;
+        return pe / g;
+      },
+      unit: "x", plain: (r) => r < 0 ? "Negative: earnings are shrinking, so growth-adjusted value does not apply cleanly." : "Priced at " + r.toFixed(2) + " per unit of earnings growth." }
   ];
+
+  // Reference card for every ratio: what it is, why anyone cares, what is normal,
+  // and where it misleads. Shown on click. Kept beside the definitions rather than
+  // inside them so the arithmetic above stays readable.
+  const RATIO_META = {
+    "Current ratio": { dir: "high", bands: [1.0, 1.5], what: "Whether short-term assets cover short-term debts.", why: "It is the first thing a lender checks: can this business pay what falls due within a year without selling something it needs?", typical: "1.5\u20133.0x in most industries. Below 1.0 means current liabilities exceed current assets.", limits: "A high figure can mean idle cash or unsold inventory, not health. It is a snapshot on one date and can be dressed up at year end." },
+    "Quick ratio": { dir: "high", bands: [0.8, 1.2], what: "The current ratio with inventory stripped out.", why: "Inventory can be slow or impossible to sell at book value. This asks what could be paid using assets that are already close to cash.", typical: "Around 1.0x. Service businesses run higher because they hold little inventory.", limits: "Still counts receivables at full value, which assumes customers actually pay." },
+    "Cash ratio": { dir: "high", bands: [0.2, 0.5], what: "The share of current liabilities covered by cash alone.", why: "The most conservative liquidity test. It survives the assumption that nothing else can be converted in time.", typical: "0.2\u20130.5x. Much above 1.0 often signals cash that could be deployed.", limits: "Deliberately pessimistic. A low figure is normal for a business with reliable collections." },
+    "Operating cash flow ratio": { dir: "high", bands: [0.4, 1.0], what: "How far one year of operating cash goes towards current liabilities.", why: "Unlike the current ratio it uses cash actually generated, not balances that might be stale.", typical: "Above 1.0x is comfortable.", limits: "One year of cash flow can be unrepresentative if the year held an unusual receipt." },
+    "Working capital": { dir: "high", bands: [0, 1], what: "Current assets minus current liabilities, in currency.", why: "The absolute cushion. Ratios hide scale; this shows the actual size of the buffer.", typical: "Positive for most going concerns, though some cash-collecting businesses run negative by design.", limits: "Not comparable between entities of different sizes. Read it with the current ratio." },
+    "Revenue growth rate": { dir: "high", bands: [0, 0.1], what: "The year-on-year change in revenue.", why: "Growth is the clearest evidence that the market wants what the business sells.", typical: "Varies enormously. Mid-single digits is steady for a mature entity.", limits: "Says nothing about profitability. Revenue bought with discounts or acquisitions is not the same as organic demand." },
+    "Gross profit margin": { dir: "high", bands: [0.2, 0.4], what: "What survives revenue after the direct cost of delivering it.", why: "It isolates pricing power and production efficiency from overheads and financing.", typical: "20\u201340% in industry, far higher for software and toll-type businesses.", limits: "What counts as cost of sales varies between companies, so cross-company comparison is unreliable." },
+    "Operating profit margin": { dir: "high", bands: [0.1, 0.2], what: "Profit from trading, before interest and tax.", why: "It shows whether the core business works, independent of how it is financed or taxed.", typical: "10\u201320% is solid in most sectors.", limits: "Excludes financing cost, which is a real obligation for a leveraged business." },
+    "Net profit margin": { dir: "high", bands: [0.05, 0.15], what: "What is left for owners from every unit of revenue.", why: "The bottom line after everything: costs, interest, tax.", typical: "5\u201315% across most industries.", limits: "Distorted by one-off gains, disposals and tax effects that will not repeat." },
+    "EBITDA margin": { dir: "high", bands: [0.15, 0.3], what: "Earnings before interest, tax, depreciation and amortisation, over revenue.", why: "A rough proxy for cash generation that strips out accounting choices on asset lives.", typical: "15\u201330%, much higher in infrastructure and toll operators.", limits: "Not a cash measure. It ignores the real cost of replacing the assets that generate the revenue, and is not defined under IFRS." },
+    "Return on assets (ROA)": { dir: "high", bands: [0.03, 0.08], what: "Profit generated per unit of assets.", why: "It measures how hard the asset base is working, regardless of funding mix.", typical: "3\u20138% for asset-heavy businesses, higher for asset-light ones.", limits: "Book asset values can be far from current value, especially after long ownership." },
+    "Return on equity (ROE)": { dir: "high", bands: [0.08, 0.15], what: "Profit generated per unit of shareholder equity.", why: "The return the owners actually earn on their stake.", typical: "8\u201315% is respectable.", limits: "Leverage inflates it. A high ROE built on heavy borrowing is a different animal from one built on margin, and thin equity can push it to absurd levels." },
+    "Return on capital employed": { dir: "high", bands: [0.08, 0.15], what: "Operating return on all long-term capital in the business.", why: "It compares operating performance against total funding, so it is harder to flatter with debt than ROE.", typical: "Above the cost of capital, so typically 10%+.", limits: "Sensitive to how capital employed is defined; definitions differ between analysts." },
+    "Interest coverage ratio": { dir: "high", bands: [2, 4], what: "How many times operating profit covers the interest bill.", why: "The single clearest test of whether debt is affordable.", typical: "Above 3x is comfortable; below 1.5x is distress territory.", limits: "Uses profit rather than cash, and ignores the repayment of principal falling due." },
+    "Net debt-to-EBITDA": { dir: "low", bands: [3, 2], what: "How many years of EBITDA it would take to clear net debt.", why: "The standard leverage measure in loan covenants.", typical: "Under 3x is generally acceptable; above 4x draws scrutiny.", limits: "Relies on EBITDA, which is not cash and not an IFRS measure." },
+    "Debt ratio": { dir: "low", bands: [0.6, 0.4], what: "The share of assets funded by liabilities.", why: "A quick read on how much of the business belongs to creditors rather than owners.", typical: "0.4\u20130.6 in most sectors.", limits: "Treats all liabilities alike, though trade payables and long-dated debt behave very differently." },
+    "Debt-to-equity": { dir: "low", bands: [2, 1], what: "Creditor funding against owner funding.", why: "It shows the financial risk owners have taken on, and how much cushion creditors have.", typical: "Around 1.0\u20132.0x, far higher for regulated utilities and banks.", limits: "Meaningless if equity is negative or tiny, and book equity may bear no relation to market value." },
+    "Equity ratio": { dir: "high", bands: [0.3, 0.5], what: "The share of assets owned outright.", why: "The mirror of the debt ratio, framed as resilience: how much loss the business could absorb.", typical: "0.3\u20130.6.", limits: "Book equity understates businesses whose main assets are intangible and unrecognised." },
+    "Asset turnover": { dir: "high", bands: [0.5, 1.0], what: "Revenue generated per unit of assets.", why: "It separates the two routes to profit: high margin, or high volume against the asset base.", typical: "Under 0.5x for infrastructure, above 2x for retail.", limits: "Only comparable within an industry. Capital-intensive businesses will always look poor on it." },
+    "Fixed asset turnover": { dir: "high", bands: [0.5, 1.5], what: "Revenue generated per unit of property, plant and intangibles.", why: "It shows how productively the long-term asset base is being used.", typical: "Highly sector-dependent.", limits: "Heavily distorted by asset age: depreciated assets flatter the ratio." },
+    "Inventory turnover": { dir: "high", bands: [4, 8], what: "How many times inventory is sold and replaced in a year.", why: "Slow-moving inventory ties up cash and tends to end in write-downs.", typical: "4\u20138x in manufacturing, far higher in fresh food.", limits: "Not meaningful for service businesses that carry no inventory." },
+    "Receivable turnover": { dir: "high", bands: [4, 8], what: "How many times receivables are collected and rebuilt.", why: "Collection speed is an early warning: it deteriorates before bad debts appear.", typical: "6\u201312x, meaning 30\u201360 day terms.", limits: "A year-end balance may not represent the year, especially in seasonal businesses." },
+    "Days sales outstanding": { dir: "low", bands: [90, 45], what: "Average days between invoicing and collection.", why: "The same information as receivable turnover, in the unit managers actually use.", typical: "30\u201360 days on standard commercial terms.", limits: "Blends all customers, so a few very late payers hide inside a respectable average." },
+    "Operating cash-flow margin": { dir: "high", bands: [0.1, 0.2], what: "The share of revenue that arrives as operating cash.", why: "Profit is an opinion; cash is a fact. This tests whether revenue converts.", typical: "10\u201320%, higher for businesses that collect upfront.", limits: "Can be flattered temporarily by stretching payables." },
+    "Cash conversion ratio": { dir: "high", bands: [0.8, 1.0], what: "Operating cash flow against net profit.", why: "The clearest single check on earnings quality. Persistent readings below 1.0 suggest profit that never becomes cash.", typical: "Around 1.0x or above.", limits: "One year can be thrown off by working-capital timing. Read the trend, not the point." },
+    "Free cash flow": { dir: "high", bands: [0, 1], what: "Operating cash left after the capital spending needed to keep going.", why: "This is the cash genuinely available for dividends, debt repayment or reinvestment.", typical: "Positive and growing for a mature business.", limits: "Lumpy capex makes single years misleading; a business mid-expansion can be healthy with negative free cash flow." },
+    "Free cash flow margin": { dir: "high", bands: [0.05, 0.15], what: "Free cash flow as a share of revenue.", why: "Puts free cash flow on a comparable footing across periods and entities.", typical: "5\u201315%.", limits: "Inherits the lumpiness of capex." },
+    "Capex to operating cash flow": { dir: "low", bands: [0.8, 0.4], what: "The share of operating cash consumed by capital spending.", why: "It shows how much of the cash generated is being ploughed straight back in to stand still or expand.", typical: "20\u201360% depending on growth phase.", limits: "Does not distinguish maintenance capex from expansion capex, which matter very differently." },
+    "Net profit growth": { dir: "high", bands: [0, 0.1], what: "Year-on-year change in the bottom line.", why: "Growth in profit, not just revenue, is what compounds value.", typical: "Varies. Steady positive growth beats a volatile average.", limits: "Very sensitive to one-offs in either year, and to a weak comparative base." },
+    "Asset growth": { dir: "high", bands: [0, 0.05], what: "Year-on-year change in the asset base.", why: "Shows whether the business is investing, holding, or shrinking.", typical: "In line with revenue growth for a stable business.", limits: "Assets growing much faster than revenue can signal poor investment discipline." },
+    "Earnings per share": { dir: "high", bands: [0, 1], what: "Profit attributable to each ordinary share.", why: "The per-share figure is what share prices are actually compared against.", typical: "Not comparable between companies; only its trend matters.", limits: "Changes in share count from buybacks or issues move it without any change in performance." },
+    "Price-to-earnings ratio": { dir: "low", bands: [25, 15], what: "The price paid per unit of annual earnings.", why: "The most quoted valuation shorthand: how many years of current earnings the price represents.", typical: "12\u201320x for mature businesses.", limits: "Meaningless with negative earnings, and a low figure often reflects an expectation that earnings will fall, not a bargain." },
+    "Dividend yield": { dir: "high", bands: [0.02, 0.04], what: "Cash dividend as a percentage of share price.", why: "The income return a shareholder receives without selling anything.", typical: "2\u20135% for income stocks.", limits: "A high yield is often a falling share price rather than generosity. Check it is covered by earnings." },
+    "Dividend payout ratio": { dir: "low", bands: [0.9, 0.6], what: "The share of earnings paid out as dividends.", why: "It tests whether the dividend is sustainable and how much is retained to fund growth.", typical: "30\u201360%. Above 100% means paying out more than was earned.", limits: "A single year can be distorted by a special dividend or a weak profit year." },
+    "Market capitalisation": { dir: "high", bands: [0, 1], what: "The market value of all shares outstanding.", why: "The market's own verdict on the equity, against which book equity can be compared.", typical: "Not a benchmark figure; it is scale.", limits: "Reflects sentiment as much as fundamentals, and moves daily." },
+    "EV / EBITDA": { dir: "low", bands: [14, 9], what: "The value of the whole business, debt included, against EBITDA.", why: "Unlike P/E it is unaffected by capital structure, so it compares leveraged and unleveraged businesses fairly.", typical: "8\u201312x in most sectors.", limits: "Depends on EBITDA, which ignores the cost of maintaining the asset base." },
+    "PEG ratio": { dir: "low", bands: [2, 1], what: "The P/E ratio divided by the growth rate.", why: "It asks whether a high multiple is justified by the growth behind it.", typical: "Around 1.0 is considered fair value.", limits: "Breaks down entirely with negative or near-zero growth, and one year of growth is a poor proxy for the future." }
+  };
+
+  // Which statement a missing input would have come from, so a ratio that cannot be
+  // computed can say WHY in the reader's terms rather than listing field names.
+  const SOURCE_OF = {
+    revenue: "Income statement", priorRevenue: "Income statement",
+    costOfSales: "Income statement", grossProfit: "Income statement",
+    operatingProfit: "Income statement", netProfit: "Income statement",
+    priorNetProfit: "Income statement", financeCosts: "Income statement",
+    financeIncome: "Income statement", ebitda: "Income statement",
+    depreciation: "Income statement", taxExpense: "Income statement",
+    totalAssets: "Balance sheet", priorTotalAssets: "Balance sheet",
+    totalLiabilities: "Balance sheet", totalEquity: "Balance sheet",
+    currentAssets: "Balance sheet", currentLiabilities: "Balance sheet",
+    inventory: "Balance sheet", tradeReceivables: "Balance sheet",
+    tradePayables: "Balance sheet", fixedAssets: "Balance sheet",
+    cashAndEquivalents: "Balance sheet", shortTermDeposits: "Balance sheet",
+    totalDebt: "Balance sheet", netDebt: "Balance sheet",
+    operatingCashFlow: "Cash flow statement", capex: "Cash flow statement",
+    dividendsPaid: "Cash flow statement",
+    sharesOutstanding: "Share data", marketPrice: "Market data",
+    dividendPerShare: "Share data"
+  };
 
   const NEED_LABEL = {
     currentAssets: "current assets", currentLiabilities: "current liabilities",
@@ -411,43 +849,99 @@ function App() {
     operatingProfit: "operating profit", netProfit: "net profit",
     financeCosts: "finance costs", netDebt: "net debt", ebitda: "EBITDA",
     operatingCashFlow: "operating cash flow", sharesOutstanding: "share count",
-    marketPrice: "market price", dividendPerShare: "dividend per share"
+    marketPrice: "market price", dividendPerShare: "dividend per share",
+    costOfSales: "cost of sales", grossProfit: "gross profit",
+    priorNetProfit: "prior-year net profit", depreciation: "depreciation",
+    taxExpense: "tax expense", totalAssets: "total assets",
+    priorTotalAssets: "prior-year total assets", totalLiabilities: "total liabilities",
+    totalEquity: "total equity", inventory: "inventory",
+    tradeReceivables: "trade receivables", tradePayables: "trade payables",
+    fixedAssets: "fixed assets", totalDebt: "total borrowings",
+    capex: "capital expenditure", dividendsPaid: "dividends paid",
+    financeIncome: "finance income"
+  };
+
+  // Group the missing inputs by the statement they live on, so the reason reads
+  // "Balance sheet not yet read" rather than a list of field names.
+  const missReason = (keys) => {
+    const stmts = [...new Set(keys.map((k) => SOURCE_OF[k]).filter(Boolean))];
+    const names = keys.map((k) => NEED_LABEL[k] || k);
+    if (stmts.length === 1) {
+      return { headline: stmts[0] + " not yet read.", detail: "Needs " + names.join(" and ") + "." };
+    }
+    return { headline: "Inputs not found in what was read.", detail: "Needs " + names.join(" and ") + "." };
   };
 
   const computeRatios = (lineItems) => {
     if (!lineItems) return null;
     const v = lineItems;
     return RATIO_DEFS.map((d) => {
-      const missing = d.needs.filter((k) => v[k] == null || v[k] === 0 && k !== "priorRevenue");
+      const meta = RATIO_META[d.name] || {};
+      const base = { ...d, ...meta };
+      const missing = d.needs.filter((k) => v[k] == null || (v[k] === 0 && k !== "priorRevenue"));
       if (missing.length) {
-        return { ...d, status: "missing", missing: missing.map((k) => NEED_LABEL[k] || k) };
+        return { ...base, status: "missing", missing: missing.map((k) => NEED_LABEL[k] || k), reason: missReason(missing) };
       }
       let val;
-      try { val = d.calc(v); } catch { return { ...d, status: "missing", missing: ["valid inputs"] }; }
-      if (!isFinite(val)) return { ...d, status: "missing", missing: ["non-zero denominator"] };
+      try { val = d.calc(v); } catch {
+        return { ...base, status: "missing", missing: ["valid inputs"], reason: { headline: "Could not compute.", detail: "The inputs were present but the arithmetic failed." } };
+      }
+      if (!isFinite(val)) {
+        return { ...base, status: "missing", missing: ["non-zero denominator"], reason: { headline: "Could not compute.", detail: "The denominator is zero, so the result is undefined." } };
+      }
       const shown = d.pct ? (val * 100).toFixed(1) + "%"
         : d.money ? "AED " + val.toFixed(3)
+        : d.raw ? Math.round(val).toLocaleString("en-US")
         : val.toFixed(2) + (d.unit || "");
-      return { ...d, status: "ok", value: val, shown, note: d.plain(val) };
+      // Score 0-100 against the band for this ratio, used by the health scorecard.
+      // Ratios with no meaningful band (scale figures like market cap) score null.
+      let score = null;
+      if (meta.bands && meta.dir && !d.raw) {
+        const [weak, strong] = meta.bands;
+        if (meta.dir === "high") score = val >= strong ? 100 : val >= weak ? 62 : 28;
+        else score = val <= strong ? 100 : val <= weak ? 62 : 28;
+      }
+      return { ...base, status: "ok", value: val, shown, score, note: d.plain(val) };
     });
   };
 
   // Build a compact, number-rich summary of the finished analysis and ask the
   // evaluation function to interpret it. Kept fully separate from the arithmetic.
-  const runEvaluation = async (reading, ratioList) => {
+  // The lens changes only the reader it is written for, never the underlying data.
+  const runEvaluation = async (reading, ratioList, useLens) => {
     setEvalState("working"); setEvalErr(""); setEvaluation(null);
+    const chosen = useLens !== undefined ? useLens : lens;
     try {
       const okRatios = (ratioList || []).filter((r) => r.status === "ok")
         .map((r) => "- " + r.name + " (" + r.family + "): " + r.shown + " [" + r.note + "]");
       const missRatios = (ratioList || []).filter((r) => r.status !== "ok")
-        .map((r) => "- " + r.name + ": not computed (missing " + (r.missing || []).join(", ") + ")");
-      const figs = (reading.figures || []).map((f) => "- " + f.label + ": " + f.value + " (" + f.ref + ")");
+        .map((r) => "- " + r.name + ": not computed (" + ((r.reason && r.reason.headline) || "missing " + (r.missing || []).join(", ")) + ")");
+      const figs = (reading.figures || []).map((f) => "- " + f.label + ": " + f.value + " (" + f.ref + ")" +
+        (typeof f.confidence === "number" ? " [confidence " + f.confidence + "%" + (f.origin ? ", " + f.origin : "") + "]" : ""));
       const finds = (reading.findings || []).map((f) => "- [" + (f.severity || "") + "] " + f.title + ": " + (f.detail || ""));
+      const claims = (reading.mgmtClaims || []).map((c) => "- \"" + c.claim + "\" (" + (c.topic || "") + ", " + (c.ref || "") + ")");
+      // What was actually read. The evaluation is told to scale its confidence to
+      // this, so it has to see it — a clean income statement means little if the
+      // balance sheet was never opened.
+      const cov = coverageOf(reading).map((c) => "- " + c.label + ": " + c.pct + "% (" +
+        (c.seen ? "seen" + (c.pages ? " on pages " + c.pages : "") : "never seen") + ", " + c.proven + ")");
+      // Where a reading spans several files the evaluation has to know it, both to
+      // cite the right source and to weigh figures the documents disagree on.
+      const srcs = (reading.entities || []).map((e) => "- " + (e.doc || "document") + ": " +
+        (e.name || "entity not stated") + (e.period ? ", " + e.period : ""));
+      const clash = (reading.conflicts || []).map((c) => "- " + c.label + ": " +
+        c.held.doc + " says " + fmt(c.held.value) + " (used in the ratios), " +
+        c.other.doc + " says " + fmt(c.other.value));
 
       const summary = [
         "ENTITY: " + (reading.entity?.name || "unknown") + " | " + (reading.classification?.basis || "") +
           " | " + (reading.entity?.period || ""),
         "CLASSIFICATION: " + (reading.classification?.lens || ""),
+        "",
+        ...(srcs.length > 1 ? ["SOURCE DOCUMENTS — this reading spans more than one file:", srcs.join("\n"), ""] : []),
+        ...(clash.length ? ["FIGURES THE DOCUMENTS DISAGREE ON — the first was used; say plainly " +
+          "if the disagreement undermines any conclusion:", clash.join("\n"), ""] : []),
+        "READING COVERAGE — how much of each statement was actually read:", cov.join("\n"),
         "",
         "COMPUTED RATIOS:", okRatios.join("\n") || "(none computed)",
         "",
@@ -455,21 +949,29 @@ function App() {
         "",
         "KEY FIGURES:", figs.join("\n") || "(none)",
         "",
-        "FINDINGS FROM THE READING:", finds.join("\n") || "(none)"
+        "FINDINGS FROM THE READING:", finds.join("\n") || "(none)",
+        "",
+        "MANAGEMENT CLAIMS FROM THE NARRATIVE:", claims.join("\n") || "(none recorded)"
       ].join("\n");
 
       const r = await fetch("/.netlify/functions/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ summary })
+        body: JSON.stringify({ summary, lens: chosen })
       });
       const j = await r.json();
       if (!r.ok || !j.evaluation) throw new Error(j.error || "The evaluation could not be produced.");
       setEvaluation(j.evaluation);
       setEvalState("done");
+      if (j.meta) evalCostRef.current = j.meta;
+      mark("eval", "Produced the evaluation" + (chosen ? " through the " + LENS_LABEL[chosen] : ""),
+        (j.evaluation.assessment || []).length + " areas assessed, " +
+        (j.evaluation.contradictions || []).length + " contradiction check" +
+        ((j.evaluation.contradictions || []).length === 1 ? "" : "s") + " raised");
     } catch (e) {
       setEvalErr(e.message || "Evaluation failed.");
       setEvalState("error");
+      mark("miss", "The evaluation could not be produced", e.message || "");
     }
   };
 
@@ -478,9 +980,33 @@ function App() {
   //  1. Pick the balance sheet that actually BALANCES, not the first fragment seen.
   //  2. A confident finding beats an absence: once any slice reports the audit
   //     opinion, drop every "opinion not in my slice" note the others raised.
+  // Tag one slice's reading with the file it came from. Refs get the document
+  // name prefixed so a citation stays unambiguous across a multi-file set, and
+  // every item keeps a machine-readable `doc` for grouping and export.
+  const stampDoc = (p, docName) => {
+    if (!p || !docName) return p;
+    const tag = (item) => {
+      if (!item || typeof item !== "object") return item;
+      const ref = item.ref && !String(item.ref).startsWith(docName)
+        ? docName + " · " + item.ref
+        : (item.ref || docName);
+      return { ...item, doc: docName, ref };
+    };
+    const out = { ...p, doc: docName };
+    for (const k of ["tieOut", "figures", "variance", "findings", "escalations", "mgmtClaims", "sections"]) {
+      if (Array.isArray(p[k])) out[k] = p[k].map(tag);
+    }
+    if (p.balance) out.balance = tag(p.balance);
+    // lineItems is a flat map of numbers, so provenance rides alongside it.
+    if (p.lineItems) out.lineItemDoc = Object.fromEntries(Object.keys(p.lineItems).map((k) => [k, docName]));
+    return out;
+  };
+
   const merge = (partials) => {
     const out = {
       entity: {}, classification: {}, balance: null, lineItems: {},
+      lineItemDoc: {}, conflicts: [], entities: [],
+      sections: [], mgmtClaims: [],
       tieOut: [], figures: [], variance: [], findings: [], escalations: []
     };
     const seen = new Set();
@@ -493,6 +1019,16 @@ function App() {
       if (p.entity) {
         for (const k of ["name", "period", "currency", "scale", "auditOpinion"]) {
           if (!out.entity[k] && p.entity[k]) out.entity[k] = p.entity[k];
+        }
+        // Who each document says it is. If the set turns out to describe two
+        // companies, or one company in two different years, the ratios below
+        // would be built from mixed sources — so record it and say so.
+        if (p.entity.name || p.entity.period) {
+          const id = "entity|" + (p.doc || "") + "|" + (p.entity.name || "") + "|" + (p.entity.period || "");
+          if (!seen.has(id)) {
+            seen.add(id);
+            out.entities.push({ doc: p.doc || "", name: p.entity.name || "", period: p.entity.period || "" });
+          }
         }
       }
       if (p.classification?.lens) {
@@ -511,6 +1047,57 @@ function App() {
         const ties = hasAll && Math.abs(b.totalAssets - (b.totalLiabilities + b.totalNetAssets)) < Math.max(1, b.totalAssets * 0.001);
         const score = (ties ? 100 : 0) + (hasAll ? 10 : 0) + 1;
         if (score > balScore) { out.balance = b; balScore = score; }
+      }
+
+      // Ratio inputs. Slices arrive in page order, so the first slice to report a
+      // key is the one that saw it on the face of a statement; later slices are
+      // usually notes repeating a fragment of it. First reading wins, and only
+      // real finite numbers are taken — a key reported as text is ignored, never
+      // coerced, because a ratio built on a coerced number is a guess.
+      //
+      // Across several documents the same rule holds, but a disagreement now
+      // means something different: two files stating a different revenue are two
+      // different truths, not a note repeating a face. Those are recorded as
+      // conflicts and shown, never averaged and never quietly dropped.
+      for (const [k, raw] of Object.entries(p.lineItems || {})) {
+        const n = typeof raw === "number" ? raw : parseFloat(String(raw).replace(/[,\s]/g, ""));
+        if (typeof n !== "number" || !isFinite(n)) continue;
+        const from = (p.lineItemDoc || {})[k] || p.doc || "";
+        if (out.lineItems[k] == null) {
+          out.lineItems[k] = n;
+          if (from) out.lineItemDoc[k] = from;
+          continue;
+        }
+        const held = out.lineItems[k];
+        const heldFrom = out.lineItemDoc[k] || "";
+        const differs = Math.abs(held - n) > Math.max(1, Math.abs(held) * 0.005);
+        if (differs && from && heldFrom && from !== heldFrom) {
+          const id = "conflict|" + k + "|" + from;
+          if (!seen.has(id)) {
+            seen.add(id);
+            out.conflicts.push({ key: k, label: NEED_LABEL[k] || k,
+              held: { doc: heldFrom, value: held }, other: { doc: from, value: n } });
+          }
+        }
+      }
+
+      // Which statements were actually seen, and where. Deduped by kind and page
+      // range so the same statement spanning two slices is not counted twice.
+      for (const s of p.sections || []) {
+        if (!s || !s.kind) continue;
+        const id = "section|" + s.kind + "|" + (s.pages || "");
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.sections.push(s);
+      }
+
+      // Management assertions, kept verbatim for the contradiction check.
+      for (const c of p.mgmtClaims || []) {
+        if (!c || !c.claim) continue;
+        const id = "claim|" + c.claim.toLowerCase().slice(0, 80);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.mgmtClaims.push(c);
       }
 
       for (const key of ["tieOut", "figures", "variance", "findings", "escalations"]) {
@@ -560,7 +1147,6 @@ function App() {
 
     out.findings.sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
     return out;
-    return out;
   };
 
   const readSlice = async (payload) => {
@@ -596,16 +1182,31 @@ function App() {
         const s = built[i];
         setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy" } : x)));
 
-        const res = await readSlice({ pdf: s.pdf, offset: s.from, total: pageCount });
+        const res = await readSlice({ pdf: s.pdf, offset: s.from, total: s.docPages || pageCount });
 
         if (res.partial) {
-          partials[i] = res.partial;
+          // Stamp the source document onto everything this slice produced. Page 14
+          // of one file is not page 14 of another, so a bare "p.14" would make the
+          // evidence trail ambiguous the moment a second document is present.
+          partials[i] = stampDoc(res.partial, s.docName);
           if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
-          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "done" } : x)));
+          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "done", usage: res.meta || null } : x)));
           setData(merge(partials.filter(Boolean)));
+          // Say what this slice actually yielded, so the trail is evidence not decoration.
+          const p = res.partial;
+          const found = [];
+          const li = Object.keys(p.lineItems || {});
+          if (p.entity?.name) found.push("entity " + p.entity.name);
+          if (p.balance?.totalAssets) found.push("balance sheet totals");
+          if (li.length) found.push(li.length + " line item" + (li.length > 1 ? "s" : ""));
+          if ((p.figures || []).length) found.push((p.figures || []).length + " figure" + (p.figures.length > 1 ? "s" : ""));
+          if ((p.findings || []).length) found.push((p.findings || []).length + " finding" + (p.findings.length > 1 ? "s" : ""));
+          mark("read", "Read " + (s.docName ? s.docName + " " : "") + "pages " + s.from + "–" + s.to,
+            found.length ? found.join(", ") : "nothing extractable on these pages");
         } else {
           failures.push(res.error);
           setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "miss", why: res.error } : x)));
+          mark("miss", (s.docName ? s.docName + " " : "") + "pages " + s.from + "–" + s.to + " could not be read", res.error || "");
         }
       }
     };
@@ -614,11 +1215,16 @@ function App() {
     return { partials, costs, failures, modelSeen };
   }, []);
 
-  const finish = (f, hash, pageCount, built, partials, costs, modelSeen, began) => {
+  const finish = (docList, hash, pageCount, built, partials, costs, modelSeen, began) => {
     const got = partials.filter(Boolean);
     const reading = merge(got);
+    const list = Array.isArray(docList) ? docList : [docList];
     const m = {
-      hash, name: f.name, size: f.size, pages: pageCount,
+      hash,
+      name: list.length === 1 ? list[0].name : list.length + " documents",
+      docs: list,
+      size: list.reduce((a, d) => a + (d.size || 0), 0),
+      pages: pageCount,
       slices: built.length, read: got.length, failed: built.length - got.length,
       model: modelSeen,
       input_tokens: costs.reduce((a, c) => a + (c.input_tokens || 0), 0),
@@ -629,61 +1235,121 @@ function App() {
     };
     setData(reading);
     setMeta(m);
+    setDocs(list);
     setState("done");
-    cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, file: { name: f.name, size: f.size } };
+    cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, docs: list };
+
+    mark("merge", "Merged " + got.length + " slice readings" +
+      (list.length > 1 ? " from " + list.length + " documents" : ""),
+      "deduplicated findings, chose the balance sheet that ties, collapsed absence notes");
+    if ((reading.conflicts || []).length) {
+      mark("miss", "Found " + reading.conflicts.length + " figure" +
+        (reading.conflicts.length > 1 ? "s" : "") + " the documents disagree on",
+        "held the first reading and flagged the disagreement rather than averaging it");
+    }
+    if (reading.balance?.totalAssets) {
+      const b = checkBalance(reading.balance);
+      mark("check", "Ran the balance check",
+        b && b.ok ? "assets = liabilities + net assets, in balance" : "does not balance, difference " + fmt(b ? b.delta : 0));
+    }
+    if ((reading.tieOut || []).length) {
+      mark("check", "Ran " + reading.tieOut.length + " tie-out check" + (reading.tieOut.length > 1 ? "s" : ""),
+        reading.tieOut.map((t) => t.result).join(", "));
+    }
     // Kick off the written evaluation using the just-computed ratios.
     const ratioList = computeRatios(reading.lineItems);
+    const okCount = (ratioList || []).filter((r) => r.status === "ok").length;
+    mark("ratio", "Computed " + okCount + " of " + (ratioList || []).length + " ratios",
+      "arithmetic in the browser; the rest are missing inputs and were not estimated");
     runEvaluation(reading, ratioList);
   };
 
-  const run = useCallback(async (f) => {
+  // Read one or many PDFs as a single reading. A set of statements is often
+  // split across files — the income statement in one, the notes in another, an
+  // auditor's report in a third — and a ratio that needs revenue from one and
+  // total assets from another can only be computed if both are open at once.
+  const run = useCallback(async (fileList) => {
+    const chosen = Array.from(fileList || []).filter(Boolean);
+    if (!chosen.length) return;
+
     setState("working"); setErr(""); setNotice(""); setData(null); setMeta(null); setSlices([]);
-    setOwners({});
+    setOwners({}); setTrail([]);
     const began = Date.now();
 
     try {
-      const buf = await f.arrayBuffer();
-      const hash = await sha256(buf);
+      // Hash every file first. The cache key is the hashes of the whole set in
+      // order, so re-reading the same documents together is free, while adding
+      // one more document is correctly treated as a different reading.
+      const loaded = [];
+      for (const f of chosen) {
+        const buf = await f.arrayBuffer();
+        loaded.push({ file: f, buf, hash: await sha256(buf) });
+      }
+      const hash = loaded.length === 1
+        ? loaded[0].hash
+        : await sha256(new TextEncoder().encode(loaded.map((d) => d.hash).join("|")).buffer);
+
+      mark("open", "Opened " + loaded.length + " document" + (loaded.length > 1 ? "s" : ""),
+        loaded.map((d) => d.file.name + " (" + Math.round(d.file.size / 1024) + " KB)").join(" · "));
 
       // Duplicate detection: same bytes, same reading. Serve it back instantly.
       const hit = cacheRef.current[hash];
       if (hit) {
         builtRef.current = hit.built;
         setSlices(hit.built.map((b) => ({ ...b, status: "done" })));
+        setDocs(hit.docs || []);
         setData(hit.reading);
         setMeta(hit.meta);
         setState("done");
-        setNotice("This exact document was already read this session. Showing the cached reading. Re-upload a changed file to force a fresh read.");
+        setNotice("This exact set of documents was already read this session. Showing the cached reading. Upload a changed file to force a fresh read.");
         return;
       }
 
-      const src = await PDFDocument.load(buf, { ignoreEncryption: true });
-      const pageCount = src.getPageCount();
-
+      // One slice plan across the whole set. Page numbers stay relative to the
+      // document they came from, because that is how a reviewer will look them
+      // up; the document name travels with the slice to keep them apart.
       const plan = [];
-      for (let start = 0; start < pageCount; start += PAGES_PER_SLICE) {
-        const end = Math.min(start + PAGES_PER_SLICE, pageCount);
-        plan.push({ idx: plan.length, start, end, from: start + 1, to: end });
+      const docList = [];
+      for (let d = 0; d < loaded.length; d++) {
+        const { file: f, buf, hash: dhash } = loaded[d];
+        const src = await PDFDocument.load(buf, { ignoreEncryption: true });
+        const pageCount = src.getPageCount();
+        docList.push({ doc: d, name: f.name, size: f.size, pages: pageCount, hash: dhash });
+
+        for (let start = 0; start < pageCount; start += PAGES_PER_SLICE) {
+          const end = Math.min(start + PAGES_PER_SLICE, pageCount);
+          plan.push({
+            idx: plan.length, doc: d, docName: f.name, docPages: pageCount,
+            start, end, from: start + 1, to: end, src
+          });
+        }
       }
-      setSlices(plan.map((p) => ({ ...p, status: "queued" })));
+      setDocs(docList);
+      setSlices(plan.map((p) => ({ ...p, src: undefined, status: "queued" })));
 
       const built = [];
       for (const p of plan) {
-        const doc = await PDFDocument.create();
-        const pages = await doc.copyPages(src, Array.from({ length: p.end - p.start }, (_, i) => p.start + i));
-        pages.forEach((pg) => doc.addPage(pg));
-        built.push({ ...p, pdf: b64(await doc.save()) });
+        const out = await PDFDocument.create();
+        const pages = await out.copyPages(p.src, Array.from({ length: p.end - p.start }, (_, i) => p.start + i));
+        pages.forEach((pg) => out.addPage(pg));
+        built.push({ ...p, src: undefined, pdf: b64(await out.save()) });
       }
       builtRef.current = built;
 
-      const { partials, costs, failures, modelSeen } = await dispatch(built, pageCount, began);
+      const totalPages = docList.reduce((a, d) => a + d.pages, 0);
+      mark("slice", "Split " + totalPages + " pages into " + built.length + " slices",
+        loaded.length > 1
+          ? "across " + loaded.length + " documents, " + PAGES_PER_SLICE + " pages each, " + CONCURRENCY + " read at a time"
+          : PAGES_PER_SLICE + " pages each, " + CONCURRENCY + " read at a time");
+
+      const { partials, costs, failures, modelSeen } = await dispatch(built, totalPages, began);
 
       if (!partials.filter(Boolean).length) {
-        throw new Error("No part of this document could be read. First failure: " + (failures[0] || "unknown."));
+        throw new Error("No part of these documents could be read. First failure: " + (failures[0] || "unknown."));
       }
-      finish(f, hash, pageCount, built, partials, costs, modelSeen, began);
+      finish(docList, hash, totalPages, built, partials, costs, modelSeen, began);
     } catch (e) {
-      setErr(e.message || "Something went wrong reading this document.");
+      setErr(e.message || "Something went wrong reading these documents.");
       setState("error");
     }
   }, [dispatch]);
@@ -701,7 +1367,8 @@ function App() {
     try {
       const { partials: filled, costs, modelSeen } = await dispatch(built, meta.pages, began, partials);
       const priorCosts = cached ? cached.costs : [];
-      finish({ name: meta.name, size: meta.size }, meta.hash, meta.pages, built, filled, priorCosts.concat(costs), modelSeen || meta.model, began);
+      finish(meta.docs || [{ name: meta.name, size: meta.size, pages: meta.pages }],
+        meta.hash, meta.pages, built, filled, priorCosts.concat(costs), modelSeen || meta.model, began);
     } catch (e) {
       setErr(e.message || "Retry failed.");
       setState("error");
@@ -709,9 +1376,9 @@ function App() {
   }, [dispatch, meta]);
 
   const onPick = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFile(f); run(f); e.target.value = "";
+    const picked = Array.from(e.target.files || []);
+    if (!picked.length) return;
+    run(picked); e.target.value = "";
   };
 
   const bal = data ? checkBalance(data.balance) : null;
@@ -720,6 +1387,57 @@ function App() {
   const doneCount = slices.filter((s) => s.status === "done").length;
   const missCount = slices.filter((s) => s.status === "miss").length;
   const pagesRead = slices.filter((s) => s.status === "done").reduce((a, s) => a + (s.to - s.from + 1), 0);
+
+  // ---- Cross-statement health scorecard -------------------------------------
+  // One score per family, averaged from the ratios that actually computed, plus an
+  // overall. This is the step that stops the reading being document-by-document:
+  // liquidity needs the balance sheet, cash conversion needs the cash flow, and a
+  // family scored from one ratio out of five is reported as exactly that.
+  const FAMILIES = ["Profitability", "Liquidity", "Solvency", "Efficiency", "Cash conversion", "Growth", "Market value"];
+
+  const scoreBand = (s) =>
+    s == null ? { label: "No data", tone: "none" }
+    : s >= 85 ? { label: "Strong", tone: "good" }
+    : s >= 55 ? { label: "Adequate", tone: "warn" }
+    : { label: "Weak", tone: "bad" };
+
+  const scorecard = !ratios ? null : FAMILIES.map((fam) => {
+    const inFam = ratios.filter((r) => r.family === fam);
+    const scored = inFam.filter((r) => r.status === "ok" && r.score != null);
+    const score = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null;
+    return {
+      family: fam, score, ...scoreBand(score),
+      computed: inFam.filter((r) => r.status === "ok").length,
+      total: inFam.length,
+      basis: scored.length
+    };
+  });
+
+  const overall = (() => {
+    if (!scorecard) return null;
+    const got = scorecard.filter((s) => s.score != null);
+    if (!got.length) return null;
+    const score = Math.round(got.reduce((a, s) => a + s.score, 0) / got.length);
+    return { score, ...scoreBand(score), families: got.length, of: FAMILIES.length };
+  })();
+
+  // ---- Coverage by statement ------------------------------------------------
+  // What the reading actually saw, per statement type, rather than one flat number.
+  const coverage = !data ? null : coverageOf(data);
+
+  // Overall confidence blends how much of the document was processed with how much
+  // of the model's own stated confidence held up, and how many statements were found.
+  const overallConfidence = (() => {
+    if (!data || !meta) return null;
+    const sliceCov = meta.slices ? meta.read / meta.slices : 0;
+    const figs = (data.figures || []).filter((f) => typeof f.confidence === "number");
+    const figConf = figs.length ? figs.reduce((a, f) => a + f.confidence, 0) / figs.length / 100 : null;
+    const core = coverage ? coverage.slice(0, 3) : [];
+    const stmtCov = core.length ? core.reduce((a, c) => a + c.pct, 0) / (core.length * 100) : 0;
+    const parts = [sliceCov, stmtCov].concat(figConf == null ? [] : [figConf]);
+    return Math.round((parts.reduce((a, p) => a + p, 0) / parts.length) * 100);
+  })();
+
 
   const evidence = () => {
     if (!data || !meta) return null;
@@ -730,6 +1448,17 @@ function App() {
       generated_at: meta.at,
       operator: operator || "UNRECORDED",
       document: { file_name: meta.name, bytes: meta.size, pages: meta.pages, sha256: meta.hash },
+      // Each source file listed on its own, with its own hash, so a reviewer can
+      // re-derive any single citation without re-uploading the whole set.
+      documents: (meta.docs || []).map((d) => ({
+        file_name: d.name, bytes: d.size, pages: d.pages, sha256: d.hash
+      })),
+      disagreements: (data.conflicts || []).map((c) => ({
+        line_item: c.key, label: c.label,
+        used: { document: c.held.doc, value: c.held.value },
+        also_reported: { document: c.other.doc, value: c.other.value },
+        resolution: "first reading kept; not averaged"
+      })),
       coverage: {
         slices_total: meta.slices,
         slices_read: meta.read,
@@ -815,11 +1544,262 @@ function App() {
 
   const downloadEvidence = () => {
     const rec = evidence(); if (!rec) return;
-    const blob = new Blob([JSON.stringify(rec, null, 2)], { type: "application/json" });
+    saveBlob(JSON.stringify(rec, null, 2), "application/json",
+      "mizan-evidence-" + (meta?.hash || "").slice(0, 12) + ".json");
+  };
+
+  // ---- Export layer -------------------------------------------------------
+  // Six shapes of the same reading. Nothing is recomputed on the way out:
+  // every export reads the values already on screen, so a downloaded file and
+  // the page can never disagree.
+
+  const saveBlob = (text, type, name) => {
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "mizan-evidence-" + (meta?.hash || "").slice(0, 12) + ".json";
-    a.click(); URL.revokeObjectURL(a.href);
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const stamp = () => (meta?.hash || "reading").slice(0, 12);
+
+  // The per-call record behind the audit log, shared by the screen and the exports.
+  const aiCalls = (slices || [])
+    .filter((s) => s.usage || s.status === "miss")
+    .map((s) => ({
+      step: "Extraction",
+      detail: "pages " + s.from + "–" + s.to,
+      model: s.usage?.model || meta?.model || "",
+      status: s.status === "miss" ? "failed" : s.usage?.salvaged ? "salvaged" : "ok",
+      input_tokens: s.usage?.input_tokens || 0,
+      output_tokens: s.usage?.output_tokens || 0,
+      cost_usd: s.usage?.cost_usd || 0
+    }))
+    .concat(evalCostRef.current ? [{
+      step: "Evaluation",
+      detail: lens ? LENS_LABEL[lens] : "General",
+      model: evalCostRef.current.model || "",
+      status: evalState === "done" ? "ok" : evalState,
+      input_tokens: evalCostRef.current.input_tokens || 0,
+      output_tokens: evalCostRef.current.output_tokens || 0,
+      cost_usd: evalCostRef.current.cost_usd || 0
+    }] : []);
+
+  const csvCell = (v) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const csvRows = (rows) => rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+
+  const downloadCSV = () => {
+    if (!data) return;
+    const rows = [["Section", "Item", "Value", "State", "Confidence", "Source", "Note"]];
+    (meta?.docs || []).forEach((d) => rows.push([
+      "Document", d.name, d.pages + " pages", "read", "", d.hash || "",
+      (d.size ? Math.round(d.size / 1024) + " KB" : "")
+    ]));
+    (data.conflicts || []).forEach((c) => rows.push([
+      "Disagreement", c.label, c.held.value, "used", "", c.held.doc,
+      c.other.doc + " reports " + c.other.value + "; not averaged"
+    ]));
+    (data.figures || []).forEach((f) => rows.push([
+      "Figure", f.label, edits[f.label] != null ? edits[f.label] : f.value,
+      f.state || "", f.confidence == null ? "" : f.confidence + "%", f.ref || "", f.quote || ""
+    ]));
+    (ratios || []).forEach((r) => rows.push([
+      "Ratio", r.name, r.status === "ok" ? r.shown : "not computed",
+      r.status, r.status === "ok" && r.score != null ? scoreBand(r.score).label : "",
+      r.formula, r.status === "ok" ? r.note : (r.reason ? r.reason.headline + " " + r.reason.detail : "")
+    ]));
+    (coverage || []).forEach((c) => rows.push([
+      "Coverage", c.label, c.pct + "%", c.pct === 0 ? "not read" : c.pct === 100 ? "read" : "partial",
+      "", c.proven || "", c.pages || ""
+    ]));
+    (data.findings || []).concat(manual).forEach((f) => rows.push([
+      "Finding", f.title, f.metric || "", f.state || "",
+      f.confidence == null ? "" : f.confidence + "%", f.ref || "", f.detail || ""
+    ]));
+    (data.escalations || []).forEach((e, i) => rows.push([
+      "Escalation", e.title, owners[i] || "UNASSIGNED", "PENDING", "", e.ref || "", e.decisionNeeded || ""
+    ]));
+    saveBlob("﻿" + csvRows(rows), "text/csv;charset=utf-8", "mizan-" + stamp() + ".csv");
+  };
+
+  const downloadMarkdown = () => {
+    if (!data) return;
+    const L = [];
+    L.push("# " + (data.entity?.name || "Financial statement reading"));
+    L.push("");
+    L.push("*Read by Mizan " + VERSION + " on " + (meta?.at || "") + ". " +
+      "Figures are read from the source document; nothing here is an opinion on the accounts.*");
+    L.push("");
+    L.push("| | |");
+    L.push("|---|---|");
+    L.push("| Document | " + (meta?.name || "") + " · " + (meta?.pages || 0) + " pages |");
+    L.push("| SHA-256 | `" + (meta?.hash || "") + "` |");
+    L.push("| Coverage | " + (meta?.read || 0) + "/" + (meta?.slices || 0) + " slices" +
+      (meta?.failed ? " — **incomplete**" : "") + " |");
+    L.push("| Overall confidence | " + (overallConfidence == null ? "n/a" : overallConfidence + "%") + " |");
+    L.push("| Operator | " + (operator || "UNRECORDED") + " |");
+    L.push("");
+
+    if ((meta?.docs || []).length > 1) {
+      L.push("## Source documents");
+      L.push("");
+      L.push("This reading draws on " + meta.docs.length + " files at once. Every citation below " +
+        "names the file it came from.");
+      L.push("");
+      L.push("| File | Pages | SHA-256 |");
+      L.push("|---|---|---|");
+      meta.docs.forEach((d) => L.push("| " + d.name + " | " + d.pages + " | `" + (d.hash || "").slice(0, 16) + "…` |"));
+      L.push("");
+    }
+
+    if ((data.conflicts || []).length) {
+      L.push("## Figures the documents disagree on");
+      L.push("");
+      L.push("The first reading was kept and used in the ratios. Nothing was averaged.");
+      L.push("");
+      L.push("| Figure | Used | Also reported |");
+      L.push("|---|---|---|");
+      data.conflicts.forEach((c) => L.push("| " + c.label + " | " + fmt(c.held.value) + " (" + c.held.doc +
+        ") | " + fmt(c.other.value) + " (" + c.other.doc + ") |"));
+      L.push("");
+    }
+
+    if (overall) {
+      L.push("## Overall financial health");
+      L.push("");
+      L.push("**" + overall.score + "/100 — " + overall.label + "**, from " +
+        overall.families + " of " + overall.of + " families with computable ratios.");
+      L.push("");
+      scorecard.filter((s) => s.score != null).forEach((s) =>
+        L.push("- **" + s.family + "** " + s.score + "/100 — " + s.label));
+      L.push("");
+    }
+
+    if (coverage) {
+      L.push("## Reading coverage");
+      L.push("");
+      L.push("| Statement | Read | Evidence |");
+      L.push("|---|---|---|");
+      coverage.forEach((c) => L.push("| " + c.label + " | " + c.pct + "% | " + (c.proven || "not seen") +
+        (c.pages ? " · pages " + c.pages : "") + " |"));
+      L.push("");
+    }
+
+    if (ratiosOk.length) {
+      L.push("## Financial ratios");
+      L.push("");
+      L.push("| Ratio | Value | Formula | Reading |");
+      L.push("|---|---|---|---|");
+      (ratios || []).forEach((r) => L.push("| " + r.name + " | " +
+        (r.status === "ok" ? r.shown : "—") + " | " + r.formula + " | " +
+        (r.status === "ok" ? r.note : "Could not compute. " +
+          (r.reason ? r.reason.headline + " " + r.reason.detail : "")) + " |"));
+      L.push("");
+    }
+
+    if (evaluation) {
+      L.push("## Performance evaluation" + (lens ? " · " + LENS_LABEL[lens] : ""));
+      L.push("");
+      L.push("*Model judgment, not arithmetic and not an audit opinion.*");
+      L.push("");
+      if (evaluation.headline) L.push("**" + evaluation.headline + "**");
+      if (evaluation.overall) { L.push(""); L.push(evaluation.overall); }
+      (evaluation.assessment || []).forEach((a) => {
+        L.push("");
+        L.push("### " + a.area + " — " + (a.read || ""));
+        if (a.text) L.push(a.text);
+        (a.drivers || []).forEach((d) => L.push("- " + d));
+        if (a.conclusion) L.push("");
+        if (a.conclusion) L.push("> **Conclusion.** " + a.conclusion);
+      });
+      if ((evaluation.contradictions || []).length) {
+        L.push("");
+        L.push("### Potential contradictions");
+        evaluation.contradictions.forEach((c) => {
+          L.push("");
+          L.push("- **Management says:** " + c.claim);
+          L.push("  **Financial evidence:** " + c.evidence);
+          L.push("  *" + (c.severity || "") + " — " + (c.tension || "") + "*");
+        });
+      }
+      if ((evaluation.dataGaps || []).length) {
+        L.push("");
+        L.push("**What limited this evaluation:** " + evaluation.dataGaps.join("; ") + ".");
+      }
+      L.push("");
+    }
+
+    const allF = (data.findings || []).concat(manual);
+    if (allF.length) {
+      L.push("## Findings");
+      L.push("");
+      allF.forEach((f) => {
+        L.push("- **" + f.title + "** (" + (f.state || "") + (f.severity ? ", " + f.severity : "") +
+          (typeof f.confidence === "number" ? ", " + f.confidence + "% confidence" : "") + ") — " +
+          (f.detail || "") + " *" + (f.ref || "") + "*");
+      });
+      L.push("");
+    }
+
+    if ((data.escalations || []).length) {
+      L.push("## Held for a person");
+      L.push("");
+      data.escalations.forEach((e, i) => L.push("- **" + e.title + "** — " + (e.decisionNeeded || "") +
+        " · owner: " + (owners[i] || "UNASSIGNED")));
+      L.push("");
+    }
+
+    if (trail.length) {
+      L.push("## How this reading happened");
+      L.push("");
+      trail.forEach((t) => L.push("1. " + t.text + (t.detail ? " — " + t.detail : "")));
+      L.push("");
+    }
+
+    saveBlob(L.join("\n"), "text/markdown;charset=utf-8", "mizan-" + stamp() + ".md");
+  };
+
+  // The raw merged model output, exactly as the ratio engine received it.
+  const downloadApiResponse = () => {
+    if (!data) return;
+    saveBlob(JSON.stringify({ reading: data, reading_meta: meta, ai_calls: aiCalls }, null, 2),
+      "application/json", "mizan-response-" + stamp() + ".json");
+  };
+
+  // Everything at once: the evidence record, the reading, the arithmetic, the
+  // judgment, the operator's edits and the trail that produced them.
+  const downloadAuditPackage = () => {
+    if (!data || !meta) return;
+    saveBlob(JSON.stringify({
+      package: "mizan-audit-package",
+      version: VERSION,
+      evidence_record: evidence(),
+      document_reading: data,
+      operator_corrections: edits,
+      operator_findings: manual,
+      escalation_owners: owners,
+      arithmetic: {
+        balance_check: bal,
+        ratios: (ratios || []).map((r) => ({
+          family: r.family, name: r.name, formula: r.formula, status: r.status,
+          value: r.status === "ok" ? r.value : null,
+          shown: r.status === "ok" ? r.shown : null,
+          score: r.status === "ok" ? r.score : null,
+          not_computed_because: r.status === "ok" ? null
+            : (r.reason ? r.reason.headline + " " + r.reason.detail : "input missing")
+        })),
+        scorecard, overall
+      },
+      coverage: { by_statement: coverage, overall_confidence: overallConfidence },
+      judgment: { lens: lens || "general", lens_label: LENS_LABEL[lens] || "General", evaluation },
+      ai_calls: aiCalls,
+      reading_timeline: trail,
+      note: "Model judgment is labelled as judgment. Arithmetic was computed on the client " +
+            "from figures read out of the document, and no figure here was estimated."
+    }, null, 2), "application/json", "mizan-audit-package-" + stamp() + ".json");
   };
 
   React.useEffect(() => {
@@ -871,9 +1851,9 @@ function App() {
         </header>
 
         <div className="mz-intake">
-          <input ref={inputRef} type="file" accept="application/pdf" onChange={onPick} style={{ display: "none" }} />
+          <input ref={inputRef} type="file" accept="application/pdf" multiple onChange={onPick} style={{ display: "none" }} />
           <button className="mz-btn" disabled={working} onClick={() => inputRef.current?.click()}>
-            {working ? "Reading" : "Read a statements PDF"}
+            {working ? "Reading" : "Read statements PDFs"}
           </button>
           <input className="mz-in" placeholder="Your name, for the record"
             value={operator} onChange={(e) => setOperator(e.target.value)} aria-label="Operator name" />
@@ -882,17 +1862,42 @@ function App() {
               <button className="mz-btn ghost" onClick={() => window.print()}>Print</button>
               <button className="mz-btn ghost" onClick={downloadExcel}>Excel</button>
               <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence JSON</button>
-              <button className="mz-btn ghost" onClick={clearSession}>New document</button>
+              <button className="mz-btn ghost" onClick={clearSession}>New reading</button>
             </>
           )}
-          {file && state === "done" && <span className="mz-hint">{file.name}</span>}
+          {docs.length > 0 && state === "done" && (
+            <span className="mz-hint">
+              {docs.length === 1 ? docs[0].name : docs.length + " documents · " + meta?.pages + " pages"}
+            </span>
+          )}
         </div>
+
+        {docs.length > 0 && (
+          <div className="mz-docs">
+            {docs.map((d) => {
+              const mine = slices.filter((s) => s.doc === d.doc);
+              const read = mine.filter((s) => s.status === "done").length;
+              const failed = mine.filter((s) => s.status === "miss").length;
+              return (
+                <div key={d.doc} className="mz-doc">
+                  <span className="mz-doc-n">{d.name}</span>
+                  <span className="mz-doc-m">
+                    {d.pages} page{d.pages === 1 ? "" : "s"} · {read}/{mine.length} slices read
+                    {failed ? " · " + failed + " unread" : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {state === "idle" && (
           <div className="mz-empty">
-            <p className="mz-empty-t">No document read yet.</p>
+            <p className="mz-empty-t">Nothing read yet.</p>
             <p className="mz-empty-s">
-              Load a set of financial statements as a PDF. Long documents are cut into slices and read in parallel.
+              Load one set of financial statements, or several at once — an income statement in
+              one file and the balance sheet in another are read together as a single reading.
+              Long documents are cut into slices and read in parallel.
             </p>
           </div>
         )}
@@ -927,7 +1932,7 @@ function App() {
             <div className="mz-grid">
               {slices.map((s, i) => (
                 <div key={s.idx ?? i} className={"mz-cell " + s.status}
-                  title={"pages " + s.from + " to " + s.to + (s.why ? " · " + s.why : "")}>
+                  title={(s.docName ? s.docName + " · " : "") + "pages " + s.from + " to " + s.to + (s.why ? " · " + s.why : "")}>
                   {s.from}
                 </div>
               ))}
@@ -937,6 +1942,44 @@ function App() {
 
         {notice && (
           <div className="mz-note">{notice}</div>
+        )}
+
+        {state === "done" && data && (data.entities || []).length > 1 &&
+          new Set(data.entities.map((e) => (e.name || "") + "|" + (e.period || ""))).size > 1 && (
+          <div className="mz-mixed">
+            <p className="mz-mixed-t">These documents do not describe the same thing</p>
+            <p className="mz-mixed-b">
+              The ratios below draw on all of them at once, which is only meaningful if they
+              belong to one entity and one period. Check this before relying on the arithmetic.
+            </p>
+            <div className="mz-mixed-l">
+              {data.entities.map((e, i) => (
+                <div key={i}>
+                  <b>{e.doc || "document " + (i + 1)}</b> · {e.name || "entity not stated"}
+                  {e.period ? " · " + e.period : ""}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {state === "done" && data && (data.conflicts || []).length > 0 && (
+          <div className="mz-conf">
+            <p className="mz-conf-t">
+              {data.conflicts.length} figure{data.conflicts.length > 1 ? "s" : ""} the documents disagree on
+            </p>
+            <p className="mz-conf-b">
+              The first reading was kept and used in the ratios. Nothing was averaged. Decide which
+              document governs before signing anything off.
+            </p>
+            {data.conflicts.map((c, i) => (
+              <div key={i} className="mz-conf-r">
+                <span className="mz-conf-k">{c.label}</span>
+                <span className="mz-conf-v"><b>{fmt(c.held.value)}</b> <em>{c.held.doc}</em> · used</span>
+                <span className="mz-conf-v">{fmt(c.other.value)} <em>{c.other.doc}</em></span>
+              </div>
+            ))}
+          </div>
         )}
 
         {state === "done" && meta && meta.failed > 0 && (
@@ -955,6 +1998,173 @@ function App() {
 
         {data && (data.findings?.length > 0 || state === "done") && (
           <>
+            {state === "done" && data && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">At a glance</h2>
+                  <span className="mz-sec-note">live from this reading</span>
+                </div>
+                <div className="mz-dash">
+                  {(() => {
+                    const all = [...(data.findings || []), ...manual];
+                    const high = all.filter((f) => f.severity === "high").length;
+                    const esc = (data.escalations || []).length;
+                    const escOwned = (data.escalations || []).filter((_, i) => owners[i]).length;
+                    const cells = [
+                      { l: "Findings", v: all.length, tone: "" },
+                      { l: "High risk", v: high, tone: high ? "bad" : "good" },
+                      { l: "Held for a person", v: esc, tone: esc ? "warn" : "good" },
+                      { l: "Owners named", v: escOwned + "/" + esc, tone: escOwned === esc ? "good" : "warn" },
+                      { l: "Confidence", v: (overallConfidence == null ? "—" : overallConfidence + "%"),
+                        tone: overallConfidence == null ? "" : overallConfidence >= 85 ? "good" : overallConfidence >= 60 ? "warn" : "bad" },
+                      { l: "Ratios computed", v: ratiosOk.length + "/" + (ratios || []).length, tone: "" }
+                    ];
+                    return cells.map((c, i) => (
+                      <div key={i} className={"mz-dash-cell " + c.tone}>
+                        <div className="mz-dash-v">{c.v}</div>
+                        <div className="mz-dash-l">{c.l}</div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </section>
+            )}
+
+            {state === "done" && overall && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Overall financial health</h2>
+                  <span className="mz-sec-note">
+                    every statement combined · {overall.families} of {overall.of} families scored
+                  </span>
+                </div>
+                <div className="mz-score">
+                  <div className="mz-score-top">
+                    <div>
+                      <div className={"mz-score-big " + overall.tone}>{overall.score}</div>
+                      <div className="mz-score-lab">out of 100</div>
+                    </div>
+                    <div>
+                      <div className="mz-score-verdict">{overall.label}</div>
+                      <div className="mz-score-lab">
+                        averaged across the {overall.families} famil{overall.families === 1 ? "y" : "ies"} with enough data
+                      </div>
+                    </div>
+                  </div>
+                  {scorecard.map((s, i) => (
+                    <div key={i} className="mz-score-row">
+                      <div>
+                        <div className="mz-score-name">{s.family}</div>
+                        <div className="mz-score-sub">{s.computed}/{s.total} computed</div>
+                      </div>
+                      <div className="mz-score-track">
+                        {s.score != null && (
+                          <div className={"mz-score-fill " + s.tone} style={{ width: s.score + "%" }} />
+                        )}
+                      </div>
+                      <div className={"mz-score-tag " + s.tone}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mz-legend">
+                  <span>Scored from the ratios that computed, banded against conventional thresholds.</span>
+                  <span>A family with no computable ratio is reported as no data, never as neutral.</span>
+                </div>
+              </section>
+            )}
+
+            {state === "done" && coverage && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Reading coverage</h2>
+                  <span className="mz-sec-note">
+                    what was actually read, by statement
+                    {meta ? " · " + meta.read + "/" + meta.slices + " slices processed" : ""}
+                  </span>
+                </div>
+                <div className="mz-cov">
+                  {coverage.map((c, i) => {
+                    const cls = c.pct === 0 ? "zero" : c.pct >= 100 ? "full" : "part";
+                    return (
+                      <div key={i} className="mz-cov-row">
+                        <div>
+                          <div className="mz-cov-n">{c.label}</div>
+                          <div className="mz-cov-sub">{c.pages ? "pp. " + c.pages : c.proven}</div>
+                        </div>
+                        <div className="mz-cov-track">
+                          <div className={"mz-cov-fill " + (cls === "full" ? "" : cls)} style={{ width: c.pct + "%" }} />
+                        </div>
+                        <div className={"mz-cov-p " + cls}>{c.pct}%</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mz-legend">
+                  <span>Measured by how many of each statement's key lines were found, not by pages turned.</span>
+                  <span>Overall confidence {overallConfidence == null ? "—" : overallConfidence + "%"} blends coverage with the reading's own certainty.</span>
+                </div>
+              </section>
+            )}
+
+            {evalState === "done" && evaluation && evaluation.risk && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Risk profile</h2>
+                  <span className="mz-sec-note">
+                    model judgment · confidence {evaluation.risk.confidence != null ? evaluation.risk.confidence + "%" : "not stated"}
+                  </span>
+                </div>
+                <div className="mz-risk">
+                  {["operational", "financial", "liquidity", "accounting"].map((k) => {
+                    const n = Math.max(0, Math.min(5, Number(evaluation.risk[k]) || 0));
+                    return (
+                      <div key={k} className="mz-risk-cell">
+                        <div className="mz-risk-l">{k} risk</div>
+                        <div className="mz-risk-blocks">
+                          {[1, 2, 3, 4, 5].map((b) => (
+                            <div key={b} className={"mz-risk-b " + (b <= n ? "on l" + n : "")} />
+                          ))}
+                        </div>
+                        <div className="mz-risk-why">{(evaluation.risk.why || {})[k] || "—"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {evalState === "done" && evaluation && (evaluation.contradictions || []).length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Potential contradictions</h2>
+                  <span className="mz-sec-note">management narrative against the arithmetic</span>
+                </div>
+                {evaluation.contradictions.map((c, i) => (
+                  <div key={i} className="mz-contra">
+                    <div className="mz-contra-h">
+                      <span>Potential contradiction</span>
+                      <span>{c.severity || "medium"}</span>
+                    </div>
+                    <div className="mz-contra-b">
+                      <div className="mz-contra-side">
+                        <span className="mz-contra-lab">Management statement</span>
+                        {c.claim}
+                      </div>
+                      <div className="mz-contra-v">vs</div>
+                      <div className="mz-contra-side">
+                        <span className="mz-contra-lab">Financial evidence</span>
+                        {c.evidence}
+                      </div>
+                    </div>
+                    {c.tension && <div className="mz-contra-t">{c.tension}</div>}
+                  </div>
+                ))}
+                <div className="mz-legend">
+                  <span>Raised for a person to judge. A flag here is a question, not a conclusion.</span>
+                </div>
+              </section>
+            )}
+
             <section className="mz-sec">
               <div className="mz-sec-head">
                 <h2 className="mz-sec-title">Lens applied</h2>
@@ -1044,24 +2254,75 @@ function App() {
               <section className="mz-sec">
                 <div className="mz-sec-head">
                   <h2 className="mz-sec-title">Figures</h2>
-                  <span className="mz-sec-note">every one carries its page</span>
+                  <span className="mz-sec-note">every one carries its page and its certainty</span>
                 </div>
                 <div className="mz-figs">
                   {data.figures.map((f, i) => {
                     const corrected = edits[f.label] != null;
+                    const cf = typeof f.confidence === "number" ? f.confidence : null;
+                    const band = cf == null ? "" : cf >= 95 ? "hi" : cf >= 80 ? "mid" : "lo";
+                    const open = openFig === i;
                     return (
                       <div key={i} className={"mz-fig " + (f.state || "review")}>
-                        <div className="mz-fig-lbl" title={f.label}>{f.label}{corrected && <span className="mz-corrected">corrected</span>}</div>
+                        <div
+                          className={"mz-fig-lbl" + (f.quote ? " mz-fig-label click" : "")}
+                          title={f.quote ? "Show the sentence this came from" : f.label}
+                          onClick={() => f.quote && setOpenFig(open ? null : i)}
+                        >
+                          {f.label}{corrected && <span className="mz-corrected">corrected</span>}
+                        </div>
                         <input
                           className="mz-fig-input"
                           value={corrected ? edits[f.label] : normNum(f.value)}
                           onChange={(e) => setEdits((p) => ({ ...p, [f.label]: e.target.value }))}
                           aria-label={"Value for " + f.label}
                         />
+                        {cf != null && (
+                          <div>
+                            <span className={"mz-conf " + band}>
+                              <span className="mz-conf-dot" />{cf}% confidence
+                            </span>
+                            {f.origin && f.origin !== "stated" && (
+                              <span className={"mz-origin " + f.origin}>
+                                {f.origin === "narrative" ? "AI generated" : f.origin}
+                              </span>
+                            )}
+                            <div className="mz-conf-track">
+                              <div className={"mz-conf-fill " + band} style={{ width: cf + "%" }} />
+                            </div>
+                          </div>
+                        )}
+                        {(() => {
+                          const cp = compPair(f.value);
+                          if (!cp) return null;
+                          const mx = Math.max(cp.cur, cp.pri);
+                          return (
+                            <div className="mz-fig-comp">
+                              <div className="mz-fig-comp-row">
+                                <span>now</span>
+                                <div className="mz-fig-comp-track"><div className={"mz-fig-comp-fill " + (cp.up ? "up" : "dn")} style={{ width: (cp.cur / mx * 100) + "%" }} /></div>
+                              </div>
+                              <div className="mz-fig-comp-row">
+                                <span>prior</span>
+                                <div className="mz-fig-comp-track"><div className="mz-fig-comp-fill pri" style={{ width: (cp.pri / mx * 100) + "%" }} /></div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        {open && f.quote && (
+                          <div className="mz-quote">
+                            <div className="mz-quote-l">Source sentence · {tidyRef(f.ref)}</div>
+                            <div className="mz-quote-t">“{f.quote}”</div>
+                          </div>
+                        )}
                         <div className="mz-fig-ref">{tidyRef(f.ref)}{corrected && " · edited from " + f.value}</div>
                       </div>
                     );
                   })}
+                </div>
+                <div className="mz-legend">
+                  <span>Confidence is the reading's own certainty, stated per figure rather than assumed.</span>
+                  <span>Click a label with a source sentence to see the exact text it was read from.</span>
                 </div>
               </section>
             )}
@@ -1094,34 +2355,90 @@ function App() {
               <section className="mz-sec">
                 <div className="mz-sec-head">
                   <h2 className="mz-sec-title">Financial ratios</h2>
-                  <span className="mz-sec-note">{ratiosOk.length} of 12 computed · arithmetic, not a model</span>
+                  <span className="mz-sec-note">
+                    {ratiosOk.length} of {ratios.length} computed · arithmetic, not a model
+                  </span>
                 </div>
-                {["Liquidity", "Profitability", "Leverage", "Cash flow", "Stock performance"].map((fam) => {
+                {FAMILIES.map((fam) => {
                   const group = ratios.filter((r) => r.family === fam);
                   if (!group.length) return null;
+                  const done = group.filter((r) => r.status === "ok").length;
                   return (
                     <div key={fam} className="mz-rfam">
-                      <div className="mz-rfam-h">{fam}</div>
-                      {group.map((r, i) => (
-                        <div key={i} className={"mz-ratio " + (r.status === "ok" ? "ok" : "missing")}>
+                      <div className="mz-rfam-h">{fam} · {done}/{group.length}</div>
+                      {group.map((r) => {
+                        const card = openRatio === r.name;
+                        const explain = r.what || r.why || r.typical || r.limits;
+                        return (
+                        <div key={r.name} className={"mz-ratio " + (r.status === "ok" ? "ok" : "missing")}>
                           <div className="mz-ratio-main">
-                            <div className="mz-ratio-name">{r.name}</div>
+                            <div
+                              className={"mz-ratio-name" + (explain ? " click" : "")}
+                              title={explain ? "What this ratio means" : r.name}
+                              onClick={() => explain && setOpenRatio(card ? null : r.name)}
+                            >{r.name}</div>
                             <div className="mz-ratio-formula">{r.formula}</div>
                             {r.status === "ok"
-                              ? <div className="mz-ratio-note">{r.note}</div>
-                              : <div className="mz-ratio-miss">Needs {r.missing.join(" and ")} — held for a person, not estimated.</div>}
+                              ? (
+                                <>
+                                  <div className="mz-ratio-note">{r.note}</div>
+                                  {r.typical && (
+                                    <div className="mz-ratio-typ">Typical range · {r.typical}</div>
+                                  )}
+                                </>
+                              )
+                              : (
+                                <div className="mz-ratio-miss">
+                                  <strong>Could not compute.</strong>{" "}
+                                  Reason: {r.reason ? r.reason.headline : "an input was missing."}{" "}
+                                  {r.reason ? r.reason.detail : "Needs " + (r.missing || []).join(" and ") + "."}{" "}
+                                  Held for a person, not estimated.
+                                </div>
+                              )}
                           </div>
-                          <div className="mz-ratio-val">
-                            {r.status === "ok" ? r.shown : "\u2014"}
+                          <div className="mz-ratio-right">
+                            <div className="mz-ratio-val">
+                              {r.status === "ok" ? r.shown : "\u2014"}
+                            </div>
+                            {r.status === "ok" && isFinite(r.value) && (
+                              <div className="mz-ratio-bar">
+                                <div
+                                  className="mz-ratio-bar-fill"
+                                  style={{ width: Math.min(100, Math.max(4,
+                                    r.pct ? Math.abs(r.value) * 100
+                                    : Math.min(Math.abs(r.value) * 10, 100))) + "%" }}
+                                />
+                              </div>
+                            )}
+                            {r.status === "ok" && r.score != null && (
+                              <div className={"mz-score-tag " + scoreBand(r.score).tone}
+                                   style={{ marginTop: ".35rem" }}>
+                                {scoreBand(r.score).label}
+                              </div>
+                            )}
                           </div>
+                          {card && (
+                            <div className="mz-card">
+                              <div className="mz-card-g">
+                                <div className="mz-card-b"><span className="mz-card-l">Definition</span><p>{r.what || "—"}</p></div>
+                                <div className="mz-card-b"><span className="mz-card-l">Formula</span><p>{r.formula}</p></div>
+                                <div className="mz-card-b"><span className="mz-card-l">Why investors care</span><p>{r.why || "—"}</p></div>
+                                <div className="mz-card-b"><span className="mz-card-l">Typical range</span><p>{r.typical || "—"}</p></div>
+                                <div className="mz-card-b"><span className="mz-card-l">Limitations</span><p>{r.limits || "—"}</p></div>
+                                <div className="mz-card-b"><span className="mz-card-l">Inputs it needs</span><p>{(r.needs || []).map((k) => NEED_LABEL[k] || k).join(", ")}</p></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })}
                 <div className="mz-legend">
                   <span>Every computed ratio uses figures the reading pulled from the statements.</span>
                   <span>A ratio marked — is missing an input and is never guessed.</span>
+                  <span>Click a ratio name for what it means, why it matters and where it misleads.</span>
                 </div>
               </section>
             )}
@@ -1132,7 +2449,25 @@ function App() {
                   <h2 className="mz-sec-title">Performance evaluation</h2>
                   <span className="mz-sec-note">
                     {evalState === "working" ? "writing\u2026" : evalState === "error" ? "unavailable" : "AI analysis \u00b7 not arithmetic"}
+                    {lens ? " \u00b7 " + LENS_LABEL[lens] : ""}
                   </span>
+                </div>
+
+                {/* Same data, re-read for a different audience. The figures and ratios
+                    never change; only the reader the evaluation is written for does. */}
+                <div className="mz-lens">
+                  {LENSES.map((l) => (
+                    <button
+                      key={l.key || "general"}
+                      className={"mz-lens-b" + (lens === l.key ? " on" : "")}
+                      disabled={evalState === "working"}
+                      onClick={() => { setLens(l.key); runEvaluation(data, ratios, l.key); }}
+                    >{l.label}</button>
+                  ))}
+                </div>
+                <div className="mz-lens-blurb">
+                  {(LENSES.find((l) => l.key === lens) || LENSES[0]).blurb}{" "}
+                  Same figures, same ratios \u2014 a different reader.
                 </div>
 
                 {evalState === "working" && (
@@ -1166,6 +2501,17 @@ function App() {
                               <span className={"mz-eval-tag read-" + (a.read || "mixed")}>{a.read}</span>
                             </div>
                             <p className="mz-eval-area-t">{a.text}</p>
+                            {((a.drivers || []).length > 0 || a.conclusion) && (
+                              <div className="mz-why">
+                                <div className="mz-why-h">Why this reading</div>
+                                {(a.drivers || []).map((d, j) => (
+                                  <div key={j} className="mz-why-d"><span>✓</span><span>{d}</span></div>
+                                ))}
+                                {a.conclusion && (
+                                  <div className="mz-why-c"><b>Conclusion</b>{a.conclusion}</div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1260,6 +2606,12 @@ function App() {
                         <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
                         <p className="mz-detail">{f.detail}</p>
                         {f.metric && <p className="mz-metric">{f.metric}</p>}
+                        {typeof f.confidence === "number" && (
+                          <span className={"mz-conf " + (f.confidence >= 95 ? "hi" : f.confidence >= 80 ? "mid" : "lo")}
+                                style={{ marginTop: ".35rem" }}>
+                            <span className="mz-conf-dot" />{f.confidence}% confidence
+                          </span>
+                        )}
                       </div>
                       <div className="mz-ref">{tidyRef(f.ref)}</div>
                     </div>
@@ -1303,6 +2655,80 @@ function App() {
               </section>
             )}
 
+            {trail.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">How this reading happened</h2>
+                  <span className="mz-sec-note">{trail.length} steps · in order</span>
+                </div>
+                <div className="mz-tl">
+                  {trail.map((t, i) => (
+                    <div key={i} className={"mz-tl-i " + t.kind}>
+                      <div className="mz-tl-t">
+                        {trail[0] ? "+" + ((t.at - trail[0].at) / 1000).toFixed(1) + "s" : ""}
+                      </div>
+                      <div className="mz-tl-rail"><div className="mz-tl-dot" /></div>
+                      <div>
+                        <div className="mz-tl-txt">{t.text}</div>
+                        {t.detail && <div className="mz-tl-d">{t.detail}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mz-legend">
+                  <span>Recorded as the reading ran, not reconstructed afterwards.</span>
+                  <span>A red dot is a step that did not succeed.</span>
+                </div>
+              </section>
+            )}
+
+            {aiCalls.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">AI audit log</h2>
+                  <span className="mz-sec-note">every model call made for this document</span>
+                </div>
+                <div className="mz-log">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th><th>Step</th><th>Scope</th><th>Model</th><th>Result</th>
+                        <th className="n">Tokens in</th><th className="n">Tokens out</th><th className="n">Cost USD</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aiCalls.map((c, i) => (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td>{c.step}</td>
+                          <td>{c.detail}</td>
+                          <td>{c.model}</td>
+                          <td style={{ color: c.status === "ok" ? "var(--tick)" : c.status === "failed" ? "var(--esc)" : "var(--query)" }}>
+                            {c.status}
+                          </td>
+                          <td className="n">{c.input_tokens.toLocaleString()}</td>
+                          <td className="n">{c.output_tokens.toLocaleString()}</td>
+                          <td className="n">{c.cost_usd.toFixed(5)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={5}>{aiCalls.length} calls</td>
+                        <td className="n">{aiCalls.reduce((a, c) => a + c.input_tokens, 0).toLocaleString()}</td>
+                        <td className="n">{aiCalls.reduce((a, c) => a + c.output_tokens, 0).toLocaleString()}</td>
+                        <td className="n">{aiCalls.reduce((a, c) => a + c.cost_usd, 0).toFixed(5)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div className="mz-legend">
+                  <span>Balance, tie-out and every ratio were computed on this machine and cost nothing.</span>
+                  <span>Only the calls listed here involved a model.</span>
+                </div>
+              </section>
+            )}
+
             {meta && (
               <section className="mz-sec">
                 <div className="mz-sec-head">
@@ -1311,7 +2737,12 @@ function App() {
                 </div>
                 <div className="mz-ev">
                   <div><b>Document</b> {meta.name} · {meta.pages} pages</div>
-                  <div><b>SHA-256</b> {meta.hash}</div>
+                  {(meta.docs || []).length > 1 && (meta.docs || []).map((d, i) => (
+                    <div key={i} style={{ paddingLeft: "1.2rem" }}>
+                      <b>{i + 1}</b> {d.name} · {d.pages} pages · {(d.hash || "").slice(0, 16)}…
+                    </div>
+                  ))}
+                  <div><b>SHA-256</b> {meta.hash}{(meta.docs || []).length > 1 && " (of the set, in order)"}</div>
                   <div><b>Read at</b> {meta.at} · took {meta.seconds}s</div>
                   <div><b>System</b> Mizan {VERSION} · {meta.model}</div>
                   <div>
@@ -1325,13 +2756,29 @@ function App() {
                   <div><b>Operator</b> {operator || "UNRECORDED"}</div>
                   <div><b>Escalations open</b> {(data.escalations || []).length} · owners named {(data.escalations || []).filter((_, i) => owners[i]).length}</div>
                 </div>
+                <div className="mz-sec-head" style={{ marginTop: "1.2rem" }}>
+                  <h2 className="mz-sec-title">Take it away</h2>
+                  <span className="mz-sec-note">the same reading, six shapes</span>
+                </div>
+                <div className="mz-dl" style={{ padding: ".8rem 0" }}>
+                  <button className="mz-btn ghost" onClick={downloadAuditPackage}>Audit package</button>
+                  <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence JSON</button>
+                  <button className="mz-btn ghost" onClick={downloadCSV}>CSV</button>
+                  <button className="mz-btn ghost" onClick={downloadExcel}>Excel</button>
+                  <button className="mz-btn ghost" onClick={downloadMarkdown}>Markdown</button>
+                  <button className="mz-btn ghost" onClick={downloadApiResponse}>API response</button>
+                </div>
+                <div className="mz-legend">
+                  <span>The audit package carries the reading, the arithmetic, the judgment and the trail in one file.</span>
+                  <span>The API response is the merged model output exactly as the ratio engine received it.</span>
+                </div>
               </section>
             )}
 
             {state === "done" && (
               <footer className="mz-foot">
                 <div>
-                  <b>Mizan</b> {VERSION} · reading of {file?.name || "document"}<br />
+                  <b>Mizan</b> {VERSION} · reading of {meta?.name || "document"}<br />
                   Figures are read from the document. Nothing here is an opinion on the accounts.
                 </div>
                 <div style={{ textAlign: "right" }}>
