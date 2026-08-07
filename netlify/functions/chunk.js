@@ -43,12 +43,30 @@ const SHAPE = `Return ONLY valid JSON. No fences, no preamble.
  "classification":{"lens":"public_sector|corporate","basis":"","why":""},
  "balance":{"totalAssets":0,"totalLiabilities":0,"totalNetAssets":0,"ref":""},
  "tieOut":[{"check":"","result":"pass|fail|cannot_verify","detail":"","ref":""}],
- "figures":[{"label":"","value":"","ref":"","state":"verified|review|escalate"}],
+ "figures":[{"label":"","value":"","ref":"","state":"verified|review|escalate","confidence":0,"origin":"stated|derived|narrative","quote":""}],
  "variance":[{"label":"","budget":0,"actual":0}],
  "findings":[{"state":"","severity":"high|medium|low","title":"","detail":"","metric":"","ref":""}],
  "escalations":[{"title":"","why":"","decisionNeeded":"","ref":""}],
- "lineItems":{}
+ "lineItems":{},
+ "mgmtClaims":[{"claim":"","topic":"","ref":""}],
+ "sections":[]
 }
+
+CONFIDENCE, ORIGIN AND QUOTE on every figure:
+- "confidence" is 0-100: how certain you are the number is exactly right.
+  Read cleanly off a printed table = 95-100. Derived by simple arithmetic from
+  stated numbers = 85-95. Read from narrative prose = 60-85. Anything you had
+  to interpret harder scores lower. Never omit it.
+- "origin": "stated" (printed as-is), "derived" (you computed it from stated
+  figures), or "narrative" (pulled from prose, not a statement table).
+- "quote": the exact sentence or table line the figure came from, verbatim,
+  max 30 words. This is the evidence a reviewer clicks to see.
+
+MANAGEMENT CLAIMS: if the pages contain narrative where management asserts
+something about performance ("record year", "costs well controlled", "strong
+liquidity position"), capture up to 3 as mgmtClaims with the verbatim claim,
+its topic, and page ref. These get checked against the numbers later. Omit if
+these pages have no narrative.
 
 RATIO LINE ITEMS. If any of these appear on THESE pages, add them to "lineItems"
 as plain numbers in the statement's own units (thousands stay thousands). Omit any
