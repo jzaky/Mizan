@@ -115,6 +115,43 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-legend b{font-size:.85rem;margin-right:.3rem}
 .mz-ev{border:1px solid var(--rule);border-top:none;background:#fff;padding:1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);line-height:1.9;word-break:break-all}
 .mz-ev b{color:var(--ink)}
+.mz-eval-load{padding:2.4rem 1rem;text-align:center;border:1px solid var(--rule);border-top:none;background:#fff}
+.mz-eval-load-t{font-family:'Instrument Serif',Georgia,serif;font-size:1.3rem;color:var(--forest)}
+.mz-eval{border:1px solid var(--rule);border-top:none;background:#fff;padding:0 0 1rem}
+.mz-eval-banner{background:var(--bar);padding:.6rem .9rem;font-size:.72rem;color:var(--ink-soft);line-height:1.4;border-bottom:1px solid var(--rule)}
+.mz-eval-head{font-family:'Instrument Serif',Georgia,serif;font-size:1.5rem;line-height:1.25;color:var(--ink);padding:1rem .9rem .3rem}
+.mz-eval-over{font-size:.9rem;line-height:1.6;color:var(--ink);padding:0 .9rem 1rem;border-bottom:1px solid var(--rule)}
+.mz-eval-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))}
+.mz-eval-area{padding:.85rem .9rem;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);border-left:3px solid var(--rule)}
+.mz-eval-area.read-positive{border-left-color:var(--tick)}
+.mz-eval-area.read-mixed{border-left-color:var(--ink-soft)}
+.mz-eval-area.read-watch{border-left-color:var(--query)}
+.mz-eval-area.read-concern{border-left-color:var(--esc)}
+.mz-eval-area-h{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.mz-eval-area-h>span:first-child{font-family:'IBM Plex Mono',monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--ink)}
+.mz-eval-tag{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.08em;text-transform:uppercase;padding:.1rem .35rem;border:1px solid currentColor}
+.mz-eval-tag.read-positive{color:var(--tick)}
+.mz-eval-tag.read-mixed{color:var(--ink-soft)}
+.mz-eval-tag.read-watch{color:var(--query)}
+.mz-eval-tag.read-concern{color:var(--esc)}
+.mz-eval-area-t{font-size:.82rem;line-height:1.5;color:var(--ink-soft);margin-top:.4rem}
+.mz-eval-sc{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
+.mz-eval-col{padding:.85rem .9rem;border-right:1px solid var(--rule)}
+.mz-eval-col-h{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:.5rem}
+.mz-eval-col-h.pos{color:var(--tick)}
+.mz-eval-col-h.neg{color:var(--esc)}
+.mz-eval-col ul{list-style:none;padding:0;margin:0}
+.mz-eval-col li{font-size:.82rem;line-height:1.45;color:var(--ink);padding:.3rem 0 .3rem .9rem;position:relative}
+.mz-eval-col li:before{content:'\\2013';position:absolute;left:0;color:var(--ink-soft)}
+.mz-eval-rec{padding:.9rem}
+.mz-eval-rec-h{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--forest)}
+.mz-eval-rec-note{font-size:.72rem;color:var(--ink-soft);margin:.2rem 0 .7rem;font-style:italic}
+.mz-eval-rec-item{border-left:2px solid var(--forest);padding:.1rem 0 .1rem .8rem;margin-bottom:.7rem}
+.mz-eval-rec-for{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--forest);margin-bottom:.15rem}
+.mz-eval-rec-item p{font-size:.85rem;line-height:1.5;color:var(--ink)}
+.mz-eval-gaps{padding:.7rem .9rem;background:rgba(168,93,0,.04);font-size:.78rem;color:var(--ink-soft);line-height:1.45;border-top:1px solid var(--rule)}
+.mz-eval-gaps b{color:var(--query);font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:620px){.mz-eval-sc{grid-template-columns:1fr}}
 .mz-rfam{border:1px solid var(--rule);border-top:none;background:#fff}
 .mz-rfam-h{background:var(--bar);padding:.45rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--rule)}
 .mz-ratio{display:grid;grid-template-columns:1fr 6.5rem;border-bottom:1px solid var(--rule);align-items:center}
@@ -160,6 +197,7 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 @media print{
 .mz{background:#fff;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .mz-intake,.mz-btn,.mz-thesis,.mz-panel,.mz-controls,.mz-retry,.mz-note{display:none!important}
+.mz-eval,.mz-eval-area,.mz-eval-rec-item{break-inside:avoid;page-break-inside:avoid}
 .mz-row,.mz-fig,.mz-esc-card,.mz-arith{break-inside:avoid;page-break-inside:avoid}
 .mz-sec{margin-top:1.2rem;break-inside:avoid}
 .mz-sec-head{break-after:avoid}
@@ -201,6 +239,9 @@ function App() {
   const [edits, setEdits] = useState({});                  // figure label -> corrected value
   const [manual, setManual] = useState([]);                // operator-added findings
   const [restored, setRestored] = useState(false);
+  const [evaluation, setEvaluation] = useState(null);
+  const [evalState, setEvalState] = useState("idle");   // idle|working|done|error
+  const [evalErr, setEvalErr] = useState("");
   const cacheRef = useRef({});
   const builtRef = useRef([]);
   const inputRef = useRef(null);
@@ -217,6 +258,7 @@ function App() {
         setData(s.data); setMeta(s.meta || null); setOwners(s.owners || {});
         setOperator(s.operator || ""); setEdits(s.edits || {}); setManual(s.manual || []);
         setSlices(s.slices || []);
+        if (s.evaluation) { setEvaluation(s.evaluation); setEvalState("done"); }
         setState("done"); setRestored(true);
         setNotice("Restored your last reading from this browser. Upload a new document to start fresh.");
       }
@@ -227,7 +269,7 @@ function App() {
     if (state !== "done" || !data) return;
     try {
       localStorage.setItem(PERSIST_KEY, JSON.stringify({
-        data, meta, owners, operator, edits, manual,
+        data, meta, owners, operator, edits, manual, evaluation,
         slices: (slices || []).map((s) => ({ ...s, pdf: undefined }))  // never persist the raw PDF bytes
       }));
     } catch {}
@@ -237,6 +279,7 @@ function App() {
     try { localStorage.removeItem(PERSIST_KEY); } catch {}
     setData(null); setMeta(null); setOwners({}); setEdits({}); setManual([]);
     setSlices([]); setState("idle"); setRestored(false); setNotice("");
+    setEvaluation(null); setEvalState("idle"); setEvalErr("");
   };
 
   const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
@@ -389,7 +432,47 @@ function App() {
     });
   };
 
-  // Deterministic merge. No second model call, so nothing can drift here.
+  // Build a compact, number-rich summary of the finished analysis and ask the
+  // evaluation function to interpret it. Kept fully separate from the arithmetic.
+  const runEvaluation = async (reading, ratioList) => {
+    setEvalState("working"); setEvalErr(""); setEvaluation(null);
+    try {
+      const okRatios = (ratioList || []).filter((r) => r.status === "ok")
+        .map((r) => "- " + r.name + " (" + r.family + "): " + r.shown + " [" + r.note + "]");
+      const missRatios = (ratioList || []).filter((r) => r.status !== "ok")
+        .map((r) => "- " + r.name + ": not computed (missing " + (r.missing || []).join(", ") + ")");
+      const figs = (reading.figures || []).map((f) => "- " + f.label + ": " + f.value + " (" + f.ref + ")");
+      const finds = (reading.findings || []).map((f) => "- [" + (f.severity || "") + "] " + f.title + ": " + (f.detail || ""));
+
+      const summary = [
+        "ENTITY: " + (reading.entity?.name || "unknown") + " | " + (reading.classification?.basis || "") +
+          " | " + (reading.entity?.period || ""),
+        "CLASSIFICATION: " + (reading.classification?.lens || ""),
+        "",
+        "COMPUTED RATIOS:", okRatios.join("\n") || "(none computed)",
+        "",
+        "RATIOS NOT COMPUTED:", missRatios.join("\n") || "(all computed)",
+        "",
+        "KEY FIGURES:", figs.join("\n") || "(none)",
+        "",
+        "FINDINGS FROM THE READING:", finds.join("\n") || "(none)"
+      ].join("\n");
+
+      const r = await fetch("/.netlify/functions/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary })
+      });
+      const j = await r.json();
+      if (!r.ok || !j.evaluation) throw new Error(j.error || "The evaluation could not be produced.");
+      setEvaluation(j.evaluation);
+      setEvalState("done");
+    } catch (e) {
+      setEvalErr(e.message || "Evaluation failed.");
+      setEvalState("error");
+    }
+  };
+
   // Deterministic merge. No second model call, so nothing can drift here.
   // Two rules that matter on a full document:
   //  1. Pick the balance sheet that actually BALANCES, not the first fragment seen.
@@ -548,6 +631,9 @@ function App() {
     setMeta(m);
     setState("done");
     cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, file: { name: f.name, size: f.size } };
+    // Kick off the written evaluation using the just-computed ratios.
+    const ratioList = computeRatios(reading.lineItems);
+    runEvaluation(reading, ratioList);
   };
 
   const run = useCallback(async (f) => {
@@ -1037,6 +1123,91 @@ function App() {
                   <span>Every computed ratio uses figures the reading pulled from the statements.</span>
                   <span>A ratio marked — is missing an input and is never guessed.</span>
                 </div>
+              </section>
+            )}
+
+            {(evalState !== "idle") && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Performance evaluation</h2>
+                  <span className="mz-sec-note">
+                    {evalState === "working" ? "writing\u2026" : evalState === "error" ? "unavailable" : "AI analysis \u00b7 not arithmetic"}
+                  </span>
+                </div>
+
+                {evalState === "working" && (
+                  <div className="mz-eval-load">
+                    <div className="mz-eval-load-t">Interpreting the ratios and figures</div>
+                    <div className="mz-scan" style={{ maxWidth: "20rem" }} />
+                  </div>
+                )}
+
+                {evalState === "error" && (
+                  <div className="mz-note" style={{ borderColor: "var(--query)" }}>
+                    The written evaluation could not be produced: {evalErr} The ratios and findings above are unaffected.
+                  </div>
+                )}
+
+                {evalState === "done" && evaluation && (
+                  <div className="mz-eval">
+                    <div className="mz-eval-banner">
+                      Written analysis by the model, interpreting the figures above. It is judgment, not audited fact \u2014 weigh it as an analyst\u2019s view.
+                    </div>
+
+                    {evaluation.headline && <p className="mz-eval-head">{evaluation.headline}</p>}
+                    {evaluation.overall && <p className="mz-eval-over">{evaluation.overall}</p>}
+
+                    {(evaluation.assessment || []).length > 0 && (
+                      <div className="mz-eval-grid">
+                        {evaluation.assessment.map((a, i) => (
+                          <div key={i} className={"mz-eval-area read-" + (a.read || "mixed")}>
+                            <div className="mz-eval-area-h">
+                              <span>{a.area}</span>
+                              <span className={"mz-eval-tag read-" + (a.read || "mixed")}>{a.read}</span>
+                            </div>
+                            <p className="mz-eval-area-t">{a.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {((evaluation.strengths || []).length > 0 || (evaluation.concerns || []).length > 0) && (
+                      <div className="mz-eval-sc">
+                        {(evaluation.strengths || []).length > 0 && (
+                          <div className="mz-eval-col">
+                            <div className="mz-eval-col-h pos">Strengths</div>
+                            <ul>{evaluation.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                          </div>
+                        )}
+                        {(evaluation.concerns || []).length > 0 && (
+                          <div className="mz-eval-col">
+                            <div className="mz-eval-col-h neg">Concerns</div>
+                            <ul>{evaluation.concerns.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(evaluation.considerations || []).length > 0 && (
+                      <div className="mz-eval-rec">
+                        <div className="mz-eval-rec-h">Considerations for management</div>
+                        <div className="mz-eval-rec-note">Options to weigh, grounded in the figures. Not directives.</div>
+                        {evaluation.considerations.map((c, i) => (
+                          <div key={i} className="mz-eval-rec-item">
+                            <div className="mz-eval-rec-for">{c.for}</div>
+                            <p>{c.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {(evaluation.dataGaps || []).length > 0 && (
+                      <div className="mz-eval-gaps">
+                        <b>What limited this evaluation:</b> {evaluation.dataGaps.join("; ")}.
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
             )}
 
