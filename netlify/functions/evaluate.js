@@ -43,6 +43,15 @@ Return ONLY valid JSON, no fences, no preamble:
  ],
  "strengths": ["short specific bullet grounded in a figure", "..."],
  "concerns": ["short specific bullet grounded in a figure", "..."],
+ "contradictions": [
+   {"claim":"the management statement, verbatim as given to you",
+    "evidence":"what the figures actually show, with the specific numbers cited",
+    "severity":"high|medium|low",
+    "tension":"1-2 sentences on where the claim and the numbers pull apart"}
+ ],
+ "risk": {"operational":0,"financial":0,"liquidity":0,"accounting":0,
+          "confidence":0,
+          "note":"one sentence on the overall risk picture"},
  "considerations": [
    {"for":"the area it addresses",
     "text":"a management consideration, framed as an option to weigh, tied to the data"}
@@ -50,7 +59,17 @@ Return ONLY valid JSON, no fences, no preamble:
  "dataGaps": ["what was missing that limited this evaluation, if anything"]
 }
 
-Up to 6 assessment areas, 5 strengths, 5 concerns, 5 considerations.
+Up to 6 assessment areas, 5 strengths, 5 concerns, 5 considerations, 4 contradictions.
+
+CONTRADICTIONS: you will receive MANAGEMENT CLAIMS FROM THE NARRATIVE. Test each
+against the computed ratios and figures. Only raise a contradiction where the
+numbers genuinely strain the claim; agreeing claims are not contradictions and
+get no entry. Empty array if nothing conflicts.
+
+RISK: score operational, financial, liquidity and accounting risk 0-5 each
+(0 = no evidence of risk, 5 = severe, visible in the numbers). "confidence" is
+0-100: how much data you had to work with. Score only from evidence given;
+missing data lowers confidence, it does not raise risk.
 Keep every string tight. If a whole section has nothing real to say, use an empty array.`;
 
 const json = (obj, status = 200) =>
