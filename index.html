@@ -235,6 +235,14 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-conf-k{font-size:.8rem;font-weight:600;min-width:11rem}
 .mz-conf-v{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-soft)}
 .mz-conf-v em{font-style:normal;font-size:.62rem;opacity:.8}
+.mz-tray{border:1px solid var(--forest);border-top:none;background:#fff}
+.mz-tray-h{background:rgba(27,77,62,.06);padding:.5rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--forest);border-bottom:1px solid var(--rule)}
+.mz-tray-row{display:flex;align-items:center;gap:.8rem;padding:.55rem .9rem;border-bottom:1px solid var(--rule)}
+.mz-tray-row:last-child{border-bottom:none}
+.mz-tray-name{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mz-tray-size{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--ink-soft)}
+.mz-tray-x{font-family:'IBM Plex Mono',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.06em;color:var(--esc);background:none;border:1px solid var(--esc);padding:.25rem .5rem;cursor:pointer}
+.mz-tray-x:hover{background:rgba(168,32,43,.06)}
 .mz-empty{padding:3.4rem 1rem;text-align:center;border:1px solid var(--rule);border-top:none;background:#fff}
 .mz-empty-t{font-family:'Instrument Serif',Georgia,serif;font-size:1.35rem;color:var(--ink-soft);font-style:italic}
 .mz-empty-s{font-size:.83rem;color:var(--ink-soft);margin-top:.5rem}
@@ -1375,10 +1383,27 @@ function App() {
     }
   }, [dispatch, meta]);
 
+  const [staged, setStaged] = useState([]);
+
   const onPick = (e) => {
     const picked = Array.from(e.target.files || []);
     if (!picked.length) return;
-    run(picked); e.target.value = "";
+    // Stage, don't run. Same file re-added twice is dropped by name+size.
+    setStaged((prev) => {
+      const seen = new Set(prev.map((f) => f.name + "|" + f.size));
+      const fresh = picked.filter((f) => !seen.has(f.name + "|" + f.size));
+      return [...prev, ...fresh];
+    });
+    e.target.value = "";
+  };
+
+  const removeStaged = (i) => setStaged((prev) => prev.filter((_, ix) => ix !== i));
+
+  const analyzeStaged = () => {
+    if (!staged.length) return;
+    const files = staged;
+    setStaged([]);
+    run(files);
   };
 
   const bal = data ? checkBalance(data.balance) : null;
@@ -1853,8 +1878,13 @@ function App() {
         <div className="mz-intake">
           <input ref={inputRef} type="file" accept="application/pdf" multiple onChange={onPick} style={{ display: "none" }} />
           <button className="mz-btn" disabled={working} onClick={() => inputRef.current?.click()}>
-            {working ? "Reading" : "Read statements PDFs"}
+            {working ? "Reading" : staged.length ? "Add more files" : "Choose statements PDFs"}
           </button>
+          {staged.length > 0 && !working && (
+            <button className="mz-btn" style={{ background: "var(--forest)", borderColor: "var(--forest)" }} onClick={analyzeStaged}>
+              Analyze {staged.length} {staged.length === 1 ? "document" : "documents"}
+            </button>
+          )}
           <input className="mz-in" placeholder="Your name, for the record"
             value={operator} onChange={(e) => setOperator(e.target.value)} aria-label="Operator name" />
           {state === "done" && (
@@ -1888,6 +1918,19 @@ function App() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+                {staged.length > 0 && !working && (
+          <div className="mz-tray">
+            <div className="mz-tray-h">Ready to analyze · nothing runs until you say so</div>
+            {staged.map((f, i) => (
+              <div key={i} className="mz-tray-row">
+                <span className="mz-tray-name">{f.name}</span>
+                <span className="mz-tray-size">{(f.size / 1024).toFixed(0)} KB</span>
+                <button className="mz-tray-x" onClick={() => removeStaged(i)} aria-label={"Remove " + f.name}>remove</button>
+              </div>
+            ))}
           </div>
         )}
 
