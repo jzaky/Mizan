@@ -61,6 +61,9 @@ CONFIDENCE, ORIGIN AND QUOTE on every figure:
   figures), or "narrative" (pulled from prose, not a statement table).
 - "quote": the exact sentence or table line the figure came from, verbatim,
   max 30 words. This is the evidence a reviewer clicks to see.
+- In every "value" string, NEVER abbreviate scale: write "thousand", "million",
+  "billion" as full words or plain digits. Never "Tn", "K", "M", "Bn" alone.
+  "Tn" is ambiguous between thousand and trillion and is banned outright.
 
 MANAGEMENT CLAIMS: if the pages contain narrative where management asserts
 something about performance ("record year", "costs well controlled", "strong
