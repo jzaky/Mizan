@@ -227,13 +227,13 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-mixed-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--esc)}
 .mz-mixed-b{font-size:.83rem;margin-top:.4rem;line-height:1.5}
 .mz-mixed-l{margin-top:.6rem;font-size:.76rem;line-height:1.7;color:var(--ink-soft)}
-.mz-conf{border:1px solid var(--query);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
-.mz-conf-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--query)}
-.mz-conf-b{font-size:.83rem;margin-top:.4rem;line-height:1.5;color:var(--ink-soft)}
-.mz-conf-r{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;align-items:baseline;padding:.5rem 0;border-bottom:1px solid var(--rule)}
+.mz-conflicts{border:1px solid var(--query);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
+.mz-conflicts-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--query)}
+.mz-conflicts-b{font-size:.83rem;margin-top:.4rem;line-height:1.5;color:var(--ink-soft)}
+.mz-conflicts-r{display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;align-items:baseline;padding:.5rem 0;border-bottom:1px solid var(--rule)}
 .mz-conf-r:last-child{border-bottom:none}
-.mz-conf-k{font-size:.8rem;font-weight:600;min-width:11rem}
-.mz-conf-v{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-soft)}
+.mz-conflicts-k{font-size:.8rem;font-weight:600;min-width:11rem}
+.mz-conflicts-v{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-soft)}
 .mz-conf-v em{font-style:normal;font-size:.62rem;opacity:.8}
 .mz-tray{border:1px solid var(--forest);border-top:none;background:#fff}
 .mz-tray-h{background:rgba(27,77,62,.06);padding:.5rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--forest);border-bottom:1px solid var(--rule)}
@@ -524,15 +524,15 @@ function App() {
   const normNum = (raw) => {
     if (raw == null) return raw;
     const s = String(raw).trim();
-    const mm = s.match(/([\d,]+(?:\.\d+)?)\s*(trillion|tn|billion|bn|million|mn|thousand|[mk])\b/i);
+    const mm = s.match(/([\d,]+(?:\.\d+)?)\s*(trillion|billion|bn|million|mn|thousand|[mk])\b/i);
     if (!mm) return s;
     let val = parseFloat(mm[1].replace(/,/g, ""));
     if (!isFinite(val)) return s;
     const unit = (mm[2] || "").toLowerCase();
-    const mult = /^t/.test(unit) ? 1e12
+    const mult = (/^th/.test(unit) || unit === "k") ? 1e3
+      : /^tr/.test(unit) ? 1e12
       : /^b/.test(unit) ? 1e9
-      : (/^mi/.test(unit) || /^mn/.test(unit) || unit === "m") ? 1e6
-      : (/^th/.test(unit) || unit === "k") ? 1e3 : 1;
+      : (/^mi/.test(unit) || /^mn/.test(unit) || unit === "m") ? 1e6 : 1;
     const abs = val * mult;
     // keep only trailing parenthetical context like "(+3%)", drop leftover unit words
     const after = s.slice(mm.index + mm[0].length);
@@ -2007,19 +2007,19 @@ function App() {
         )}
 
         {state === "done" && data && (data.conflicts || []).length > 0 && (
-          <div className="mz-conf">
-            <p className="mz-conf-t">
+          <div className="mz-conflicts">
+            <p className="mz-conflicts-t">
               {data.conflicts.length} figure{data.conflicts.length > 1 ? "s" : ""} the documents disagree on
             </p>
-            <p className="mz-conf-b">
+            <p className="mz-conflicts-b">
               The first reading was kept and used in the ratios. Nothing was averaged. Decide which
               document governs before signing anything off.
             </p>
             {data.conflicts.map((c, i) => (
-              <div key={i} className="mz-conf-r">
-                <span className="mz-conf-k">{c.label}</span>
-                <span className="mz-conf-v"><b>{fmt(c.held.value)}</b> <em>{c.held.doc}</em> · used</span>
-                <span className="mz-conf-v">{fmt(c.other.value)} <em>{c.other.doc}</em></span>
+              <div key={i} className="mz-conflicts-r">
+                <span className="mz-conflicts-k">{c.label}</span>
+                <span className="mz-conflicts-v"><b>{fmt(c.held.value)}</b> <em>{c.held.doc}</em> · used</span>
+                <span className="mz-conflicts-v">{fmt(c.other.value)} <em>{c.other.doc}</em></span>
               </div>
             ))}
           </div>
