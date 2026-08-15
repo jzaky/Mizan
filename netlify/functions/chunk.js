@@ -151,7 +151,10 @@ export default async (req) => {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        // Override without a code change: set MIZAN_READ_MODEL in Netlify env.
+        // "claude-haiku-4-5-20251001" reads slices at roughly half the cost;
+        // Sonnet stays sharper on subtle disclosure catches. A/B on a real doc.
+        model: process.env.MIZAN_READ_MODEL || "claude-sonnet-5",
         max_tokens: 4000,
         messages: [{
           role: "user",
