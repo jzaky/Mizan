@@ -34,7 +34,11 @@ const LENSES = [
 ];
 const LENS_LABEL = LENSES.reduce((a, l) => { a[l.key] = l.label; return a; }, {});
 
-const PAGES_PER_SLICE = 6;   // small enough that one call clears 10s comfortably
+const PAGES_PER_SLICE = (() => {
+  // Testable without a code change: append ?slice=4 (or 8) to the URL.
+  const q = Number(new URLSearchParams(window.location.search).get("slice"));
+  return q >= 2 && q <= 10 ? q : 6;
+})();   // small enough that one call clears 10s comfortably
 const CONCURRENCY = 2;       // slices in flight at once
 const RETRIES = 3;
 
@@ -941,7 +945,12 @@ function App() {
         c.held.doc + " says " + fmt(c.held.value) + " (used in the ratios), " +
         c.other.doc + " says " + fmt(c.other.value));
 
+      const covLine = meta && meta.failed > 0
+        ? "COVERAGE WARNING: only " + meta.read + " of " + meta.slices + " slices were read. " +
+          "Unread page ranges exist. Treat every conclusion as provisional and say so."
+        : "COVERAGE: complete.";
       const summary = [
+        covLine,
         "ENTITY: " + (reading.entity?.name || "unknown") + " | " + (reading.classification?.basis || "") +
           " | " + (reading.entity?.period || ""),
         "CLASSIFICATION: " + (reading.classification?.lens || ""),
@@ -1329,12 +1338,16 @@ function App() {
         const pageCount = src.getPageCount();
         docList.push({ doc: d, name: f.name, size: f.size, pages: pageCount, hash: dhash });
 
-        for (let start = 0; start < pageCount; start += PAGES_PER_SLICE) {
+        // Slices overlap by one page so a table crossing a boundary is seen
+        // whole at least once. The merge dedupes anything read twice.
+        const STEP = Math.max(1, PAGES_PER_SLICE - (pageCount > PAGES_PER_SLICE ? 1 : 0));
+        for (let start = 0; start < pageCount; start += STEP) {
           const end = Math.min(start + PAGES_PER_SLICE, pageCount);
           plan.push({
             idx: plan.length, doc: d, docName: f.name, docPages: pageCount,
             start, end, from: start + 1, to: end, src
           });
+          if (end >= pageCount) break;
         }
       }
       setDocs(docList);
@@ -2496,7 +2509,7 @@ function App() {
                 <div className="mz-sec-head">
                   <h2 className="mz-sec-title">Performance evaluation</h2>
                   <span className="mz-sec-note">
-                    {evalState === "working" ? "writing\u2026" : evalState === "error" ? "unavailable" : "AI analysis \u00b7 not arithmetic"}
+                    {evalState === "working" ? "writing\u2026" : evalState === "error" ? "unavailable" : (meta && meta.failed > 0 ? "PARTIAL COVERAGE \u00b7 not final" : "AI analysis \u00b7 not arithmetic")}
                     {lens ? " \u00b7 " + LENS_LABEL[lens] : ""}
                   </span>
                 </div>
