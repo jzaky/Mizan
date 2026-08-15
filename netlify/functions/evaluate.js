@@ -101,7 +101,8 @@ export default async (req) => {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        // Override without a code change: set MIZAN_EVAL_MODEL in Netlify env.
+        model: process.env.MIZAN_EVAL_MODEL || "claude-sonnet-5",
         max_tokens: 3000,
         messages: [{
           role: "user",
