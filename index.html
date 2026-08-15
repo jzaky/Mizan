@@ -1087,7 +1087,12 @@ function App() {
         }
         const held = out.lineItems[k];
         const heldFrom = out.lineItemDoc[k] || "";
-        const differs = Math.abs(held - n) > Math.max(1, Math.abs(held) * 0.005);
+        // The same figure reported in thousands in one document and millions in
+        // another differs by a clean power of ten. That is a scale difference,
+        // not a disagreement, and flagging it would cry wolf to an auditor.
+        const ratio = held && n ? Math.max(Math.abs(held), Math.abs(n)) / Math.min(Math.abs(held), Math.abs(n)) : 1;
+        const scaleTwin = [1e3, 1e6, 1e9].some((f) => Math.abs(ratio - f) / f < 0.005);
+        const differs = !scaleTwin && Math.abs(held - n) > Math.max(1, Math.abs(held) * 0.005);
         if (differs && from && heldFrom && from !== heldFrom) {
           const id = "conflict|" + k + "|" + from;
           if (!seen.has(id)) {
@@ -1318,7 +1323,13 @@ function App() {
       const hit = cacheRef.current[hash];
       if (hit) {
         builtRef.current = hit.built;
-        setSlices(hit.built.map((b) => ({ ...b, status: "done" })));
+        // Restore the true per-slice outcome; a cached incomplete reading must
+        // still show its red cells, or the retry button has nothing to find.
+        setSlices(hit.built.map((b, i) => ({
+          ...b,
+          status: hit.partials && hit.partials[i] ? "done" : "miss",
+          why: hit.partials && hit.partials[i] ? undefined : "unread in the cached run"
+        })));
         setDocs(hit.docs || []);
         setData(hit.reading);
         setMeta(hit.meta);
