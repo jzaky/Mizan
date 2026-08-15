@@ -35,8 +35,8 @@ const LENSES = [
 const LENS_LABEL = LENSES.reduce((a, l) => { a[l.key] = l.label; return a; }, {});
 
 const PAGES_PER_SLICE = 6;   // small enough that one call clears 10s comfortably
-const CONCURRENCY = 4;       // slices in flight at once
-const RETRIES = 2;
+const CONCURRENCY = 2;       // slices in flight at once
+const RETRIES = 3;
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
@@ -1158,6 +1158,7 @@ function App() {
   };
 
   const readSlice = async (payload) => {
+    let lastErr = "Unreachable.";
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
       try {
         const r = await fetch("/.netlify/functions/chunk", {
@@ -1167,13 +1168,17 @@ function App() {
         });
         const j = await r.json().catch(() => ({ error: "Netlify returned " + r.status + "." }));
         if (r.ok && j.partial) return j;
-        if (attempt === RETRIES) return { error: j.error || "Netlify returned " + r.status + "." };
+        lastErr = j.error || "Netlify returned " + r.status + ".";
       } catch (e) {
-        if (attempt === RETRIES) return { error: String(e.message || e) };
+        lastErr = String(e.message || e);
       }
-      await new Promise((r) => setTimeout(r, 900 * (attempt + 1)));
+      if (attempt === RETRIES) break;
+      // Rate limits and overloads reset on a per-minute window. Hammering it
+      // inside the window burns the retries for nothing, so wait it out.
+      const rateHit = /rate[ _-]?limit|429|overloaded|529/i.test(lastErr);
+      await new Promise((r) => setTimeout(r, rateHit ? 22000 : 1500 * (attempt + 1)));
     }
-    return { error: "Unreachable." };
+    return { error: lastErr };
   };
 
   const dispatch = useCallback(async (built, pageCount, began, seedPartials) => {
