@@ -1,4 +1,4 @@
-<!doctype html>
+\<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -426,6 +426,20 @@ const STATEMENT_PROOF = {
 // Slice coverage tells you how much of the PDF was processed; this tells you
 // whether the parts that matter were among it. Module scope, because both the
 // coverage map and the evaluation prompt must be looking at the same answer.
+const failedPageRanges = () => (slices || [])
+  .filter((s) => s.status === "miss")
+  .map((s) => ({ from: s.from, to: s.to, doc: s.docName }));
+
+const refTouchesUnread = (ref) => {
+  if (!ref) return false;
+  const ranges = failedPageRanges();
+  if (!ranges.length) return false;
+  const mm = String(ref).match(/p(?:age|p)?\.??\s*(\d+)/i);
+  if (!mm) return false;
+  const pg = parseInt(mm[1], 10);
+  return ranges.some((r) => pg >= r.from && pg <= r.to);
+};
+
 const coverageOf = (d) => STATEMENTS.map((s) => {
   const seen = (d.sections || []).filter((x) => x.kind === s.key);
   const proof = STATEMENT_PROOF[s.key] || [];
@@ -2056,7 +2070,14 @@ function App() {
 
         {state === "done" && meta && meta.failed > 0 && (
           <div className="mz-retry">
-            <span>{meta.failed} of {meta.slices} slices did not read. This reading is marked incomplete.</span>
+            <span>
+              <b>INCOMPLETE SOURCE READ.</b> {meta.failed} of {meta.slices} slices did not read.
+              {(() => {
+                const gaps = (slices || []).filter((s) => s.status === "miss")
+                  .map((s) => (s.docName ? s.docName.replace(/\.pdf$/i, "") + " " : "") + "p." + s.from + "\u2013" + s.to);
+                return gaps.length ? " Pages needing recovery: " + gaps.join(", ") + ". Conclusions that depend on these pages are not verified." : "";
+              })()}
+            </span>
             <button className="mz-btn ghost" onClick={retryFailed}>Retry failed slices</button>
           </div>
         )}
@@ -2709,9 +2730,18 @@ function App() {
                   <span className="mz-sec-note">not answered, on purpose</span>
                 </div>
                 {data.escalations.map((e, i) => (
-                  <div key={i} className="mz-esc-card">
-                    <p className="mz-esc-t">{e.title}</p>
-                    <p className="mz-esc-w">{e.why}</p>
+                  <div key={i} className={"mz-esc-card" + (refTouchesUnread(e.ref) ? " unread" : "")}>
+                    <div className="mz-esc-head">
+                      <p className="mz-esc-t">{e.title}</p>
+                      <span className={"mz-esc-state " + (refTouchesUnread(e.ref) ? "notread" : "notpresent")}>
+                        {refTouchesUnread(e.ref) ? "NOT READ" : "NOT PRESENT"}
+                      </span>
+                    </div>
+                    <p className="mz-esc-w">
+                      {refTouchesUnread(e.ref)
+                        ? "This points at a page that failed to read, not a figure the company omitted. Recover the page before treating this as an accounting gap."
+                        : e.why}
+                    </p>
                     <div className="mz-esc-d">
                       <b>Decision needed</b>
                       {e.decisionNeeded}
