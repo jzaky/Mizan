@@ -107,6 +107,45 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ratio-typ{font-size:.7rem;color:var(--soft);margin-top:.2rem;line-height:1.45}
 .mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
 .mz-ratio.missing .mz-ratio-val,.mz-ratio.blocked .mz-ratio-val{color:var(--rule)}
+.mz-snap{border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-snap-row{display:grid;grid-template-columns:8.5rem 1fr;gap:.9rem;padding:.55rem .9rem;border-bottom:1px solid var(--rule);font-size:.83rem;line-height:1.5}
+.mz-snap-row:last-child{border-bottom:none}
+.mz-snap-k{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);padding-top:.18rem}
+.mz-snap-top{border:1px solid var(--rule);border-top:none;background:var(--bar);padding:.8rem .9rem}
+.mz-snap-top-h{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:.45rem}
+.mz-snap-top ol{margin:0;padding-left:1.1rem}
+.mz-snap-top li{font-size:.8rem;line-height:1.5;padding:.22rem 0}
+.mz-snap-top em{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--soft);font-style:normal}
+@media(max-width:620px){.mz-snap-row{grid-template-columns:1fr}}
+.mz-pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.09em;text-transform:uppercase;padding:.12rem .38rem;border:1px solid currentColor;white-space:nowrap}
+.mz-pill.notread{color:var(--query)}
+.mz-pill.notpresent{color:var(--soft)}
+.mz-pill.await{color:var(--query)}
+.mz-qhead{border:1px solid var(--ink);border-top:none;background:var(--bar);padding:.7rem .9rem;display:flex;gap:1.6rem;flex-wrap:wrap;font-size:.76rem;color:var(--soft)}
+.mz-qhead b{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-right:.4rem}
+.mz-qnote{font-style:italic;flex-basis:100%;font-size:.7rem}
+.mz-queue{border:1px solid var(--rule);border-top:none;background:#fff}
+.mz-q{border-bottom:1px solid var(--rule)}
+.mz-q:last-child{border-bottom:none}
+.mz-q-row{display:grid;grid-template-columns:6.5rem 1fr auto 1.4rem;gap:.7rem;align-items:center;padding:.55rem .9rem;cursor:pointer}
+.mz-q-row:hover{background:var(--bar)}
+.mz-q-t{font-size:.84rem;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mz-q-ref{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:14rem}
+.mz-q-x{font-family:'IBM Plex Mono',monospace;color:var(--soft);text-align:center}
+.mz-q.open .mz-q-t{white-space:normal}
+.mz-q-body{padding:0 .9rem .8rem 8.1rem;background:var(--bar)}
+.mz-q-why{font-size:.8rem;color:var(--soft);line-height:1.5}
+.mz-q-ev{list-style:none;margin:.5rem 0}
+.mz-q-ev li{font-size:.76rem;color:var(--ink);padding:.2rem 0 .2rem .8rem;position:relative;line-height:1.45}
+.mz-q-ev li:before{content:"-";position:absolute;left:0;color:var(--soft)}
+.mz-q-next{margin-top:.5rem;font-size:.8rem;padding-top:.5rem;border-top:1px dashed var(--rule)}
+.mz-q-next b{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--forest);display:block;margin-bottom:.15rem}
+.mz-f-ev{list-style:none;margin-top:.4rem}
+.mz-f-ev li{font-size:.74rem;color:var(--soft);padding:.15rem 0 .15rem .8rem;position:relative;line-height:1.4}
+.mz-f-ev li:before{content:"-";position:absolute;left:0}
+.mz-ratio-need{font-size:.7rem;color:var(--soft);margin-top:.28rem}
+.mz-ratio-need b{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-right:.4rem}
+@media(max-width:620px){.mz-q-row{grid-template-columns:1fr 1.4rem}.mz-q-ref{display:none}.mz-q-body{padding-left:.9rem}}
 .mz-stages{border:1px solid var(--forest);border-top:none;background:#fff;padding:1.2rem 1.1rem}
 .mz-stages-h{font-family:'Instrument Serif',Georgia,serif;font-size:1.3rem;color:var(--forest);margin-bottom:.9rem}
 .mz-stage{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.6rem;align-items:baseline;padding:.32rem 0;color:var(--soft);font-size:.86rem}
@@ -231,13 +270,53 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ref{grid-column:2;border-left:none;text-align:left;border-top:1px dashed var(--rule)}
 .mz-thesis{text-align:left;max-width:none}
 .mz-eval-sc{grid-template-columns:1fr}}
+/* ---- Print: a report, not a printed webpage --------------------------- */
+.mz-cover{display:none}
+@page{size:A4;margin:18mm 16mm 20mm}
 @media print{
-.mz{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.mz-intake,.mz-btn,.mz-thesis,.mz-panel,.mz-retry,.mz-tray{display:none!important}
-.mz-row,.mz-fig,.mz-esc-card,.mz-arith,.mz-sec{break-inside:avoid}
-.mz-class{background:#fff!important;color:var(--ink)!important;border:1px solid var(--ink)}
+.mz{background:#fff;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.mz-wrap{max-width:none;padding:0}
+
+/* Screen furniture has no business in a report. */
+.mz-intake,.mz-btn,.mz-thesis,.mz-panel,.mz-retry,.mz-tray,.mz-stages,.mz-note,
+.mz-head,.mz-q-x,.mz-owner,.mz-empty{display:none!important}
+
+/* Cover page. */
+.mz-cover{display:block;height:245mm;position:relative;page-break-after:always}
+.mz-cover-rule{border-top:3px solid var(--ink);margin-bottom:2.4rem}
+.mz-cover-mark{font-family:'Instrument Serif',Georgia,serif;font-size:4.2rem;line-height:.95;letter-spacing:-.02em}
+.mz-cover-mark span{font-size:.36em;color:var(--soft);margin-left:.6rem}
+.mz-cover-kind{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--soft);margin-top:.7rem}
+.mz-cover-co{font-family:'Instrument Serif',Georgia,serif;font-size:2.4rem;line-height:1.15;margin-top:5.5rem}
+.mz-cover-meta{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--soft);margin-top:.8rem;line-height:2}
+.mz-cover-foot{position:absolute;bottom:0;left:0;right:0;border-top:1px solid var(--rule);padding-top:.8rem;
+display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--soft);line-height:1.8}
+.mz-cover-note{margin-top:2.4rem;font-size:.8rem;line-height:1.6;color:var(--soft);max-width:34rem;border-left:2px solid var(--forest);padding-left:.9rem}
+
+/* Running header on every page after the cover. */
+.mz-sec{margin-top:9mm;break-inside:auto}
+.mz-sec-head{border-bottom:1.5px solid var(--ink);break-after:avoid}
+.mz-sec-title{font-size:.62rem}
+
+/* Keep atomic blocks whole. */
+.mz-row,.mz-fig,.mz-arith,.mz-ratio,.mz-score-row,.mz-cov-row,.mz-q,.mz-trail-s,
+.mz-kpi-cell,.mz-eval-area,.mz-eval-rec-item{break-inside:avoid;page-break-inside:avoid}
+
+/* Colour blocks flatten but keep their meaning. */
+.mz-class{background:#fff!important;color:var(--ink)!important;border:1.5px solid var(--ink)}
 .mz-class-lens,.mz-class-meta,.mz-class-why{color:var(--ink)!important;opacity:1}
-.mz-owner{display:none!important}
+.mz-strip,.mz-rfam-h,.mz-qhead{background:#fff!important;color:var(--ink)!important;border-bottom:1px solid var(--ink)}
+
+/* The queue prints open: a reader cannot click a plus sign on paper. */
+.mz-q-body{display:block!important;background:#fff;padding:.2rem 0 .7rem 8.1rem}
+.mz-q-row{padding-left:0;padding-right:0}
+
+/* Tighten the density that reads fine on screen and wastes paper. */
+.mz-kpi-cell{padding:.7rem}
+.mz-kpi-v{font-size:1.4rem}
+.mz-ratio-main,.mz-ratio-val{padding:.5rem .7rem}
+.mz-legend{font-size:.55rem;padding:.5rem .7rem}
+a[href]:after{content:""}
 }
 `;
 
@@ -512,6 +591,7 @@ function App() {
   const [evaluation, setEvaluation] = useState(null);
   const [evalState, setEvalState] = useState("idle");
   const [evalErr, setEvalErr] = useState("");
+  const [openEsc, setOpenEsc] = useState(null);
   const cacheRef = useRef({});
   const builtRef = useRef([]);
   const inputRef = useRef(null);
@@ -707,6 +787,54 @@ function App() {
         !out.sections.some((s) => s.kind === "income_statement")) {
       out.sections.push({ kind: "income_statement", pages: "", doc: "" });
     }
+
+    // Five cards saying "related party finance cost surged" is not five findings,
+    // it is one finding seen from five pages. Cluster on the subject the text is
+    // actually about, keep the strongest wording, and carry the rest as evidence.
+    const subjectOf = (t) => {
+      const s = String(t || "").toLowerCase();
+      const topics = [
+        [/related.?part/, "related-party"],
+        [/ecl|expected credit|loss allowance|impairment/, "credit-loss"],
+        [/revenue grow|revenue rose|revenue \+/, "revenue-growth"],
+        [/dividend/, "dividend"],
+        [/ifrs ?18/, "ifrs18"],
+        [/tax adjust|direct.*equity|equity.*tax/, "equity-tax"],
+        [/amortisation|amortization/, "amortisation"],
+        [/lease/, "lease"],
+        [/covenant|leverage|net debt/, "leverage"],
+        [/contract liabilit/, "contract-liability"],
+        [/no (financial|quantitative|primary|actual)|not (present|shown|in this)/, "no-figures"],
+        [/finance cost|finance charge/, "finance-cost"],
+        [/concession|toll gate/, "concession"]
+      ];
+      for (const [re, key] of topics) if (re.test(s)) return key;
+      return null;
+    };
+    const clusterList = (arr, titleKey, bodyKey) => {
+      const byTopic = new Map(); const out2 = [];
+      for (const item of arr) {
+        const topic = subjectOf(item[titleKey] + " " + (item[bodyKey] || ""));
+        if (!topic) { out2.push(item); continue; }
+        if (!byTopic.has(topic)) {
+          byTopic.set(topic, { ...item, evidence: [] });
+          out2.push(byTopic.get(topic));
+        } else {
+          const head = byTopic.get(topic);
+          // Keep the more severe framing as the headline.
+          if ((SEV_RANK[item.severity] ?? 3) < (SEV_RANK[head.severity] ?? 3)) {
+            head.title = item.title; head.severity = item.severity;
+          }
+          const line = (item[bodyKey] || item[titleKey] || "").trim();
+          if (line && !head.evidence.some((e) => e.text === line)) {
+            head.evidence.push({ text: line, ref: item.ref || "" });
+          }
+        }
+      }
+      return out2;
+    };
+    out.findings = clusterList(out.findings, "title", "detail");
+    out.escalations = clusterList(out.escalations, "title", "why");
 
     out.findings.sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
     return out;
@@ -1222,6 +1350,92 @@ function App() {
 
         {data && state === "done" && (
           <>
+            <div className="mz-cover">
+              <div className="mz-cover-rule" />
+              <div className="mz-cover-mark">Mizan<span>&#1605;&#1610;&#1586;&#1575;&#1606;</span></div>
+              <div className="mz-cover-kind">Financial statement analysis · working paper</div>
+
+              <div className="mz-cover-co">{data.entity?.name || "Financial statements"}</div>
+              <div className="mz-cover-meta">
+                {data.entity?.period && <>{data.entity.period}<br /></>}
+                {data.classification?.basis && <>{data.classification.basis}<br /></>}
+                {(meta?.docs || []).length} source document{(meta?.docs || []).length === 1 ? "" : "s"} · {meta?.pages} pages<br />
+                Prepared {new Date(meta?.at || Date.now()).toLocaleDateString("en-GB",
+                  { day: "numeric", month: "long", year: "numeric" })}<br />
+                Operator {operator || "unrecorded"}
+              </div>
+
+              <div className="mz-cover-note">
+                Every figure in this paper carries the page it was read from. Arithmetic
+                was computed independently of the reading, and any measure whose inputs
+                could not be traced is reported as outstanding rather than estimated.
+                {meta?.failed > 0 && " This reading is incomplete: " + meta.failed +
+                  " of " + meta.slices + " batches did not process, and conclusions touching those pages are not verified."}
+              </div>
+
+              <div className="mz-cover-foot">
+                <div>
+                  Mizan {VERSION}<br />
+                  SHA-256 {(meta?.hash || "").slice(0, 32)}
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  Nexus AI Assurance FZCO · Dubai<br />
+                  nexusai.ae
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              const li = data.lineItems || {};
+              const top = (data.findings || []).filter((f) => f.severity === "high").slice(0, 5);
+              const q = (data.escalations || []).length;
+              return (
+                <section className="mz-sec mz-snapshot">
+                  <div className="mz-sec-head">
+                    <h2 className="mz-sec-title">Executive snapshot</h2>
+                    <span className="mz-sec-note">what a reader needs in one page</span>
+                  </div>
+                  <div className="mz-snap">
+                    <div className="mz-snap-row">
+                      <span className="mz-snap-k">Entity</span>
+                      <span>{data.entity?.name || "not stated"} · {data.classification?.lens === "public_sector" ? "public sector" : "corporate"} · {data.classification?.basis || ""}</span>
+                    </div>
+                    <div className="mz-snap-row">
+                      <span className="mz-snap-k">Audit opinion</span>
+                      <span>{data.entity?.auditOpinion || "not stated in the pages read"}</span>
+                    </div>
+                    <div className="mz-snap-row">
+                      <span className="mz-snap-k">Balance check</span>
+                      <span>{bal ? (bal.ok ? "Assets equal liabilities plus equity. Difference nil."
+                        : "Does not balance. Off by " + fmt(Math.abs(bal.delta)) + ".") : "Balance sheet totals not read."}</span>
+                    </div>
+                    <div className="mz-snap-row">
+                      <span className="mz-snap-k">Ratios</span>
+                      <span>{ratiosOk.length} of {(ratios || []).length} computed{blocked.length ? ", " + blocked.length + " blocked on scale" : ""}. {overall ? (overall.partial ? "Overall health not available on this coverage." : overall.label + " on the families with data.") : ""}</span>
+                    </div>
+                    <div className="mz-snap-row">
+                      <span className="mz-snap-k">Coverage</span>
+                      <span>{meta?.read} of {meta?.slices} batches read{meta?.failed ? ". Incomplete." : ". Complete."}</span>
+                    </div>
+                    <div className="mz-snap-row">
+                      <span className="mz-snap-k">Outstanding</span>
+                      <span>{q} item{q === 1 ? "" : "s"} awaiting source evidence or a management decision.</span>
+                    </div>
+                  </div>
+                  {top.length > 0 && (
+                    <div className="mz-snap-top">
+                      <div className="mz-snap-top-h">Matters ranked highest by the reading</div>
+                      <ol>
+                        {top.map((f, i) => (
+                          <li key={i}><b>{f.title}</b> {f.detail} <em>{f.ref}</em></li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
+
             {(() => {
               const li = data.lineItems || {};
               const nLine = Object.keys(li).length;
@@ -1501,7 +1715,13 @@ function App() {
                             )}
                             {r.status === "missing" && (
                               <div className="mz-ratio-miss">
-                                <b>Could not compute.</b> {r.reason.headline} {r.reason.detail} Held for a person, not estimated.
+                                <span className="mz-pill await">not yet computable</span>
+                                <div className="mz-ratio-need">
+                                  <b>Required</b> {(r.needs || []).map((k) => NEED_LABEL[k] || k).join(" \u00b7 ")}
+                                </div>
+                                <div className="mz-ratio-need">
+                                  <b>Source</b> {r.reason.headline.replace(" not yet read.", "")}
+                                </div>
                               </div>
                             )}
                             {r.status === "blocked" && (
@@ -1603,6 +1823,13 @@ function App() {
                       <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
                       <p className="mz-detail">{f.detail}</p>
                       {f.metric && <p className="mz-metric">{f.metric}</p>}
+                      {(f.evidence || []).length > 0 && (
+                        <ul className="mz-f-ev">
+                          {f.evidence.slice(0, 4).map((x, j) => (
+                            <li key={j}>{x.text}{x.ref ? " \u00b7 " + x.ref : ""}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     <div className="mz-ref">{f.ref}</div>
                   </div>
@@ -1618,36 +1845,49 @@ function App() {
             {data.escalations?.length > 0 && (
               <section className="mz-sec">
                 <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Held for a person</h2>
-                  <span className="mz-sec-note">not answered, on purpose</span>
+                  <h2 className="mz-sec-title">Verification queue</h2>
+                  <span className="mz-sec-note">{data.escalations.length} items need evidence or a decision</span>
                 </div>
-                {data.escalations.map((e, i) => {
-                  const unread = refTouchesUnread(e.ref);
-                  return (
-                    <div key={i} className={"mz-esc-card" + (unread ? " unread" : "")}>
-                      <div className="mz-esc-head">
-                        <p className="mz-esc-t">{e.title}</p>
-                        <span className={"mz-esc-state " + (unread ? "notread" : "notpresent")}>
-                          {unread ? "NOT READ" : "NOT PRESENT"}
-                        </span>
-                      </div>
-                      <p className="mz-esc-w">
-                        {unread
-                          ? "This points at a page that failed to read, not a figure the company omitted. Recover the page before treating it as an accounting gap."
-                          : e.why}
-                      </p>
-                      <div className="mz-esc-d">
-                        <b>Decision needed</b>
-                        {e.decisionNeeded}
-                        <div className="mz-owner">
-                          <label htmlFor={"own" + i}>Accountable owner</label>
-                          <input id={"own" + i} className="mz-in" placeholder="Name the person"
-                            value={owners[i] || ""} onChange={(ev) => setOwners({ ...owners, [i]: ev.target.value })} />
+                <div className="mz-qhead">
+                  <div><b>Primary owner</b> {operator || "unassigned"}</div>
+                  <div><b>Status</b> awaiting source or management confirmation</div>
+                  <div className="mz-qnote">Ownership is set once, at the top. Individual items inherit it.</div>
+                </div>
+                <div className="mz-queue">
+                  {data.escalations.map((e, i) => {
+                    const unread = refTouchesUnread(e.ref);
+                    const open = openEsc === i;
+                    return (
+                      <div key={i} className={"mz-q" + (open ? " open" : "")}>
+                        <div className="mz-q-row" onClick={() => setOpenEsc(open ? null : i)}>
+                          <span className={"mz-pill " + (unread ? "notread" : "notpresent")}>
+                            {unread ? "not read" : "not in pages"}
+                          </span>
+                          <span className="mz-q-t">{e.title}</span>
+                          <span className="mz-q-ref">{e.ref}</span>
+                          <span className="mz-q-x">{open ? "\u2212" : "+"}</span>
                         </div>
+                        {open && (
+                          <div className="mz-q-body">
+                            <p className="mz-q-why">
+                              {unread
+                                ? "This points at a page that failed to read, not a figure the company omitted."
+                                : e.why}
+                            </p>
+                            {(e.evidence || []).length > 0 && (
+                              <ul className="mz-q-ev">
+                                {e.evidence.map((x, j) => (
+                                  <li key={j}>{x.text}{x.ref ? " \u00b7 " + x.ref : ""}</li>
+                                ))}
+                              </ul>
+                            )}
+                            <div className="mz-q-next"><b>Next action</b> {e.decisionNeeded}</div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </section>
             )}
 
