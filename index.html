@@ -107,12 +107,44 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ratio-typ{font-size:.7rem;color:var(--soft);margin-top:.2rem;line-height:1.45}
 .mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
 .mz-ratio.missing .mz-ratio-val,.mz-ratio.blocked .mz-ratio-val{color:var(--rule)}
+.mz-stages{border:1px solid var(--forest);border-top:none;background:#fff;padding:1.2rem 1.1rem}
+.mz-stages-h{font-family:'Instrument Serif',Georgia,serif;font-size:1.3rem;color:var(--forest);margin-bottom:.9rem}
+.mz-stage{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.6rem;align-items:baseline;padding:.32rem 0;color:var(--soft);font-size:.86rem}
+.mz-stage.done{color:var(--ink)}
+.mz-stage.now{color:var(--forest);font-weight:600}
+.mz-stage-dot{font-family:'IBM Plex Mono',monospace;text-align:center}
+.mz-stage.done .mz-stage-dot{color:var(--tick)}
+.mz-stage.now .mz-stage-dot{animation:mzBlink 1.1s ease-in-out infinite}
+@keyframes mzBlink{0%,100%{opacity:1}50%{opacity:.35}}
+.mz-stage-s{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--soft);letter-spacing:.04em}
+.mz-live{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;margin-top:1rem;background:var(--rule);border:1px solid var(--rule)}
+.mz-live-c{background:#fff;padding:.6rem .7rem;animation:mzLand .4s ease-out both}
+@keyframes mzLand{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.mz-live-l{font-family:'IBM Plex Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+.mz-live-v{font-family:'IBM Plex Mono',monospace;font-size:1.15rem;font-weight:600;margin-top:.2rem;font-variant-numeric:tabular-nums}
+.mz-trail{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-trail-s{padding:.9rem;border-right:1px solid var(--rule);position:relative}
+.mz-trail-v{font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:var(--forest);line-height:1}
+.mz-trail-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-top:.35rem}
+.mz-trail-sub{font-size:.68rem;color:var(--soft);margin-top:.25rem;line-height:1.35}
+.mz-trail-arrow{position:absolute;right:-.42rem;top:1rem;color:var(--rule);font-size:.8rem;background:#fff;z-index:1}
+@media(max-width:620px){.mz-trail-arrow{display:none}}
 .mz-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
 .mz-kpi-cell{padding:1rem .9rem;border-right:1px solid var(--rule)}
 .mz-kpi-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.11em;text-transform:uppercase;color:var(--soft)}
 .mz-kpi-v{font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:600;margin-top:.35rem;font-variant-numeric:tabular-nums;line-height:1}
 .mz-kpi-g{font-family:'IBM Plex Mono',monospace;font-size:.62rem;margin-top:.3rem;font-weight:600}
 .mz-kpi-g.up{color:var(--tick)}.mz-kpi-g.dn{color:var(--esc)}
+.mz-ratio-right{padding:.7rem .9rem;text-align:right}
+.mz-ratio-right .mz-ratio-val{padding:0}
+.mz-state{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.09em;margin-top:.35rem;padding:.1rem .3rem;border:1px solid currentColor;display:inline-block}
+.mz-state.ok{color:var(--tick)}
+.mz-state.missing{color:var(--query)}
+.mz-state.blocked{color:var(--esc)}
+.mz-state.market{color:var(--soft)}
+.mz-chain{display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:baseline;margin-top:.35rem;padding:.35rem .5rem;background:var(--bar);font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--soft)}
+.mz-chain-i b{color:var(--ink);font-weight:500;text-transform:none}
+.mz-chain-eq{color:var(--forest);font-weight:600;margin-left:auto}
 .mz-score{border:1px solid var(--ink);border-top:none;background:#fff}
 .mz-score-top{display:flex;align-items:center;gap:1.2rem;padding:1rem;border-bottom:1px solid var(--rule);flex-wrap:wrap}
 .mz-score-big{font-family:'IBM Plex Mono',monospace;font-size:2.6rem;font-weight:600;line-height:1}
@@ -357,12 +389,16 @@ const RATIO_DEFS = [
     needs: ["totalAssets", "priorTotalAssets"], calc: (v) => (v.totalAssets - v.priorTotalAssets) / v.priorTotalAssets,
     pct: true, growth: true, dir: "high", bands: [0, 0.05], typical: "In line with revenue growth.",
     plain: (r) => "The asset base " + (r >= 0 ? "expanded" : "contracted") + " " + Math.abs(r * 100).toFixed(1) + "%." },
-  { family: "Market value", name: "Earnings per share", formula: "Net profit \u00f7 Shares outstanding",
-    needs: ["netProfit", "sharesOutstanding"], calc: (v) => v.netProfit / v.sharesOutstanding,
+  { family: "Market value", name: "Earnings per share", formula: "Net profit \u00f7 Weighted-average shares",
+    needs: ["netProfit", "sharesOutstanding"],
+    // Profit is read in thousands; the share count is in whole shares. Without
+    // this the result rounds to zero and gets blocked as a scale mismatch.
+    calc: (v) => (v.netProfit * 1000) / v.sharesOutstanding,
     money: true, typical: "Only its trend matters.",
     plain: (r) => "AED " + r.toFixed(3) + " of profit per ordinary share." },
   { family: "Market value", name: "Price-to-earnings ratio", formula: "Market price \u00f7 EPS",
-    needs: ["marketPrice", "netProfit", "sharesOutstanding"], calc: (v) => v.marketPrice / (v.netProfit / v.sharesOutstanding),
+    needs: ["marketPrice", "netProfit", "sharesOutstanding"],
+    calc: (v) => v.marketPrice / ((v.netProfit * 1000) / v.sharesOutstanding),
     unit: "x", dir: "low", bands: [25, 15], typical: "12-20x for mature businesses.",
     plain: (r) => "Investors pay " + r.toFixed(1) + " per dirham of earnings." },
   { family: "Market value", name: "Dividend yield", formula: "Dividend per share \u00f7 Market price",
@@ -370,7 +406,8 @@ const RATIO_DEFS = [
     pct: true, dir: "high", bands: [0.02, 0.04], typical: "2-5% for income stocks.",
     plain: (r) => (r * 100).toFixed(2) + "% cash return relative to share price." },
   { family: "Market value", name: "Dividend payout ratio", formula: "Dividend per share \u00f7 EPS",
-    needs: ["dividendPerShare", "netProfit", "sharesOutstanding"], calc: (v) => v.dividendPerShare / (v.netProfit / v.sharesOutstanding),
+    needs: ["dividendPerShare", "netProfit", "sharesOutstanding"],
+    calc: (v) => v.dividendPerShare / ((v.netProfit * 1000) / v.sharesOutstanding),
     pct: true, dir: "low", bands: [0.9, 0.6], typical: "30-60%.",
     plain: (r) => (r * 100).toFixed(1) + "% of earnings is paid out." }
 ];
@@ -396,13 +433,24 @@ const missReason = (keys) => {
 // them honest: a missing input is reported as missing rather than estimated,
 // and a result far outside its plausible band is blocked rather than printed,
 // because that is the signature of two figures read in different scales.
-const computeRatios = (lineItems) => {
+const computeRatios = (lineItems, lineItemDoc) => {
   if (!lineItems) return null;
   const v = lineItems;
   return RATIO_DEFS.map((d) => {
     const missing = d.needs.filter((k) => v[k] == null || (v[k] === 0 && k !== "priorRevenue"));
     if (missing.length) {
-      return { ...d, status: "missing", missing: missing.map((k) => NEED_LABEL[k] || k), reason: missReason(missing) };
+      // Market metrics need a share price and a share count, which no set of
+      // financial statements contains. That is a different state from a figure
+      // the reading simply has not reached yet, and saying so stops a reader
+      // waiting for a number that will never arrive from this document.
+      const marketOnly = missing.every((k) => SOURCE_OF[k] === "Market data" || SOURCE_OF[k] === "Share data");
+      return { ...d,
+        status: marketOnly ? "market" : "missing",
+        stateLabel: marketOnly ? "REQUIRES MARKET DATA" : "NOT COMPUTABLE",
+        missing: missing.map((k) => NEED_LABEL[k] || k),
+        reason: marketOnly
+          ? { headline: "Requires market data.", detail: "Needs " + missing.map((k) => NEED_LABEL[k] || k).join(" and ") + ", which financial statements do not contain. Supply it to compute this." }
+          : missReason(missing) };
     }
     let val;
     try { val = d.calc(v); } catch {
@@ -427,7 +475,7 @@ const computeRatios = (lineItems) => {
       || (d.money && Math.abs(val) > 0 && Math.abs(val) < 0.001)
       || (d.money && val === 0);
     if (wild) {
-      return { ...d, status: "blocked",
+      return { ...d, status: "blocked", stateLabel: "BLOCKED",
         reason: { headline: "Blocked: inputs are in different scales.",
           detail: "The figures behind this ratio were read in mismatched units, so the result would be off by orders of magnitude. Normalise the source figures before relying on it." } };
     }
@@ -441,7 +489,12 @@ const computeRatios = (lineItems) => {
       if (d.dir === "high") score = val >= strong ? 100 : val >= weak ? 62 : 28;
       else score = val <= strong ? 100 : val <= weak ? 62 : 28;
     }
-    return { ...d, status: "ok", value: val, shown, score, note: d.plain(val) };
+    // The inputs that produced this, so a reader can retrace the arithmetic
+    // without leaving the row. This is the chain the guide asks for:
+    // source line item, formula, result.
+    const inputs = d.needs.map((k) => ({ key: k, label: NEED_LABEL[k] || k, value: v[k],
+      from: (lineItemDoc || {})[k] || "" }));
+    return { ...d, status: "ok", stateLabel: "COMPUTED", value: val, shown, score, inputs, note: d.plain(val) };
   });
 };
 
@@ -576,6 +629,55 @@ function App() {
       out.findings = out.findings.filter((f) => !(noStmt(f.title) || noStmt(f.detail)));
       out.escalations = out.escalations.filter((e) => !(noStmt(e.title) || noStmt(e.why)));
     }
+    // Figures the reading captured but never routed into lineItems. The extractor
+    // returns them as labelled display strings; the ratio engine only ever looks
+    // at lineItems, so without this the tool holds total equity, receivables,
+    // cash and the share count on screen while reporting that it cannot compute
+    // ROE, receivable turnover or EPS. Matching is deliberately narrow: an exact
+    // label pattern, a number that parses cleanly, and the existing value wins.
+    const HARVEST = [
+      [/^total equity|^total equity at/i, "totalEquity"],
+      [/^total assets/i, "totalAssets"],
+      [/^total liabilities(?!.*financial)/i, "totalLiabilities"],
+      [/^total financial liabilities/i, "totalLiabilities"],
+      [/^net debt(?! ?\/)/i, "netDebt"],
+      [/^cash and cash equivalents(?!.*maturity)/i, "cashAndEquivalents"],
+      [/^inventories total|^inventories(?! turnover)/i, "inventory"],
+      [/^total trade and other receivables|^net trade receivables/i, "tradeReceivables"],
+      [/^trade and other payables(?!.*excl)/i, "tradePayables"],
+      [/^weighted average ordinary shares|^weighted.average.*shares/i, "sharesOutstanding"],
+      [/^intangibles net carrying/i, "fixedAssets"],
+      [/^profit for the year|^profit attributable to ordinary/i, "netProfit"],
+      [/^profit before tax/i, "profitBeforeTax"],
+      [/^net cash (generated |flows generated )?from operating/i, "operatingCashFlow"],
+      [/^total revenue 2024|^revenue 2024/i, "priorRevenue"]
+    ];
+    // Pull a plain number out of "AED 1,218,666 thousand" or "2.24x" or "0.21 AED".
+    const numOf = (raw) => {
+      const s = String(raw == null ? "" : raw);
+      const m = s.match(/(-?[\d,]+(?:\.\d+)?)/);
+      if (!m) return null;
+      const n = parseFloat(m[1].replace(/,/g, ""));
+      if (!isFinite(n)) return null;
+      // Everything in this document set is stated in thousands unless it says
+      // otherwise, so a figure labelled million or billion is scaled to match.
+      if (/\bbillion\b|\bbn\b/i.test(s)) return n * 1e6;
+      if (/\bmillion\b|\bm\b(?!ar)/i.test(s)) return n * 1e3;
+      return n;
+    };
+    for (const f of out.figures) {
+      const label = String(f.label || "");
+      for (const [re, key] of HARVEST) {
+        if (!re.test(label)) continue;
+        if (out.lineItems[key] != null) break;
+        const n = numOf(f.value);
+        if (n == null || n === 0) break;
+        out.lineItems[key] = n;
+        if (f.doc) out.lineItemDoc[key] = f.doc;
+        break;
+      }
+    }
+
     // The balance sheet arrives as its own object because the balance check needs
     // it whole. Coverage and the ratio engine look in lineItems. Without this
     // bridge the tool verifies assets = liabilities + equity and then reports
@@ -761,7 +863,7 @@ function App() {
     };
     setData(reading); setMeta(m); setDocs(docList); setState("done");
     cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, docs: docList };
-    runEvaluation(reading, computeRatios(reading.lineItems), m);
+    runEvaluation(reading, computeRatios(reading.lineItems, reading.lineItemDoc), m);
   };
 
   const run = useCallback(async (fileList) => {
@@ -859,7 +961,7 @@ function App() {
   };
 
   const bal = data ? checkBalance(data.balance) : null;
-  const ratios = data ? computeRatios(data.lineItems) : null;
+  const ratios = data ? computeRatios(data.lineItems, data.lineItemDoc) : null;
   const ratiosOk = (ratios || []).filter((r) => r.status === "ok");
   const blocked = (ratios || []).filter((r) => r.status === "blocked");
   const coverage = data ? coverageOf(data) : null;
@@ -1003,6 +1105,57 @@ function App() {
           </div>
         )}
 
+        {working && (
+          <div className="mz-stages">
+            <div className="mz-stages-h">Analysing your financials</div>
+            {(() => {
+              const li = data?.lineItems || {};
+              const anyRead = doneCount > 0;
+              const st = [
+                { l: "Reading the statements", done: doneCount >= slices.length && slices.length > 0,
+                  now: doneCount < slices.length,
+                  sub: doneCount + " of " + slices.length + " batches" },
+                { l: "Normalising figures", done: Object.keys(li).length > 3,
+                  now: anyRead && Object.keys(li).length <= 3,
+                  sub: Object.keys(li).length + " line items captured" },
+                { l: "Computing ratios", done: false, now: doneCount >= slices.length && slices.length > 0,
+                  sub: "arithmetic in this browser" },
+                { l: "Checking consistency", done: false, now: false,
+                  sub: (data?.tieOut || []).length + " tie-out checks" },
+                { l: "Building evidence-backed findings", done: false, now: false,
+                  sub: (data?.findings || []).length + " findings so far" }
+              ];
+              return st.map((s, i) => (
+                <div key={i} className={"mz-stage " + (s.done ? "done" : s.now ? "now" : "")}>
+                  <span className="mz-stage-dot">{s.done ? "\u2713" : s.now ? "\u25c9" : "\u25cb"}</span>
+                  <span className="mz-stage-l">{s.l}</span>
+                  <span className="mz-stage-s">{s.sub}</span>
+                </div>
+              ));
+            })()}
+            {/* Figures land here as they are read, so the wait shows real work. */}
+            {(() => {
+              const li = data?.lineItems || {};
+              const live = [["Revenue", "revenue"], ["Net profit", "netProfit"], ["EBITDA", "ebitda"],
+                ["Operating cash flow", "operatingCashFlow"], ["Total equity", "totalEquity"], ["Net debt", "netDebt"]]
+                .filter(([, k]) => typeof li[k] === "number");
+              if (!live.length) return null;
+              const big = (n) => Math.abs(n) >= 1e9 ? (n / 1e9).toFixed(2) + "B"
+                : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + "M" : (n / 1e3).toFixed(1) + "K";
+              return (
+                <div className="mz-live">
+                  {live.map(([l, k], i) => (
+                    <div key={i} className="mz-live-c">
+                      <div className="mz-live-l">{l}</div>
+                      <div className="mz-live-v">{big(li[k])}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {slices.length > 0 && (
           <div className="mz-panel">
             <div className="mz-strip">
@@ -1069,6 +1222,45 @@ function App() {
 
         {data && state === "done" && (
           <>
+            {(() => {
+              const li = data.lineItems || {};
+              const nLine = Object.keys(li).length;
+              if (!nLine) return null;
+              const steps = [
+                { l: "Source documents", v: (meta?.docs || []).length + " file" + ((meta?.docs || []).length === 1 ? "" : "s"),
+                  s: (meta?.pages || 0) + " pages, " + meta?.read + "/" + meta?.slices + " batches read" },
+                { l: "Extracted figures", v: (data.figures || []).length,
+                  s: "each carrying its page" },
+                { l: "Normalised line items", v: nLine,
+                  s: "the only values arithmetic is allowed to use" },
+                { l: "Computed ratios", v: ratiosOk.length + " of " + (ratios || []).length,
+                  s: blocked.length ? blocked.length + " blocked on scale" : "none blocked" },
+                { l: "Findings", v: (data.findings || []).length,
+                  s: (data.escalations || []).length + " held for a person" }
+              ];
+              return (
+                <section className="mz-sec">
+                  <div className="mz-sec-head">
+                    <h2 className="mz-sec-title">Evidence trail</h2>
+                    <span className="mz-sec-note">source to conclusion</span>
+                  </div>
+                  <div className="mz-trail">
+                    {steps.map((s, i) => (
+                      <div key={i} className="mz-trail-s">
+                        <div className="mz-trail-v">{s.v}</div>
+                        <div className="mz-trail-l">{s.l}</div>
+                        <div className="mz-trail-sub">{s.s}</div>
+                        {i < steps.length - 1 && <div className="mz-trail-arrow">\u2192</div>}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mz-legend">
+                    <span>Nothing moves right without the step before it. A figure with no page never becomes a ratio.</span>
+                  </div>
+                </section>
+              );
+            })()}
+
             {(() => {
               const li = data.lineItems || {};
               const kpi = [
@@ -1271,8 +1463,9 @@ function App() {
                 <div className="mz-sec-head">
                   <h2 className="mz-sec-title">Financial ratios</h2>
                   <span className="mz-sec-note">
-                    {ratiosOk.length} of {ratios.length} computed
+                    {ratiosOk.length} computed &middot; {ratios.filter((r) => r.status === "missing").length} not computable
                     {blocked.length ? " \u00b7 " + blocked.length + " blocked" : ""}
+                    {ratios.filter((r) => r.status === "market").length ? " \u00b7 " + ratios.filter((r) => r.status === "market").length + " need market data" : ""}
                   </span>
                 </div>
                 {FAMILIES.map((fam) => {
@@ -1289,9 +1482,22 @@ function App() {
                             <div className="mz-ratio-formula">{r.formula}</div>
                             {r.status === "ok" && (
                               <>
+                                <div className="mz-chain">
+                                  {(r.inputs || []).map((x, j) => (
+                                    <span key={j} className="mz-chain-i">
+                                      <b>{x.label}</b> {fmt(x.value)}
+                                    </span>
+                                  ))}
+                                  <span className="mz-chain-eq">= {r.shown}</span>
+                                </div>
                                 <div className="mz-ratio-note">{r.note}</div>
                                 {r.typical && <div className="mz-ratio-typ">Typical range &middot; {r.typical}</div>}
                               </>
+                            )}
+                            {r.status === "market" && (
+                              <div className="mz-ratio-miss">
+                                <b>{r.reason.headline}</b> {r.reason.detail}
+                              </div>
                             )}
                             {r.status === "missing" && (
                               <div className="mz-ratio-miss">
@@ -1304,7 +1510,10 @@ function App() {
                               </div>
                             )}
                           </div>
-                          <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "\u2014"}</div>
+                          <div className="mz-ratio-right">
+                            <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "\u2014"}</div>
+                            <div className={"mz-state " + r.status}>{r.stateLabel || "NOT COMPUTABLE"}</div>
+                          </div>
                         </div>
                       ))}
                     </div>
