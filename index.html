@@ -426,10 +426,13 @@ const STATEMENT_PROOF = {
 // Slice coverage tells you how much of the PDF was processed; this tells you
 // whether the parts that matter were among it. Module scope, because both the
 // coverage map and the evaluation prompt must be looking at the same answer.
-const failedPageRanges = () => (slices || [])
-  .filter((s) => s.status === "miss")
-  .map((s) => ({ from: s.from, to: s.to, doc: s.docName }));
-
+const failedPageRanges = () => {
+  try {
+    return (typeof slices === "undefined" ? [] : slices)
+      .filter((s) => s && s.status === "miss")
+      .map((s) => ({ from: s.from, to: s.to, doc: s.docName }));
+  } catch (e) { return []; }
+};
 const refTouchesUnread = (ref) => {
   if (!ref) return false;
   const ranges = failedPageRanges();
@@ -439,7 +442,7 @@ const refTouchesUnread = (ref) => {
   const pg = parseInt(mm[1], 10);
   return ranges.some((r) => pg >= r.from && pg <= r.to);
 };
-
+  
 const coverageOf = (d) => STATEMENTS.map((s) => {
   const seen = (d.sections || []).filter((x) => x.kind === s.key);
   const proof = STATEMENT_PROOF[s.key] || [];
