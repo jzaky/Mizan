@@ -341,15 +341,15 @@ const RATIO_DEFS = [
     plain: (r) => (r * 100).toFixed(1) + "% of revenue became free cash." },
   { family: "Growth", name: "Revenue growth rate", formula: "(Revenue \u2212 Prior revenue) \u00f7 Prior revenue",
     needs: ["revenue", "priorRevenue"], calc: (v) => (v.revenue - v.priorRevenue) / v.priorRevenue,
-    pct: true, dir: "high", bands: [0, 0.1], typical: "Mid-single digits is steady for a mature entity.",
+    pct: true, growth: true, dir: "high", bands: [0, 0.1], typical: "Mid-single digits is steady for a mature entity.",
     plain: (r) => "Revenue " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
   { family: "Growth", name: "Net profit growth", formula: "(Net profit \u2212 Prior net profit) \u00f7 Prior net profit",
     needs: ["netProfit", "priorNetProfit"], calc: (v) => (v.netProfit - v.priorNetProfit) / v.priorNetProfit,
-    pct: true, dir: "high", bands: [0, 0.1], typical: "Steady positive growth beats a volatile average.",
+    pct: true, growth: true, dir: "high", bands: [0, 0.1], typical: "Steady positive growth beats a volatile average.",
     plain: (r) => "Net profit " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
   { family: "Growth", name: "Asset growth", formula: "(Total assets \u2212 Prior) \u00f7 Prior total assets",
     needs: ["totalAssets", "priorTotalAssets"], calc: (v) => (v.totalAssets - v.priorTotalAssets) / v.priorTotalAssets,
-    pct: true, dir: "high", bands: [0, 0.05], typical: "In line with revenue growth.",
+    pct: true, growth: true, dir: "high", bands: [0, 0.05], typical: "In line with revenue growth.",
     plain: (r) => "The asset base " + (r >= 0 ? "expanded" : "contracted") + " " + Math.abs(r * 100).toFixed(1) + "%." },
   { family: "Market value", name: "Earnings per share", formula: "Net profit \u00f7 Shares outstanding",
     needs: ["netProfit", "sharesOutstanding"], calc: (v) => v.netProfit / v.sharesOutstanding,
@@ -407,8 +407,19 @@ const computeRatios = (lineItems) => {
     }
     // Scale guard. One figure read in thousands against another in millions
     // produces a result off by a factor of a thousand. Refuse it.
-    const wild = (d.pct && Math.abs(val) > 5) || (d.unit === "x" && Math.abs(val) > 500)
-      || (d.unit === " days" && Math.abs(val) > 3650);
+    // Plausibility gate. A result outside any believable band is the signature of
+    // inputs read in different scales, or of a missing figure that collapsed the
+    // arithmetic. Either way it is not publishable.
+    const wild = (d.pct && Math.abs(val) > 5)
+      || (d.unit === "x" && Math.abs(val) > 500)
+      || (d.unit === " days" && Math.abs(val) > 3650)
+      // A change of exactly -100% means the current figure vanished, which for a
+      // going concern reporting both years means the prior value did not arrive.
+      || (d.growth && val <= -0.999)
+      // Per-share money rounding to zero means the profit and the share count are
+      // in different units, not that each share earned nothing.
+      || (d.money && Math.abs(val) > 0 && Math.abs(val) < 0.001)
+      || (d.money && val === 0);
     if (wild) {
       return { ...d, status: "blocked",
         reason: { headline: "Blocked: inputs are in different scales.",
@@ -563,8 +574,31 @@ function App() {
     return out;
   };
 
+  // Why a slice did not come back matters more than the fact that it did not.
+  // A timeout says the request died before the model finished; it says nothing
+  // at all about whether the pages were readable. Treating those two as one
+  // state is how a reader failure becomes a false accounting conclusion.
+  const classify = (msg) => {
+    const m = String(msg || "");
+    if (/504|timed? ?out|gateway/i.test(m)) return "TIMEOUT";
+    if (/failed to fetch|networkerror|load failed/i.test(m)) return "TIMEOUT";
+    if (/rate[ _-]?limit|429/i.test(m)) return "RATE_LIMIT";
+    if (/overloaded|529|503/i.test(m)) return "OVERLOADED";
+    if (/unreadable|incomplete|output cap/i.test(m)) return "EXTRACTION_FAILED";
+    if (/api[ _-]?key|401|403/i.test(m)) return "AUTH";
+    return "ERROR";
+  };
+  const KIND_TEXT = {
+    TIMEOUT: "processing was interrupted before it finished, so these pages are not classified as unreadable",
+    RATE_LIMIT: "the rate window was exhausted, so these pages were never read",
+    OVERLOADED: "the service was overloaded, so these pages were never read",
+    EXTRACTION_FAILED: "the pages were reached but nothing usable could be extracted",
+    AUTH: "the server rejected the request",
+    ERROR: "the request did not complete"
+  };
+
   const readSlice = async (payload) => {
-    let lastErr = "Unreachable.";
+    let lastErr = "Unreachable."; let kind = "ERROR";
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
       try {
         const r = await fetch("/.netlify/functions/chunk", {
@@ -574,11 +608,34 @@ function App() {
         if (r.ok && j.partial) return j;
         lastErr = j.error || "Netlify returned " + r.status + ".";
       } catch (e) { lastErr = String(e.message || e); }
+      kind = classify(lastErr);
       if (attempt === RETRIES) break;
-      const rateHit = /rate[ _-]?limit|429|overloaded|529/i.test(lastErr);
-      await new Promise((r) => setTimeout(r, rateHit ? 22000 : 1500 * (attempt + 1)));
+      // A timeout will time out again at the same size. Retrying the identical
+      // request is the one thing guaranteed not to work, so the caller splits
+      // it instead. Rate limits do reset, so those are worth waiting out.
+      if (kind === "TIMEOUT") break;
+      const slow = kind === "RATE_LIMIT" || kind === "OVERLOADED";
+      await new Promise((r) => setTimeout(r, slow ? 22000 : 1500 * (attempt + 1)));
     }
-    return { error: lastErr };
+    return { error: lastErr, kind };
+  };
+
+  // A timed-out batch says nothing about its individual pages. Split it and read
+  // them one at a time: a single page is a fraction of the work and clears the
+  // ceiling that killed the batch. This is a deliberate recovery action, taken
+  // only after a timeout, never as the first attempt.
+  const splitAndRead = async (s) => {
+    const src = await PDFDocument.load(s.rawDoc, { ignoreEncryption: true });
+    const out = [];
+    for (let p = s.start; p < s.end; p++) {
+      const one = await PDFDocument.create();
+      const [pg] = await one.copyPages(src, [p]);
+      one.addPage(pg);
+      const res = await readSlice({ pdf: b64(await one.save()), offset: p + 1, total: s.docPages });
+      if (res.partial) out.push(res);
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    return out;
   };
 
   const dispatch = useCallback(async (built, seedPartials) => {
@@ -591,15 +648,31 @@ function App() {
         if (partials[i]) continue;
         const s = built[i];
         setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy" } : x)));
-        const res = await readSlice({ pdf: s.pdf, offset: s.from, total: s.docPages });
+        let res = await readSlice({ pdf: s.pdf, offset: s.from, total: s.docPages });
+
+        // Recovery: a timed-out batch gets read one page at a time rather than
+        // resent whole. Anything recovered is merged as if it had arrived first.
+        if (!res.partial && res.kind === "TIMEOUT" && (s.end - s.start) > 1) {
+          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy", why: "splitting after timeout" } : x)));
+          const pages = await splitAndRead(s);
+          if (pages.length) {
+            const combined = merge(pages.map((p) => p.partial));
+            pages.forEach((p) => { if (p.meta) { costs.push(p.meta); modelSeen = modelSeen || p.meta.model; } });
+            res = { partial: combined, recovered: pages.length, ofPages: s.end - s.start };
+          }
+        }
+
         if (res.partial) {
           partials[i] = stampDoc(res.partial, s.docName);
           if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
-          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "done" } : x)));
+          setSlices((prev) => prev.map((x) => (x.idx === i
+            ? { ...x, status: "done", why: res.recovered ? "recovered " + res.recovered + "/" + res.ofPages + " pages after timeout" : undefined }
+            : x)));
           setData(merge(partials.filter(Boolean)));
         } else {
           failures.push(res.error);
-          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "miss", why: res.error } : x)));
+          setSlices((prev) => prev.map((x) => (x.idx === i
+            ? { ...x, status: "miss", why: res.error, kind: res.kind || "ERROR" } : x)));
         }
       }
     };
@@ -688,7 +761,7 @@ function App() {
         const STEP = Math.max(1, PAGES_PER_SLICE - (pageCount > PAGES_PER_SLICE ? 1 : 0));
         for (let start = 0; start < pageCount; start += STEP) {
           const end = Math.min(start + PAGES_PER_SLICE, pageCount);
-          plan.push({ idx: plan.length, doc: d, docName: f.name, docPages: pageCount, start, end, from: start + 1, to: end, src });
+          plan.push({ idx: plan.length, doc: d, docName: f.name, docPages: pageCount, start, end, from: start + 1, to: end, src, raw: buf });
           if (end >= pageCount) break;
         }
       }
@@ -700,7 +773,7 @@ function App() {
         const out = await PDFDocument.create();
         const pages = await out.copyPages(p.src, Array.from({ length: p.end - p.start }, (_, i) => p.start + i));
         pages.forEach((pg) => out.addPage(pg));
-        built.push({ ...p, src: undefined, pdf: b64(await out.save()) });
+        built.push({ ...p, src: undefined, raw: undefined, rawDoc: p.raw, pdf: b64(await out.save()) });
       }
       builtRef.current = built;
 
@@ -758,7 +831,8 @@ function App() {
   const missCount = slices.filter((s) => s.status === "miss").length;
   const pagesRead = slices.filter((s) => s.status === "done").reduce((a, s) => a + (s.to - s.from + 1), 0);
 
-  const failedRanges = () => slices.filter((s) => s.status === "miss").map((s) => ({ from: s.from, to: s.to, doc: s.docName }));
+  const failedRanges = () => slices.filter((s) => s.status === "miss")
+    .map((s) => ({ from: s.from, to: s.to, doc: s.docName, kind: s.kind || "ERROR" }));
   const refTouchesUnread = (ref) => {
     if (!ref) return false;
     const ranges = failedRanges();
@@ -815,7 +889,11 @@ function App() {
       escalations: (data.escalations || []).map((e, i) => ({ item: e.title, decision_needed: e.decisionNeeded,
         source: e.ref, state: refTouchesUnread(e.ref) ? "NOT_READ" : "NOT_PRESENT",
         accountable_owner: owners[i] || "UNASSIGNED", decision: "PENDING" })),
-      note: "Figures are read from the source document. This record is not an opinion on the accounts."
+      failure_states: slices.filter((s) => s.status === "miss")
+        .map((s) => ({ pages: s.from + "-" + s.to, doc: s.docName, state: s.kind || "ERROR",
+          means: KIND_TEXT[s.kind] || KIND_TEXT.ERROR })),
+      note: "Figures are read from the source document. This record is not an opinion on the accounts. " +
+            "A batch that timed out is recorded as interrupted, never as an unreadable or undisclosed page."
     };
   };
 
@@ -929,10 +1007,18 @@ function App() {
         {state === "done" && meta && meta.failed > 0 && (
           <div className="mz-retry">
             <span>
-              <b>INCOMPLETE SOURCE READ.</b> {meta.failed} of {meta.slices} slices did not read.
-              {" Pages needing recovery: "}
+              <b>INCOMPLETE SOURCE READ.</b> {meta.read} of {meta.slices} batches completed.
+              {" " + meta.failed + " require recovery: "}
               {failedRanges().map((r) => (r.doc ? r.doc.replace(/\.pdf$/i, "") + " " : "") + "p." + r.from + "-" + r.to).join(", ")}
-              {". Conclusions that depend on these pages are not verified."}
+              {". "}
+              {(() => {
+                const kinds = [...new Set(slices.filter((s) => s.status === "miss").map((s) => s.kind || "ERROR"))];
+                const interrupted = kinds.some((k) => k === "TIMEOUT" || k === "RATE_LIMIT" || k === "OVERLOADED");
+                return kinds.map((k) => KIND_TEXT[k] || KIND_TEXT.ERROR).join("; ") +
+                  (interrupted
+                    ? ". These pages are NOT classified as unreadable, and nothing here should be read as a missing disclosure."
+                    : ".");
+              })()}
             </span>
             <button className="mz-btn ghost" onClick={retryFailed}>Retry failed slices</button>
           </div>
@@ -969,7 +1055,7 @@ function App() {
             {overall && (
               <section className="mz-sec">
                 <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Overall financial health</h2>
+                  <h2 className="mz-sec-title">{overall.partial ? "Available-metric score" : "Overall financial health"}</h2>
                   <span className="mz-sec-note">{overall.families} of {overall.of} families scored</span>
                 </div>
                 <div className="mz-score">
@@ -982,7 +1068,8 @@ function App() {
                       <div className="mz-score-verdict">{overall.label}</div>
                       <div className="mz-score-lab">
                         {overall.partial
-                          ? "Too few families have data for an overall verdict. This is a partial reading."
+                          ? "Overall financial health: not available. " + overall.families +
+                            " of " + overall.of + " families have enough data, so this score covers only what was computed."
                           : "averaged across the families with enough data"}
                       </div>
                     </div>
