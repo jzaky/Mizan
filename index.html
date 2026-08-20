@@ -107,6 +107,12 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ratio-typ{font-size:.7rem;color:var(--soft);margin-top:.2rem;line-height:1.45}
 .mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
 .mz-ratio.missing .mz-ratio-val,.mz-ratio.blocked .mz-ratio-val{color:var(--rule)}
+.mz-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-kpi-cell{padding:1rem .9rem;border-right:1px solid var(--rule)}
+.mz-kpi-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.11em;text-transform:uppercase;color:var(--soft)}
+.mz-kpi-v{font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:600;margin-top:.35rem;font-variant-numeric:tabular-nums;line-height:1}
+.mz-kpi-g{font-family:'IBM Plex Mono',monospace;font-size:.62rem;margin-top:.3rem;font-weight:600}
+.mz-kpi-g.up{color:var(--tick)}.mz-kpi-g.dn{color:var(--esc)}
 .mz-score{border:1px solid var(--ink);border-top:none;background:#fff}
 .mz-score-top{display:flex;align-items:center;gap:1.2rem;padding:1rem;border-bottom:1px solid var(--rule);flex-wrap:wrap}
 .mz-score-big{font-family:'IBM Plex Mono',monospace;font-size:2.6rem;font-weight:600;line-height:1}
@@ -570,6 +576,36 @@ function App() {
       out.findings = out.findings.filter((f) => !(noStmt(f.title) || noStmt(f.detail)));
       out.escalations = out.escalations.filter((e) => !(noStmt(e.title) || noStmt(e.why)));
     }
+    // The balance sheet arrives as its own object because the balance check needs
+    // it whole. Coverage and the ratio engine look in lineItems. Without this
+    // bridge the tool verifies assets = liabilities + equity and then reports
+    // "balance sheet not yet read" on the same screen, which is the single
+    // biggest cause of it deferring to a human on figures it already holds.
+    if (out.balance) {
+      const b = out.balance;
+      const bridge = { totalAssets: b.totalAssets, totalLiabilities: b.totalLiabilities,
+        totalEquity: b.totalNetAssets != null ? b.totalNetAssets : b.totalEquity };
+      for (const [k, v] of Object.entries(bridge)) {
+        if (out.lineItems[k] == null && typeof v === "number" && isFinite(v) && v !== 0) {
+          out.lineItems[k] = v;
+          if (b.doc) out.lineItemDoc[k] = b.doc;
+        }
+      }
+      // A balance sheet that produced totals was, by definition, seen.
+      if (b.totalAssets && !out.sections.some((s) => s.kind === "balance_sheet")) {
+        out.sections.push({ kind: "balance_sheet", pages: b.ref || "", doc: b.doc || "" });
+      }
+    }
+    // Same for the auditor's report: an opinion read verbatim is proof it was seen.
+    if (out.entity.auditOpinion && !out.sections.some((s) => s.kind === "auditor_report")) {
+      out.sections.push({ kind: "auditor_report", pages: "", doc: "" });
+    }
+    // And an income statement that yielded revenue and a profit line was seen.
+    if (out.lineItems.revenue && out.lineItems.netProfit &&
+        !out.sections.some((s) => s.kind === "income_statement")) {
+      out.sections.push({ kind: "income_statement", pages: "", doc: "" });
+    }
+
     out.findings.sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
     return out;
   };
@@ -1033,6 +1069,43 @@ function App() {
 
         {data && state === "done" && (
           <>
+            {(() => {
+              const li = data.lineItems || {};
+              const kpi = [
+                { l: "Revenue", k: "revenue", g: li.priorRevenue ? (li.revenue - li.priorRevenue) / li.priorRevenue : null },
+                { l: "Net profit", k: "netProfit", g: li.priorNetProfit ? (li.netProfit - li.priorNetProfit) / li.priorNetProfit : null },
+                { l: "EBITDA", k: "ebitda" },
+                { l: "Operating cash flow", k: "operatingCashFlow" },
+                { l: "Total assets", k: "totalAssets" },
+                { l: "Total equity", k: "totalEquity" }
+              ].filter((c) => typeof li[c.k] === "number" && isFinite(li[c.k]));
+              if (!kpi.length) return null;
+              const big = (n) => Math.abs(n) >= 1e9 ? (n / 1e9).toFixed(2) + "B"
+                : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + "M"
+                : Math.abs(n) >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(n);
+              return (
+                <section className="mz-sec">
+                  <div className="mz-sec-head">
+                    <h2 className="mz-sec-title">The numbers that matter</h2>
+                    <span className="mz-sec-note">read from the statements</span>
+                  </div>
+                  <div className="mz-kpi">
+                    {kpi.map((c, i) => (
+                      <div key={i} className="mz-kpi-cell">
+                        <div className="mz-kpi-l">{c.l}</div>
+                        <div className="mz-kpi-v">{big(li[c.k])}</div>
+                        {c.g != null && isFinite(c.g) && Math.abs(c.g) < 10 && (
+                          <div className={"mz-kpi-g " + (c.g >= 0 ? "up" : "dn")}>
+                            {(c.g >= 0 ? "+" : "") + (c.g * 100).toFixed(1)}% YoY
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
+
             <section className="mz-sec">
               <div className="mz-sec-head">
                 <h2 className="mz-sec-title">Lens applied</h2>
