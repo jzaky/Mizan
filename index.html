@@ -94,7 +94,7 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-conf.lo{color:var(--esc)}.mz-conf.lo .mz-conf-dot{background:var(--esc)}
 .mz-rfam{border:1px solid var(--rule);border-top:none;background:#fff}
 .mz-rfam-h{background:var(--bar);padding:.45rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);border-bottom:1px solid var(--rule)}
-.mz-ratio{display:grid;grid-template-columns:1fr 7rem;border-bottom:1px solid var(--rule);align-items:center}
+.mz-ratio{display:grid;grid-template-columns:1fr 8.2rem;border-bottom:1px solid var(--rule);align-items:center}
 .mz-ratio:last-child{border-bottom:none}
 .mz-ratio.missing{background:rgba(168,93,0,.03)}
 .mz-ratio.blocked{background:rgba(168,32,43,.04)}
@@ -107,6 +107,36 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ratio-typ{font-size:.7rem;color:var(--soft);margin-top:.2rem;line-height:1.45}
 .mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
 .mz-ratio.missing .mz-ratio-val,.mz-ratio.blocked .mz-ratio-val{color:var(--rule)}
+/* Ratio position band: value against its typical range. */
+.mz-ratio-right{padding:.7rem .9rem;text-align:right}
+.mz-ratio-right .mz-ratio-val{padding:0}
+.mz-band{margin-top:.45rem}
+.mz-band-track{position:relative;height:5px;background:var(--bar);border:1px solid var(--rule);width:6.4rem;margin-left:auto}
+.mz-band-zone{position:absolute;top:0;bottom:0;background:rgba(20,107,58,.16)}
+.mz-band-pin{position:absolute;top:-3px;width:2px;height:9px;background:var(--ink);transform:translateX(-1px)}
+.mz-band-pin.good{background:var(--tick)}
+.mz-band-pin.warn{background:var(--query)}
+.mz-band-pin.bad{background:var(--esc)}
+.mz-band-lab{font-family:'IBM Plex Mono',monospace;font-size:.48rem;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-top:.22rem}
+
+/* Family health bars. */
+.mz-sign{display:flex;align-items:center;gap:.6rem;margin-top:.5rem;padding-top:.6rem;border-top:1px solid var(--rule)}
+.mz-sign-in{font-family:'Instrument Serif',Georgia,serif;font-size:1.1rem;border:none;border-bottom:1px solid var(--rule);background:transparent;color:var(--ink);padding:.15rem .2rem;min-width:14rem}
+.mz-sign-in:focus{outline:none;border-bottom-color:var(--forest)}
+.mz-sign-in::placeholder{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--rule);font-style:italic}
+@media print{.mz-sign-in{border-bottom:1px solid var(--ink);min-width:16rem}}
+.mz-bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:1px;background:var(--rule)}
+.mz-bar{background:#fff;padding:.85rem .9rem}
+.mz-bar.empty{background:#FAFBF9}
+.mz-bar-top{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.mz-bar-n{font-size:.86rem;font-weight:600}
+.mz-bar-t{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.09em;text-transform:uppercase}
+.mz-bar-t.good{color:var(--tick)}.mz-bar-t.warn{color:var(--query)}.mz-bar-t.bad{color:var(--esc)}.mz-bar-t.none{color:var(--rule)}
+.mz-bar-track{height:10px;background:var(--bar);margin-top:.5rem;position:relative;overflow:hidden}
+.mz-bar-fill{height:100%;transition:width .5s ease-out}
+.mz-bar-fill.good{background:var(--tick)}.mz-bar-fill.warn{background:var(--query)}.mz-bar-fill.bad{background:var(--esc)}
+.mz-bar-none{height:100%;background:repeating-linear-gradient(45deg,transparent,transparent 4px,var(--rule) 4px,var(--rule) 5px)}
+.mz-bar-sub{font-family:'IBM Plex Mono',monospace;font-size:.54rem;color:var(--soft);margin-top:.4rem;letter-spacing:.04em}
 .mz-snap{border:1px solid var(--ink);border-top:none;background:#fff}
 .mz-snap-row{display:grid;grid-template-columns:8.5rem 1fr;gap:.9rem;padding:.55rem .9rem;border-bottom:1px solid var(--rule);font-size:.83rem;line-height:1.5}
 .mz-snap-row:last-child{border-bottom:none}
@@ -313,6 +343,8 @@ display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace
 
 /* Tighten the density that reads fine on screen and wastes paper. */
 .mz-kpi-cell{padding:.7rem}
+.mz-bar-fill,.mz-band-pin,.mz-band-zone,.mz-score-fill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.mz-bars{break-inside:avoid}
 .mz-kpi-v{font-size:1.4rem}
 .mz-ratio-main,.mz-ratio-val{padding:.5rem .7rem}
 .mz-legend{font-size:.55rem;padding:.5rem .7rem}
@@ -1196,8 +1228,6 @@ function App() {
               Analyze {staged.length} {staged.length === 1 ? "document" : "documents"}
             </button>
           )}
-          <input className="mz-in" placeholder="Your name, for the record"
-            value={operator} onChange={(e) => setOperator(e.target.value)} />
           {state === "done" && (
             <>
               <button className="mz-btn ghost" onClick={() => window.print()}>Print</button>
@@ -1553,18 +1583,22 @@ function App() {
                       </div>
                     </div>
                   </div>
-                  {scorecard.map((s, i) => (
-                    <div key={i} className="mz-score-row">
-                      <div>
-                        <div className="mz-score-name">{s.family}</div>
-                        <div className="mz-score-sub">{s.computed}/{s.total} computed</div>
+                  <div className="mz-bars">
+                    {scorecard.map((s, i) => (
+                      <div key={i} className={"mz-bar" + (s.score == null ? " empty" : "")}>
+                        <div className="mz-bar-top">
+                          <span className="mz-bar-n">{s.family}</span>
+                          <span className={"mz-bar-t " + s.tone}>{s.label}</span>
+                        </div>
+                        <div className="mz-bar-track">
+                          {s.score != null
+                            ? <div className={"mz-bar-fill " + s.tone} style={{ width: s.score + "%" }} />
+                            : <div className="mz-bar-none" />}
+                        </div>
+                        <div className="mz-bar-sub">{s.computed} of {s.total} ratios computed</div>
                       </div>
-                      <div className="mz-score-track">
-                        {s.score != null && <div className={"mz-score-fill " + s.tone} style={{ width: s.score + "%" }} />}
-                      </div>
-                      <div className={"mz-score-tag " + s.tone}>{s.label}</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
                 <div className="mz-legend">
                   <span>Scored only from ratios that computed cleanly.</span>
@@ -1731,7 +1765,28 @@ function App() {
                             )}
                           </div>
                           <div className="mz-ratio-right">
+                            <div className="mz-ratio-right">
                             <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "\u2014"}</div>
+                            {r.status === "ok" && r.bands && r.dir && !r.raw && (() => {
+                              // Place the value on a scale running from clearly weak to
+                              // clearly strong, so the reader sees position, not just a number.
+                              const [weak, strong] = r.bands;
+                              const lo = Math.min(weak, strong), hi = Math.max(weak, strong);
+                              const span = (hi - lo) || 1;
+                              const pos = Math.max(0, Math.min(1, (r.value - (lo - span)) / (span * 3)));
+                              const band = r.score >= 100 ? "good" : r.score >= 62 ? "warn" : "bad";
+                              return (
+                                <div className="mz-band">
+                                  <div className="mz-band-track">
+                                    <div className="mz-band-zone" style={{
+                                      left: (r.dir === "high" ? 33 : 0) + "%", width: "34%" }} />
+                                    <div className={"mz-band-pin " + band} style={{ left: (pos * 100) + "%" }} />
+                                  </div>
+                                  <div className="mz-band-lab">{r.dir === "high" ? "higher is better" : "lower is better"}</div>
+                                </div>
+                              );
+                            })()}
+                          </div>
                             <div className={"mz-state " + r.status}>{r.stateLabel || "NOT COMPUTABLE"}</div>
                           </div>
                         </div>
@@ -1911,7 +1966,11 @@ function App() {
                   </div>
                   <div><b>Cost of this reading</b> ${meta.cost_usd?.toFixed(4)} &middot;{" "}
                     {(meta.input_tokens || 0).toLocaleString()} in / {(meta.output_tokens || 0).toLocaleString()} out</div>
-                  <div><b>Operator</b> {operator || "UNRECORDED"}</div>
+                  <div className="mz-sign">
+                    <b>Prepared by</b>
+                    <input className="mz-sign-in" placeholder="sign this reading"
+                      value={operator} onChange={(e) => setOperator(e.target.value)} />
+                  </div>
                 </div>
               </section>
             )}
