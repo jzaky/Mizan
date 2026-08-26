@@ -30,6 +30,16 @@
 .mz-fig-val { font-size: .95rem !important; margin-top: .2rem !important; }
 .mz-fig-ref { font-size: .55rem !important; margin-top: .18rem !important; line-height: 1.25 !important; }
 .mz-fig .mz-conf { font-size: .55rem !important; margin-top: .1rem !important; }
+/* audit view - client-side, no model call; delete to revert */
+.mz-audit { border-left: 3px solid var(--forest); }
+.mz-audit-block { padding: 0 0 .6rem; }
+.mz-audit-h { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--forest); margin: .9rem 0 .45rem; }
+.mz-audit-item { padding: .4rem 0; border-bottom: 1px solid var(--rule); }
+.mz-audit-t { font-size: .9rem; }
+.mz-audit-v { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+.mz-audit-d { font-family: 'IBM Plex Mono', monospace; font-size: .62rem; color: var(--soft); margin-top: .15rem; }
+.mz-audit-empty { font-size: .82rem; color: var(--soft); font-style: italic; }
+.mz-btn.ghost.on { background: var(--forest) !important; color: var(--paper) !important; border-color: var(--forest) !important; }
 </style>
 </head>
 <body style="margin:0;background:#F2F4EF">
@@ -699,6 +709,7 @@ function App() {
   const [evalState, setEvalState] = useState("idle");
   const [evalErr, setEvalErr] = useState("");
   const [openEsc, setOpenEsc] = useState(null);
+  const [auditView, setAuditView] = useState(false);
   const [traceOf, setTraceOf] = useState(null);
   const cacheRef = useRef({});
   const builtRef = useRef([]);
@@ -1363,6 +1374,7 @@ function App() {
           )}
           {state === "done" && (
             <>
+              <button className={"mz-btn ghost" + (auditView ? " on" : "")} onClick={() => setAuditView((v) => !v)}>{auditView ? "Full view" : "Audit view"}</button>
               <button className="mz-btn ghost" onClick={() => window.print()}>Print</button>
               <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence JSON</button>
               <button className="mz-btn ghost" onClick={clearAll}>New reading</button>
@@ -1548,6 +1560,55 @@ function App() {
               </div>
             </div>
 
+{auditView && data && (() => {
+              const figs = Array.isArray(data.figures) ? data.figures : [];
+              const escs = Array.isArray(data.escalations) ? data.escalations : [];
+              const ties = Array.isArray(data.tieOut) ? data.tieOut : [];
+              const EST = /(allowance|expected credit loss|\bECL\b|impair|useful life|provision|fair value|amortis|amortiz|deprecia|contingen|estimat|sensitiv|residual|discount rate|revaluation|write.?off|write.?down|goodwill|onerous)/i;
+              const estimates = figs.filter((f) => f && EST.test(String(f.label || "")));
+              const okTies = ties.filter((t) => t && t.result === "pass");
+              return (
+                <section className="mz-sec mz-audit">
+                  <div className="mz-sec-head">
+                    <h2 className="mz-sec-title">Audit view</h2>
+                    <span className="mz-sec-note">ordered for testing, not the model's summary</span>
+                  </div>
+                  <div className="mz-audit-block">
+                    <h3 className="mz-audit-h">1 &middot; What to test ({escs.length})</h3>
+                    {escs.length === 0
+                      ? <p className="mz-audit-empty">Nothing was held back for testing.</p>
+                      : escs.map((e, i) => (
+                          <div key={i} className="mz-audit-item">
+                            <div className="mz-audit-t">{e && e.title}</div>
+                            <div className="mz-audit-d">{(e && (e.decisionNeeded || e.why)) || ""}{e && e.ref ? " · " + e.ref : ""}</div>
+                          </div>
+                        ))}
+                  </div>
+                  <div className="mz-audit-block">
+                    <h3 className="mz-audit-h">2 &middot; Estimate-heavy balances ({estimates.length})</h3>
+                    {estimates.length === 0
+                      ? <p className="mz-audit-empty">No judgement-heavy balances detected in what was read.</p>
+                      : estimates.map((f, i) => (
+                          <div key={i} className="mz-audit-item">
+                            <div className="mz-audit-t">{f && f.label}: <span className="mz-audit-v">{f && f.value}</span></div>
+                            <div className="mz-audit-d">{f && f.ref}</div>
+                          </div>
+                        ))}
+                  </div>
+                  <div className="mz-audit-block">
+                    <h3 className="mz-audit-h">3 &middot; Arithmetic tie-outs ({okTies.length}/{ties.length} reconcile)</h3>
+                    {ties.length === 0
+                      ? <p className="mz-audit-empty">No tie-out checks were run.</p>
+                      : ties.map((t, i) => (
+                          <div key={i} className="mz-audit-item">
+                            <div className="mz-audit-t">{t && t.result === "fail" ? "FAIL · " : ""}{t && t.check}</div>
+                            <div className="mz-audit-d">{t && t.detail}{t && t.ref ? " · " + t.ref : ""}</div>
+                          </div>
+                        ))}
+                  </div>
+                </section>
+              );
+            })()}
             {(() => {
               const li = data.lineItems || {};
               const top = (data.findings || []).filter((f) => f.severity === "high").slice(0, 5);
