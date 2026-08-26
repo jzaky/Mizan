@@ -21,7 +21,8 @@ const PAGES_PER_SLICE = (() => {
   const q = Number(new URLSearchParams(window.location.search).get("slice"));
   return q >= 2 && q <= 10 ? q : 4;
 })();
-const CONCURRENCY = 2;
+const CONCURRENCY_MAX = 4;   // ceiling when the API is healthy
+const CONCURRENCY_MIN = 1;
 const RETRIES = 3;
 
 const CSS = `
@@ -108,6 +109,25 @@ background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,s
 .mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
 .mz-ratio.missing .mz-ratio-val,.mz-ratio.blocked .mz-ratio-val{color:var(--rule)}
 /* Ratio position band: value against its typical range. */
+.mz-ratio.tap{cursor:pointer}
+.mz-ratio.tap:hover{background:var(--bar)}
+.mz-ratio.tracing{background:var(--bar)}
+.mz-tap-hint{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-top:.25rem}
+.mz-trace{grid-column:1/-1;background:#fff;border-top:1px solid var(--ink);padding:1rem .9rem}
+.mz-trace-h{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.11em;text-transform:uppercase;color:var(--forest);margin-bottom:.7rem}
+.mz-trace-chain{display:flex;flex-direction:column;align-items:center;gap:.2rem}
+.mz-node{border:1px solid var(--rule);border-left:3px solid var(--rule);background:#fff;padding:.5rem .8rem;min-width:15rem;max-width:26rem;width:100%}
+.mz-node.input{border-left-color:var(--soft)}
+.mz-node.calc{border-left-color:var(--ink);background:var(--bar)}
+.mz-node.out{border-left-color:var(--tick)}
+.mz-node-k{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+.mz-node-v{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600;margin-top:.15rem;font-variant-numeric:tabular-nums}
+.mz-node-v.mono{font-size:.72rem;font-weight:400}
+.mz-node-v.big{font-size:1.4rem;color:var(--tick)}
+.mz-node-s{font-size:.66rem;color:var(--soft);margin-top:.2rem;line-height:1.4}
+.mz-node-arrow{color:var(--rule);font-size:.9rem;line-height:1}
+.mz-trace-f{font-family:'IBM Plex Mono',monospace;font-size:.52rem;color:var(--soft);text-align:center;margin-top:.8rem;padding-top:.5rem;border-top:1px dashed var(--rule);word-break:break-all}
+@media print{.mz-trace{display:none}}
 .mz-ratio-right{padding:.7rem .9rem;text-align:right}
 .mz-ratio-right .mz-ratio-val{padding:0}
 .mz-band{margin-top:.45rem}
@@ -624,6 +644,7 @@ function App() {
   const [evalState, setEvalState] = useState("idle");
   const [evalErr, setEvalErr] = useState("");
   const [openEsc, setOpenEsc] = useState(null);
+  const [traceOf, setTraceOf] = useState(null);
   const cacheRef = useRef({});
   const builtRef = useRef([]);
   const inputRef = useRef(null);
@@ -940,13 +961,28 @@ function App() {
     const partials = seedPartials || new Array(built.length).fill(null);
     const costs = []; const failures = [];
     let cursor = 0; let modelSeen = null;
+    // Live ceiling. A worker that finds itself above it waits rather than firing,
+    // so pressure is relieved within a second instead of at the next batch.
+    let ceiling = CONCURRENCY_MAX;
+    let inFlight = 0;
+    let cleanRun = 0;
+
     const worker = async () => {
       while (cursor < built.length) {
+        while (inFlight >= ceiling) await new Promise((r) => setTimeout(r, 250));
         const i = cursor++;
         if (partials[i]) continue;
         const s = built[i];
         setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy" } : x)));
+        inFlight++;
         let res = await readSlice({ pdf: s.pdf, offset: s.from, total: s.docPages });
+        inFlight--;
+        if (res.kind === "RATE_LIMIT" || res.kind === "OVERLOADED") {
+          ceiling = Math.max(CONCURRENCY_MIN, ceiling - 1);
+          cleanRun = 0;
+        } else if (res.partial && ++cleanRun >= 4 && ceiling < CONCURRENCY_MAX) {
+          ceiling++; cleanRun = 0;
+        }
 
         // Recovery: a timed-out batch gets read one page at a time rather than
         // resent whole. Anything recovered is merged as if it had arrived first.
@@ -974,7 +1010,7 @@ function App() {
         }
       }
     };
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, built.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY_MAX, built.length) }, worker));
     return { partials, costs, failures, modelSeen };
   }, []);
 
@@ -1318,7 +1354,7 @@ function App() {
           <div className="mz-panel">
             <div className="mz-strip">
               <span>{working ? "Reading in parallel" : "Coverage"}</span>
-              <span>{PAGES_PER_SLICE} pages per slice &middot; {CONCURRENCY} at once</span>
+              <span>{PAGES_PER_SLICE} pages per slice &middot; up to {CONCURRENCY_MAX} at once</span>
             </div>
             <div className="mz-dials">
               <div className="mz-dial">
@@ -1724,7 +1760,8 @@ function App() {
                     <div key={fam} className="mz-rfam">
                       <div className="mz-rfam-h">{fam} &middot; {done}/{group.length}</div>
                       {group.map((r) => (
-                        <div key={r.name} className={"mz-ratio " + r.status}>
+                        <div key={r.name} className={"mz-ratio " + r.status + (r.status === "ok" ? " tap" : "") + (traceOf === r.name ? " tracing" : "")}
+                          onClick={() => r.status === "ok" && setTraceOf(traceOf === r.name ? null : r.name)}>
                           <div className="mz-ratio-main">
                             <div className="mz-ratio-name">{r.name}</div>
                             <div className="mz-ratio-formula">{r.formula}</div>
@@ -1767,6 +1804,7 @@ function App() {
                           <div className="mz-ratio-right">
                             <div className="mz-ratio-right">
                             <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "\u2014"}</div>
+                            {r.status === "ok" && <div className="mz-tap-hint">{traceOf === r.name ? "hide trace" : "trace"}</div>}
                             {r.status === "ok" && r.bands && r.dir && !r.raw && (() => {
                               // Place the value on a scale running from clearly weak to
                               // clearly strong, so the reader sees position, not just a number.
@@ -1789,12 +1827,48 @@ function App() {
                           </div>
                             <div className={"mz-state " + r.status}>{r.stateLabel || "NOT COMPUTABLE"}</div>
                           </div>
+                          {traceOf === r.name && r.status === "ok" && (
+                            <div className="mz-trace">
+                              <div className="mz-trace-h">How this number was produced</div>
+                              <div className="mz-trace-chain">
+                                {(r.needs || []).map((k, j) => {
+                                  const val = (data.lineItems || {})[k];
+                                  const src = (data.lineItemDoc || {})[k] || "";
+                                  const fig = (data.figures || []).find((f) =>
+                                    new RegExp("^" + (NEED_LABEL[k] || k).split(" ")[0], "i").test(f.label || ""));
+                                  return (
+                                    <div key={j} className="mz-node input">
+                                      <div className="mz-node-k">{NEED_LABEL[k] || k}</div>
+                                      <div className="mz-node-v">{fmt(val)}</div>
+                                      <div className="mz-node-s">{fig?.ref || src || "read from the statements"}</div>
+                                    </div>
+                                  );
+                                })}
+                                <div className="mz-node-arrow">\u2193</div>
+                                <div className="mz-node calc">
+                                  <div className="mz-node-k">Computed in this browser</div>
+                                  <div className="mz-node-v mono">{r.formula}</div>
+                                  <div className="mz-node-s">no model performed this arithmetic</div>
+                                </div>
+                                <div className="mz-node-arrow">\u2193</div>
+                                <div className="mz-node out">
+                                  <div className="mz-node-k">{r.name}</div>
+                                  <div className="mz-node-v big">{r.shown}</div>
+                                  <div className="mz-node-s">{r.note}</div>
+                                </div>
+                              </div>
+                              <div className="mz-trace-f">
+                                Source {(meta?.docs || []).map((d) => d.name).join(", ")} \u00b7 SHA-256 {(meta?.hash || "").slice(0, 16)}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   );
                 })}
                 <div className="mz-legend">
+                  <span>Tap any computed ratio to trace it back to the pages it came from.</span>
                   <span>Every computed ratio uses figures read from the statements.</span>
                   <span>A ratio is never estimated, and never printed when its inputs disagree on scale.</span>
                 </div>
