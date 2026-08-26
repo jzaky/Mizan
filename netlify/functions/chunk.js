@@ -59,6 +59,23 @@ you do not see. Never estimate. These feed a ratio calculator:
  tradeReceivables, tradePayables, fixedAssets, cashAndEquivalents, shortTermDeposits,
  netDebt, operatingCashFlow, capex, dividendsPaid, sharesOutstanding, marketPrice,
  dividendPerShare
+
+BALANCE SHEET SUBTOTALS ARE MANDATORY. When the statement of financial position is on
+these pages, you MUST capture its printed FACE subtotals into lineItems, even if you
+capture nothing else on the page:
+  "Total current assets" -> currentAssets
+  "Total current liabilities" -> currentLiabilities
+  "Total assets" -> totalAssets
+  "Total equity" (or "Total net assets") -> totalEquity
+Capture the PRINTED subtotal exactly as shown. Never add up the components yourself;
+a computed subtotal is not allowed here. These face subtotals take priority over the
+note-level pieces.
+
+PROVIDED RATIOS. If the document itself prints a ratios table, KPI summary, or
+five-year financial highlights with ratios, capture each stated ratio as a figure
+(label, its value, the page), origin "stated". Do not recompute it; record what the
+document reports.
+
 "priorRevenue" is the comparative prior-year revenue if the statement shows two years.
 For reclassified statements, operatingProfit is the EBIT subtotal, and ebitda is
 operating profit plus depreciation and amortisation only if stated or reconciled.
