@@ -30,16 +30,10 @@
 .mz-fig-val { font-size: .95rem !important; margin-top: .2rem !important; }
 .mz-fig-ref { font-size: .55rem !important; margin-top: .18rem !important; line-height: 1.25 !important; }
 .mz-fig .mz-conf { font-size: .55rem !important; margin-top: .1rem !important; }
-/* audit view - client-side, no model call; delete to revert */
-.mz-audit { border-left: 3px solid var(--forest); }
-.mz-audit-block { padding: 0 0 .6rem; }
-.mz-audit-h { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--forest); margin: .9rem 0 .45rem; }
-.mz-audit-item { padding: .4rem 0; border-bottom: 1px solid var(--rule); }
-.mz-audit-t { font-size: .9rem; }
-.mz-audit-v { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
-.mz-audit-d { font-family: 'IBM Plex Mono', monospace; font-size: .62rem; color: var(--soft); margin-top: .15rem; }
-.mz-audit-empty { font-size: .82rem; color: var(--soft); font-style: italic; }
-.mz-btn.ghost.on { background: var(--forest) !important; color: var(--paper) !important; border-color: var(--forest) !important; }
+/* perspective lens picker; delete to revert */
+.mz-lens-row { display:flex; align-items:center; gap:.6rem; margin:.2rem 0 .9rem; }
+.mz-lens-lbl { font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); }
+.mz-lens-sel { font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.04em; padding:.45rem .7rem; border:1px solid var(--ink); background:var(--paper); color:var(--ink); cursor:pointer; }
 </style>
 </head>
 <body style="margin:0;background:#F2F4EF">
@@ -708,8 +702,18 @@ function App() {
   const [evaluation, setEvaluation] = useState(null);
   const [evalState, setEvalState] = useState("idle");
   const [evalErr, setEvalErr] = useState("");
+  const [lens, setLens] = useState("");
+  const LENSES = [
+    { key: "", label: "General" },
+    { key: "investor", label: "Investor" },
+    { key: "bank", label: "Bank lending" },
+    { key: "audit", label: "Audit" },
+    { key: "cfo", label: "CFO" },
+    { key: "board", label: "Board" },
+    { key: "credit", label: "Credit rating" },
+    { key: "student", label: "Student / explainer" }
+  ];
   const [openEsc, setOpenEsc] = useState(null);
-  const [auditView, setAuditView] = useState(false);
   const [traceOf, setTraceOf] = useState(null);
   const cacheRef = useRef({});
   const builtRef = useRef([]);
@@ -1122,7 +1126,7 @@ function App() {
     return { partials, costs, failures, modelSeen };
   }, []);
 
-  const runEvaluation = async (reading, ratioList, m) => {
+  const runEvaluation = async (reading, ratioList, m, lensKey) => {
     setEvalState("working"); setEvalErr(""); setEvaluation(null);
     try {
       const ok = (ratioList || []).filter((r) => r.status === "ok")
@@ -1143,7 +1147,7 @@ function App() {
         "", "KEY FIGURES:", figs.join("\n") || "(none)",
         "", "FINDINGS:", finds.join("\n") || "(none)"].join("\n");
       const r = await fetch("/.netlify/functions/evaluate", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ summary })
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ summary, lens: lensKey || "" })
       });
       const j = await r.json();
       if (!r.ok || !j.evaluation) throw new Error(j.error || "The evaluation could not be produced.");
@@ -1151,6 +1155,11 @@ function App() {
     } catch (e) {
       setEvalErr(e.message || "Evaluation failed."); setEvalState("error");
     }
+  };
+
+  const changeLens = (k) => {
+    setLens(k);
+    if (data) runEvaluation(data, computeRatios(data.lineItems, data.lineItemDoc), meta, k);
   };
 
   const finish = (docList, hash, pageCount, built, partials, costs, modelSeen, began) => {
@@ -1167,7 +1176,7 @@ function App() {
     };
     setData(reading); setMeta(m); setDocs(docList); setState("done");
     cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, docs: docList };
-    runEvaluation(reading, computeRatios(reading.lineItems, reading.lineItemDoc), m);
+    runEvaluation(reading, computeRatios(reading.lineItems, reading.lineItemDoc), m, lens);
   };
 
   const run = useCallback(async (fileList) => {
@@ -1374,7 +1383,6 @@ function App() {
           )}
           {state === "done" && (
             <>
-              <button className={"mz-btn ghost" + (auditView ? " on" : "")} onClick={() => setAuditView((v) => !v)}>{auditView ? "Full view" : "Audit view"}</button>
               <button className="mz-btn ghost" onClick={() => window.print()}>Print</button>
               <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence JSON</button>
               <button className="mz-btn ghost" onClick={clearAll}>New reading</button>
@@ -1560,55 +1568,6 @@ function App() {
               </div>
             </div>
 
-{auditView && data && (() => {
-              const figs = Array.isArray(data.figures) ? data.figures : [];
-              const escs = Array.isArray(data.escalations) ? data.escalations : [];
-              const ties = Array.isArray(data.tieOut) ? data.tieOut : [];
-              const EST = /(allowance|expected credit loss|\bECL\b|impair|useful life|provision|fair value|amortis|amortiz|deprecia|contingen|estimat|sensitiv|residual|discount rate|revaluation|write.?off|write.?down|goodwill|onerous)/i;
-              const estimates = figs.filter((f) => f && EST.test(String(f.label || "")));
-              const okTies = ties.filter((t) => t && t.result === "pass");
-              return (
-                <section className="mz-sec mz-audit">
-                  <div className="mz-sec-head">
-                    <h2 className="mz-sec-title">Audit view</h2>
-                    <span className="mz-sec-note">ordered for testing, not the model's summary</span>
-                  </div>
-                  <div className="mz-audit-block">
-                    <h3 className="mz-audit-h">1 &middot; What to test ({escs.length})</h3>
-                    {escs.length === 0
-                      ? <p className="mz-audit-empty">Nothing was held back for testing.</p>
-                      : escs.map((e, i) => (
-                          <div key={i} className="mz-audit-item">
-                            <div className="mz-audit-t">{e && e.title}</div>
-                            <div className="mz-audit-d">{(e && (e.decisionNeeded || e.why)) || ""}{e && e.ref ? " · " + e.ref : ""}</div>
-                          </div>
-                        ))}
-                  </div>
-                  <div className="mz-audit-block">
-                    <h3 className="mz-audit-h">2 &middot; Estimate-heavy balances ({estimates.length})</h3>
-                    {estimates.length === 0
-                      ? <p className="mz-audit-empty">No judgement-heavy balances detected in what was read.</p>
-                      : estimates.map((f, i) => (
-                          <div key={i} className="mz-audit-item">
-                            <div className="mz-audit-t">{f && f.label}: <span className="mz-audit-v">{f && f.value}</span></div>
-                            <div className="mz-audit-d">{f && f.ref}</div>
-                          </div>
-                        ))}
-                  </div>
-                  <div className="mz-audit-block">
-                    <h3 className="mz-audit-h">3 &middot; Arithmetic tie-outs ({okTies.length}/{ties.length} reconcile)</h3>
-                    {ties.length === 0
-                      ? <p className="mz-audit-empty">No tie-out checks were run.</p>
-                      : ties.map((t, i) => (
-                          <div key={i} className="mz-audit-item">
-                            <div className="mz-audit-t">{t && t.result === "fail" ? "FAIL · " : ""}{t && t.check}</div>
-                            <div className="mz-audit-d">{t && t.detail}{t && t.ref ? " · " + t.ref : ""}</div>
-                          </div>
-                        ))}
-                  </div>
-                </section>
-              );
-            })()}
             {(() => {
               const li = data.lineItems || {};
               const top = (data.findings || []).filter((f) => f.severity === "high").slice(0, 5);
@@ -2041,6 +2000,12 @@ function App() {
                     {evalState === "working" ? "writing" : evalState === "error" ? "unavailable"
                       : (meta && meta.failed > 0 ? "PARTIAL COVERAGE · not final" : "AI analysis · not arithmetic")}
                   </span>
+                </div>
+                <div className="mz-lens-row">
+                  <span className="mz-lens-lbl">Perspective</span>
+                  <select className="mz-lens-sel" value={lens} onChange={(e) => changeLens(e.target.value)} disabled={evalState === "working"}>
+                    {LENSES.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
+                  </select>
                 </div>
                 {evalState === "working" && (
                   <div className="mz-note">Interpreting the ratios and figures.</div>
