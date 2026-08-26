@@ -113,7 +113,10 @@ export default async (req) => {
       body: JSON.stringify({
         // Override without a code change: set MIZAN_EVAL_MODEL in Netlify env.
         model: process.env.MIZAN_EVAL_MODEL || "claude-sonnet-5",
-        max_tokens: 1500,
+        // Sonnet 5 has adaptive thinking ON by default; left on, it eats the
+        // token budget and returns an empty body. Off = fast, full JSON output.
+        thinking: { type: "disabled" },
+        max_tokens: 2500,
         messages: [{
           role: "user",
           content: PROMPT + "\n\n" + (LENS_FRAME[payload.lens] || "AUDIENCE: a general, balanced analyst reader with no particular stakeholder bias.") + "\n\nHERE IS THE ANALYSIS TO EVALUATE:\n\n" + payload.summary
