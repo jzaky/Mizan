@@ -23,6 +23,13 @@
 .mz-ratio.market  .mz-ratio-main { padding: .5rem .9rem !important; }
 .mz-ratio.missing .mz-ratio-name,
 .mz-ratio.market  .mz-ratio-name { font-weight: 500 !important; color: #55665C !important; }
+/* compact figure cards - denser evidence grid; delete these lines to revert */
+.mz-figs { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)) !important; }
+.mz-fig { padding: .45rem .6rem !important; min-height: 0 !important; }
+.mz-fig-lbl { font-size: .55rem !important; line-height: .82rem !important; min-height: 1.5rem !important; }
+.mz-fig-val { font-size: .92rem !important; margin-top: .12rem !important; }
+.mz-fig-ref { font-size: .54rem !important; margin-top: .1rem !important; line-height: 1.2 !important; }
+.mz-fig .mz-conf { font-size: .54rem !important; margin-top: .08rem !important; }
 </style>
 </head>
 <body style="margin:0;background:#F2F4EF">
@@ -819,6 +826,8 @@ function App() {
     const HARVEST = [
       [/^total equity|^total equity at/i, "totalEquity"],
       [/^total assets/i, "totalAssets"],
+      [/^total current assets/i, "currentAssets"],
+      [/^total current liabilities/i, "currentLiabilities"],
       [/^total liabilities(?!.*financial)/i, "totalLiabilities"],
       [/^total financial liabilities/i, "totalLiabilities"],
       [/^net debt(?! ?\/)/i, "netDebt"],
@@ -879,6 +888,33 @@ function App() {
         out.sections.push({ kind: "balance_sheet", pages: b.ref || "", doc: b.doc || "" });
       }
     }
+    // Scale reconciliation. The reader emits lineItems as bare numbers, so a figure
+    // it read from a "millions" narrative (revenue "3,096.9 million") lands ~1000x
+    // too small beside statement figures in thousands, and the ratio engine then
+    // blocks or miscomputes. Correct ONLY clear low-scale outliers, and ONLY when a
+    // scale-bearing figure in what was actually read confirms the larger value.
+    (() => {
+      const BIG = ["revenue","priorRevenue","netProfit","priorNetProfit","grossProfit",
+        "operatingProfit","ebitda","costOfSales","financeCosts","financeIncome",
+        "totalAssets","priorTotalAssets","totalLiabilities","totalEquity","currentAssets",
+        "currentLiabilities","inventory","tradeReceivables","tradePayables","fixedAssets",
+        "cashAndEquivalents","shortTermDeposits","netDebt","operatingCashFlow"];
+      const present = BIG.map((k) => out.lineItems[k]).filter((n) => typeof n === "number" && isFinite(n) && n !== 0).map(Math.abs);
+      if (present.length < 4) return;
+      const sorted = present.slice().sort((a, b) => a - b);
+      const median = sorted[Math.floor(sorted.length / 2)];
+      const scaled = out.figures
+        .filter((f) => /\b(thousand|million|billion)\b/i.test(String(f.value || "")))
+        .map((f) => numOf(f.value)).filter((n) => n != null && n !== 0).map(Math.abs);
+      for (const k of BIG) {
+        const cur = out.lineItems[k];
+        if (typeof cur !== "number" || !isFinite(cur) || cur === 0) continue;
+        if (Math.abs(cur) >= median / 50) continue;
+        const target = Math.abs(cur) * 1000;
+        const hit = scaled.find((n) => Math.abs(n - target) / target < 0.02);
+        if (hit) out.lineItems[k] = (cur < 0 ? -1 : 1) * hit;
+      }
+    })();
     // Same for the auditor's report: an opinion read verbatim is proof it was seen.
     if (out.entity.auditOpinion && !out.sections.some((s) => s.kind === "auditor_report")) {
       out.sections.push({ kind: "auditor_report", pages: "", doc: "" });
