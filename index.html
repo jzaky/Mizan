@@ -3,2071 +3,766 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mizan · financial statement analysis that shows its work</title>
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<title>Mizan 2.1 - Salik Company P.J.S.C. FY2025</title>
+<style>
+  :root{
+    --ink:#15181d; --ink-2:#3c424c; --muted:#7c8492; --faint:#aeb4be;
+    --paper:#f6f4ef; --card:#fffefb; --line:#e2ddd3; --line-2:#cfc9bd;
+    --accent:#0f5f57; --good:#1f7a4d; --warn:#b9791b; --bad:#b23b2e; --none:#9aa0aa;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Menlo","Consolas",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
+  a{color:inherit}
+  .tone-good{color:var(--good)} .tone-warn{color:var(--warn)} .tone-bad{color:var(--bad)} .tone-none{color:var(--none)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle}
+  .bg-good{background:var(--good)} .bg-warn{background:var(--warn)} .bg-bad{background:var(--bad)} .bg-none{background:var(--none)}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
+    padding:10px 20px;background:var(--ink);color:#f3efe6;border-bottom:2px solid #000}
+  .brand{font-family:var(--serif);font-size:19px;letter-spacing:.02em;font-weight:600}
+  .brand small{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:#b9c2b0;display:block;margin-top:1px}
+  .topbar .entity{font-size:12.5px;color:#d8d2c4}
+  .topbar .spacer{flex:1}
+  .chip{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid #4a4f57;border-radius:2px;padding:3px 7px;color:#e7e2d6}
+  .chip.warn{border-color:#7a5a1e;color:#e6c98d}
+  .btn{font-family:var(--sans);font-size:12.5px;border:1px solid #4a4f57;background:#22262c;color:#f3efe6;
+    padding:6px 11px;border-radius:3px;cursor:pointer}
+  .btn.primary{background:#0f5f57;border-color:#0b463f}
+  select.scope{font-family:var(--mono);font-size:11px;background:#22262c;color:#f3efe6;border:1px solid #4a4f57;border-radius:3px;padding:5px 6px}
+
+  /* ---------- workspace ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 80px}
+  .rule{height:1px;background:var(--line);margin:22px 0}
+  .rule.strong{background:var(--ink);height:2px}
+  section.block{margin-top:26px}
+  .sechead{display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:5px;margin-bottom:12px}
+  .sechead .n{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700}
+  .sechead h2{font-size:17px}
+  .sechead .meta{margin-left:auto}
+
+  /* executive strip */
+  .exec{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:stretch}
+  .score-card{border:1px solid var(--line-2);background:var(--card);border-radius:4px;padding:14px 16px}
+  .score-num{font-family:var(--serif);font-size:52px;line-height:1;letter-spacing:-.02em}
+  .score-num span{font-size:20px;color:var(--muted)}
+  .score-sub{margin-top:6px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line-2);border-radius:4px;background:var(--card);overflow:hidden}
+  .kpi{padding:12px 14px;border-right:1px solid var(--line)}
+  .kpi:last-child{border-right:0}
+  .kpi .v{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;margin-top:3px}
+  .kpi .d{font-family:var(--mono);font-size:11px;margin-top:2px}
+  .integrity-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .ipill{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line-2);border-radius:2px;padding:3px 7px;background:var(--card)}
+
+  /* scorecard */
+  .families{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .fam{border:1px solid var(--line-2);border-top:3px solid var(--none);border-radius:3px;background:var(--card);padding:9px 10px;min-height:74px}
+  .fam.good{border-top-color:var(--good)} .fam.warn{border-top-color:var(--warn)} .fam.bad{border-top-color:var(--bad)} .fam.none{border-top-color:var(--none)}
+  .fam .fn{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .fam .fs{font-family:var(--serif);font-size:26px;line-height:1.1;margin-top:4px}
+  .fam .fs small{font-size:12px;color:var(--muted)}
+  .fam .fl{font-size:11px;margin-top:1px}
+  .fam .fc{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:4px}
+
+  /* ratios */
+  .fam-group{margin-bottom:4px;border-bottom:1px solid var(--line)}
+  .fam-group summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 2px}
+  .fam-group summary::-webkit-details-marker{display:none}
+  .fam-group summary .lbl{font-family:var(--serif);font-size:15px}
+  .fam-group summary .cnt{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-left:auto}
+  .rrow{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:6px 8px;border-top:1px dotted var(--line)}
+  .rrow .rname{font-size:13px}
+  .rrow .rval{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;text-align:right}
+  .rrow .rstate{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line-2);border-radius:2px;padding:2px 5px;color:var(--muted);white-space:nowrap}
+  .rrow.pending .rval,.rrow.market .rval{color:var(--faint)}
+  .rrow .caveat{grid-column:1/-1;font-size:11.5px;color:var(--warn);padding:0 8px 3px}
+  .trace{grid-column:1/-1;font-family:var(--mono);font-size:11px;color:var(--ink-2);background:#f1eee7;border-left:2px solid var(--accent);padding:7px 9px;margin:2px 8px 6px;border-radius:0 3px 3px 0}
+  .linkish{color:var(--accent);cursor:pointer;font-size:11px;font-family:var(--mono)}
+
+  /* findings */
+  .finding{border-left:3px solid var(--line-2);padding:8px 0 8px 12px;margin:10px 0}
+  .finding.high{border-left-color:var(--bad)} .finding.medium{border-left-color:var(--warn)} .finding.low{border-left-color:var(--none)}
+  .finding .ftop{display:flex;align-items:center;gap:8px}
+  .finding .fsev{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:2px;color:#fff}
+  .finding.high .fsev{background:var(--bad)} .finding.medium .fsev{background:var(--warn)} .finding.low .fsev{background:var(--none)}
+  .finding .fdec{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-left:auto}
+  .finding .fobs{font-weight:600;margin-top:3px}
+  .finding .fbody{font-size:13px;color:var(--ink-2);margin-top:2px}
+  .finding .fcalc{font-family:var(--mono);font-size:12px;background:#f1eee7;padding:2px 6px;border-radius:2px;display:inline-block;margin-top:4px}
+  .finding .fsrc{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:4px}
+  .cluster{border:1px solid var(--line-2);border-left:3px solid var(--bad);border-radius:3px;background:#fdfbf7;padding:12px 14px;margin:12px 0}
+  .cluster h3{font-size:15px}
+  .cluster .csum{font-size:13px;color:var(--ink-2);margin:4px 0 6px}
+
+  /* verification */
+  .vq{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .vqcell{border:1px solid var(--line-2);border-radius:3px;background:var(--card);padding:11px 13px}
+  .vqcell .vn{font-family:var(--serif);font-size:24px}
+  .vqcell .vl{font-size:12px;color:var(--ink-2)}
+
+  .foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px}
+
+  /* collapsed observations */
+  details.obs summary{cursor:pointer;font-family:var(--mono);font-size:11.5px;color:var(--accent);padding:6px 0}
+  details.obs summary::-webkit-details-marker{display:none}
+
+  /* ============ PRINT DOCUMENT (separate renderer) ============ */
+  #report{display:none}
+  @media screen{ #report.show{display:block;position:fixed;inset:0;overflow:auto;background:#5c5c5c;padding:24px 0;z-index:50} }
+  .page{background:#fff;color:#000;width:210mm;min-height:297mm;margin:0 auto 18px;padding:20mm 18mm 24mm;position:relative;
+    box-shadow:0 2px 14px rgba(0,0,0,.35);font-family:var(--sans);font-size:10.5pt;line-height:1.45}
+  .page .runhead{position:absolute;top:8mm;left:18mm;right:18mm;display:flex;justify-content:space-between;
+    font-family:var(--mono);font-size:8pt;letter-spacing:.06em;color:#555;border-bottom:.5pt solid #bbb;padding-bottom:2mm}
+  .page .runfoot{position:absolute;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;
+    font-family:var(--mono);font-size:7.5pt;color:#666;border-top:.5pt solid #bbb;padding-top:2mm}
+  .doc-h1{font-family:var(--serif);font-size:19pt;margin:0 0 2mm}
+  .doc-secnum{font-family:var(--mono);font-size:9pt;color:var(--accent);letter-spacing:.1em}
+  .doc-h2{font-family:var(--serif);font-size:14pt;border-bottom:1.5pt solid #000;padding-bottom:1.5mm;margin:0 0 3mm}
+  .doc-lead{color:#333;margin:0 0 4mm}
+  table.doc{width:100%;border-collapse:collapse;font-size:9.5pt;margin:2mm 0 4mm}
+  table.doc th{font-family:var(--mono);font-size:7.5pt;letter-spacing:.06em;text-transform:uppercase;color:#555;
+    text-align:left;border-bottom:1pt solid #000;padding:2mm 2mm 1.5mm}
+  table.doc td{padding:1.6mm 2mm;border-bottom:.5pt solid #ddd;vertical-align:top}
+  table.doc td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  table.doc tr{break-inside:avoid}
+  .doc-note{font-size:8.5pt;color:#666;font-style:italic;margin:1mm 0 4mm}
+  .cover{display:flex;flex-direction:column;min-height:257mm}
+  .cover .cbrand{font-family:var(--serif);font-size:30pt;letter-spacing:.02em}
+  .cover .cbrand small{display:block;font-family:var(--mono);font-size:9pt;letter-spacing:.28em;color:#0f5f57;margin-top:2mm}
+  .cover .ctitle{font-family:var(--mono);font-size:11pt;letter-spacing:.18em;text-transform:uppercase;color:#333;margin-top:26mm}
+  .cover .centity{font-family:var(--serif);font-size:22pt;margin-top:3mm}
+  .cover .cmeta{font-family:var(--mono);font-size:9.5pt;color:#444;margin-top:2mm;line-height:1.9}
+  .cover .cscore{margin-top:auto;display:flex;gap:16mm;align-items:flex-end}
+  .cover .cscore .big{font-family:var(--serif);font-size:44pt;line-height:1}
+  .cover .integ{border:1pt solid #000;padding:5mm 6mm;margin-top:8mm}
+  .cover .integ .cap{color:#333}
+  .cover .integ ul{margin:2mm 0 0;padding-left:5mm;font-family:var(--mono);font-size:8.5pt;color:#333;line-height:1.8}
+  .cover .tag{font-family:var(--serif);font-style:italic;font-size:12pt;margin-top:6mm;color:#0f5f57}
+  .keymatter{break-inside:avoid;border-left:2.5pt solid #b23b2e;padding:1mm 0 1mm 4mm;margin:3mm 0}
+  .keymatter.medium{border-left-color:#b9791b} .keymatter.low{border-left-color:#999}
+  .keymatter .km-obs{font-weight:700;font-size:10.5pt}
+  .keymatter .km-cap{font-family:var(--mono);font-size:7.5pt;letter-spacing:.06em;text-transform:uppercase;color:#666}
+  .keymatter .km-body{font-size:9.5pt;color:#333;margin-top:.5mm}
+  .keymatter .km-src{font-family:var(--mono);font-size:8pt;color:#666;margin-top:.5mm}
+  .doc-ratiofam{break-inside:avoid;margin:0 0 3mm}
+  .doc-ratiofam h4{font-family:var(--serif);font-size:11pt;margin:0 0 1mm;display:flex;justify-content:space-between}
+  .doc-ratiofam h4 span{font-family:var(--mono);font-size:8pt;color:#666;font-weight:400}
+  .unavail{font-family:var(--mono);font-size:8.5pt;color:#777;margin-top:1mm}
+
+  @media print{
+    html,body{background:#fff}
+    .topbar,.wrap,.no-print{display:none !important}
+    #report{display:block !important}
+    #report.show{position:static;background:#fff;padding:0;overflow:visible}
+    .page{width:auto;min-height:auto;margin:0;padding:0;box-shadow:none;break-after:page}
+    .page:last-child{break-after:auto}
+    .page .runhead{position:fixed;top:6mm} .page .runfoot{position:fixed;bottom:6mm}
+    @page{size:A4;margin:20mm 18mm 22mm}
+  }
+</style>
 </head>
-<body style="margin:0;background:#F2F4EF">
-<div id="root"></div>
+<body>
 
-<script type="text/babel">
-const { useState, useRef, useCallback } = React;
-const { PDFDocument } = PDFLib;
+<div class="topbar no-print">
+  <div class="brand">Mizan<small>2.1</small></div>
+  <div class="entity" id="tb-entity"></div>
+  <div class="spacer"></div>
+  <span class="chip warn" id="tb-integrity"></span>
+  <select class="scope" id="tb-scope" title="Report scope">
+    <option value="full">Full report</option>
+    <option value="executive">Executive</option>
+    <option value="appendix">Evidence appendix</option>
+  </select>
+  <button class="btn primary" id="tb-export">Export Report &rarr; PDF</button>
+  <button class="btn" id="tb-close" style="display:none">Close preview</button>
+</div>
 
-const VERSION = "2.0.0";
-const PAGES_PER_SLICE = (() => {
-  const q = Number(new URLSearchParams(window.location.search).get("slice"));
-  return q >= 2 && q <= 10 ? q : 4;
-})();
-const CONCURRENCY_MAX = 4;   // ceiling when the API is healthy
-const CONCURRENCY_MIN = 1;
-const RETRIES = 3;
+<div class="wrap" id="app"></div>
+<div id="report"></div>
 
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-.mz *{box-sizing:border-box;margin:0;padding:0}
-.mz{--paper:#F2F4EF;--bar:#E2EAE1;--ink:#17281F;--soft:#55665C;--rule:#C3CFC4;--tick:#146B3A;--query:#A85D00;--esc:#A8202B;--forest:#1B4D3E;
-background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh;padding:0 0 4rem;line-height:1.5}
-.mz-wrap{max-width:940px;margin:0 auto;padding:0 1.1rem}
-.mz-head{border-bottom:2px solid var(--ink);padding:2.2rem 0 1rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-.mz-mark{font-family:'Instrument Serif',Georgia,serif;font-size:clamp(2.6rem,8vw,3.9rem);line-height:.9}
-.mz-mark span{font-size:.42em;color:var(--soft);margin-left:.5rem}
-.mz-sub{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-top:.55rem}
-.mz-thesis{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-size:1rem;color:var(--forest);text-align:right;max-width:15rem;line-height:1.35}
-.mz-intake{border:1px solid var(--rule);border-top:none;background:#fff;padding:1.4rem 1.2rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
-.mz-btn{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:500;padding:.68rem 1.05rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer}
-.mz-btn:hover:not(:disabled){background:var(--forest);border-color:var(--forest)}
-.mz-btn:disabled{opacity:.4;cursor:default}
-.mz-btn.ghost{background:transparent;color:var(--ink)}
-.mz-btn.go{background:var(--forest);border-color:var(--forest)}
-.mz-in{font-family:'IBM Plex Mono',monospace;font-size:.72rem;padding:.62rem .7rem;border:1px solid var(--rule);background:#fff;color:var(--ink);min-width:12rem}
-.mz-sec{margin-top:2.2rem}
-.mz-sec-head{display:flex;align-items:baseline;gap:.7rem;border-bottom:1px solid var(--ink);padding-bottom:.35rem}
-.mz-sec-title{font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
-.mz-sec-note{font-size:.72rem;color:var(--soft);margin-left:auto;font-family:'IBM Plex Mono',monospace}
-.mz-panel{border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-strip{background:var(--ink);color:var(--paper);padding:.55rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.11em;text-transform:uppercase;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-.mz-dials{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));border-bottom:1px solid var(--rule)}
-.mz-dial{padding:.8rem .9rem;border-right:1px solid var(--rule)}
-.mz-dial-l{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
-.mz-dial-v{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;margin-top:.2rem;font-variant-numeric:tabular-nums}
-.mz-grid{display:flex;flex-wrap:wrap;gap:3px;padding:.9rem}
-.mz-cell{width:1.9rem;height:1.9rem;border:1px solid var(--rule);background:var(--bar);font-family:'IBM Plex Mono',monospace;font-size:.55rem;display:flex;align-items:center;justify-content:center;color:var(--soft)}
-.mz-cell.busy{border-color:var(--forest);color:var(--forest)}
-.mz-cell.done{background:var(--forest);border-color:var(--forest);color:var(--paper)}
-.mz-cell.miss{background:#fff;border-color:var(--esc);color:var(--esc)}
-.mz-row{display:grid;grid-template-columns:2.4rem 1fr 8rem;border-bottom:1px solid var(--rule);background:#fff;align-items:start}
-.mz-row:nth-child(even){background:var(--bar)}
-.mz-tick{border-right:1px solid var(--rule);padding:.72rem 0;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600;align-self:stretch}
-.mz-tick.verified{color:var(--tick)}.mz-tick.review{color:var(--query)}.mz-tick.escalate{color:var(--esc)}
-.mz-body{padding:.7rem .9rem;min-width:0}
-.mz-title{font-size:.9rem;font-weight:600;line-height:1.35}
-.mz-detail{font-size:.8rem;color:var(--soft);margin-top:.22rem;line-height:1.45}
-.mz-metric{font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;color:var(--forest);margin-top:.3rem}
-.mz-ref{padding:.75rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.64rem;color:var(--soft);text-align:right;line-height:1.4;border-left:1px dashed var(--rule);align-self:stretch;word-break:break-word}
-.mz-sev{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;padding:.1rem .35rem;border:1px solid currentColor;margin-left:.45rem}
-.mz-sev.high{color:var(--esc)}.mz-sev.medium{color:var(--query)}.mz-sev.low{color:var(--soft)}
-.mz-class{background:var(--forest);color:var(--paper);padding:1rem 1.15rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center}
-.mz-class-lens{font-family:'Instrument Serif',Georgia,serif;font-size:1.5rem;line-height:1.1}
-.mz-class-why{font-size:.78rem;opacity:.85;max-width:34rem;line-height:1.45}
-.mz-class-meta{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;opacity:.75;margin-bottom:.2rem}
-.mz-arith{border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-eq{padding:1.1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-variant-numeric:tabular-nums;line-height:2;overflow-x:auto}
-.mz-eq-line{display:flex;gap:.55rem;align-items:baseline;white-space:nowrap}
-.mz-eq-lbl{color:var(--soft);min-width:11.5rem}
-.mz-eq-val{font-weight:600;margin-left:auto}
-.mz-eq-rule{border-top:1px solid var(--ink);margin:.45rem 0}
-.mz-verdict{padding:.85rem .9rem;border-top:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;font-size:.74rem;line-height:1.5}
-.mz-verdict.pass{color:var(--tick);background:rgba(20,107,58,.05)}
-.mz-verdict.fail{color:var(--esc);background:rgba(168,32,43,.05)}
-.mz-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
-.mz-fig{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:#fff;padding:.85rem .9rem;border-left:3px solid transparent;min-height:5.5rem}
-.mz-fig.verified{border-left-color:var(--tick)}.mz-fig.review{border-left-color:var(--query)}.mz-fig.escalate{border-left-color:var(--esc)}
-.mz-fig-lbl{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;color:var(--soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:.9rem;min-height:1.8rem}
-.mz-fig-val{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;margin-top:.3rem;font-variant-numeric:tabular-nums}
-.mz-fig-ref{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--soft);margin-top:.3rem;line-height:1.35}
-.mz-conf{display:inline-flex;align-items:center;gap:.3rem;font-family:'IBM Plex Mono',monospace;font-size:.55rem;margin-top:.3rem}
-.mz-conf-dot{width:.42rem;height:.42rem;border-radius:50%}
-.mz-conf.hi{color:var(--tick)}.mz-conf.hi .mz-conf-dot{background:var(--tick)}
-.mz-conf.mid{color:var(--query)}.mz-conf.mid .mz-conf-dot{background:var(--query)}
-.mz-conf.lo{color:var(--esc)}.mz-conf.lo .mz-conf-dot{background:var(--esc)}
-.mz-rfam{border:1px solid var(--rule);border-top:none;background:#fff}
-.mz-rfam-h{background:var(--bar);padding:.45rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);border-bottom:1px solid var(--rule)}
-.mz-ratio{display:grid;grid-template-columns:1fr 8.2rem;border-bottom:1px solid var(--rule);align-items:center}
-.mz-ratio:last-child{border-bottom:none}
-.mz-ratio.missing{background:rgba(168,93,0,.03)}
-.mz-ratio.blocked{background:rgba(168,32,43,.04)}
-.mz-ratio-main{padding:.7rem .9rem;min-width:0}
-.mz-ratio-name{font-size:.88rem;font-weight:600}
-.mz-ratio-formula{font-family:'IBM Plex Mono',monospace;font-size:.64rem;color:var(--soft);margin-top:.2rem}
-.mz-ratio-note{font-size:.78rem;color:var(--forest);margin-top:.3rem;line-height:1.4}
-.mz-ratio-miss{font-size:.76rem;color:var(--query);margin-top:.3rem;line-height:1.4}
-.mz-ratio-blocked{font-size:.76rem;color:var(--esc);margin-top:.3rem;line-height:1.4}
-.mz-ratio-typ{font-size:.7rem;color:var(--soft);margin-top:.2rem;line-height:1.45}
-.mz-ratio-val{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:600;text-align:right;padding:.7rem .9rem;font-variant-numeric:tabular-nums;color:var(--forest)}
-.mz-ratio.missing .mz-ratio-val,.mz-ratio.blocked .mz-ratio-val{color:var(--rule)}
-/* Ratio position band: value against its typical range. */
-.mz-ratio.tap{cursor:pointer}
-.mz-ratio.tap:hover{background:var(--bar)}
-.mz-ratio.tracing{background:var(--bar)}
-.mz-tap-hint{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-top:.25rem}
-.mz-trace{grid-column:1/-1;background:#fff;border-top:1px solid var(--ink);padding:1rem .9rem}
-.mz-trace-h{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.11em;text-transform:uppercase;color:var(--forest);margin-bottom:.7rem}
-.mz-trace-chain{display:flex;flex-direction:column;align-items:center;gap:.2rem}
-.mz-node{border:1px solid var(--rule);border-left:3px solid var(--rule);background:#fff;padding:.5rem .8rem;min-width:15rem;max-width:26rem;width:100%}
-.mz-node.input{border-left-color:var(--soft)}
-.mz-node.calc{border-left-color:var(--ink);background:var(--bar)}
-.mz-node.out{border-left-color:var(--tick)}
-.mz-node-k{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
-.mz-node-v{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600;margin-top:.15rem;font-variant-numeric:tabular-nums}
-.mz-node-v.mono{font-size:.72rem;font-weight:400}
-.mz-node-v.big{font-size:1.4rem;color:var(--tick)}
-.mz-node-s{font-size:.66rem;color:var(--soft);margin-top:.2rem;line-height:1.4}
-.mz-node-arrow{color:var(--rule);font-size:.9rem;line-height:1}
-.mz-trace-f{font-family:'IBM Plex Mono',monospace;font-size:.52rem;color:var(--soft);text-align:center;margin-top:.8rem;padding-top:.5rem;border-top:1px dashed var(--rule);word-break:break-all}
-@media print{.mz-trace{display:none}}
-.mz-ratio-right{padding:.7rem .9rem;text-align:right}
-.mz-ratio-right .mz-ratio-val{padding:0}
-.mz-band{margin-top:.45rem}
-.mz-band-track{position:relative;height:5px;background:var(--bar);border:1px solid var(--rule);width:6.4rem;margin-left:auto}
-.mz-band-zone{position:absolute;top:0;bottom:0;background:rgba(20,107,58,.16)}
-.mz-band-pin{position:absolute;top:-3px;width:2px;height:9px;background:var(--ink);transform:translateX(-1px)}
-.mz-band-pin.good{background:var(--tick)}
-.mz-band-pin.warn{background:var(--query)}
-.mz-band-pin.bad{background:var(--esc)}
-.mz-band-lab{font-family:'IBM Plex Mono',monospace;font-size:.48rem;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-top:.22rem}
+<script>
+/* =====================================================================
+   MIZAN 2.1  -  one evidence model, two renderers (web + print document)
+   All three fixes in one file:
+     (1) evidence/ratio engine  (2) compact web renderer  (3) PDF document
+   ===================================================================== */
 
-/* Family health bars. */
-.mz-sign{display:flex;align-items:center;gap:.6rem;margin-top:.5rem;padding-top:.6rem;border-top:1px solid var(--rule)}
-.mz-sign-in{font-family:'Instrument Serif',Georgia,serif;font-size:1.1rem;border:none;border-bottom:1px solid var(--rule);background:transparent;color:var(--ink);padding:.15rem .2rem;min-width:14rem}
-.mz-sign-in:focus{outline:none;border-bottom-color:var(--forest)}
-.mz-sign-in::placeholder{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--rule);font-style:italic}
-@media print{.mz-sign-in{border-bottom:1px solid var(--ink);min-width:16rem}}
-.mz-bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:1px;background:var(--rule)}
-.mz-bar{background:#fff;padding:.85rem .9rem}
-.mz-bar.empty{background:#FAFBF9}
-.mz-bar-top{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
-.mz-bar-n{font-size:.86rem;font-weight:600}
-.mz-bar-t{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.09em;text-transform:uppercase}
-.mz-bar-t.good{color:var(--tick)}.mz-bar-t.warn{color:var(--query)}.mz-bar-t.bad{color:var(--esc)}.mz-bar-t.none{color:var(--rule)}
-.mz-bar-track{height:10px;background:var(--bar);margin-top:.5rem;position:relative;overflow:hidden}
-.mz-bar-fill{height:100%;transition:width .5s ease-out}
-.mz-bar-fill.good{background:var(--tick)}.mz-bar-fill.warn{background:var(--query)}.mz-bar-fill.bad{background:var(--esc)}
-.mz-bar-none{height:100%;background:repeating-linear-gradient(45deg,transparent,transparent 4px,var(--rule) 4px,var(--rule) 5px)}
-.mz-bar-sub{font-family:'IBM Plex Mono',monospace;font-size:.54rem;color:var(--soft);margin-top:.4rem;letter-spacing:.04em}
-.mz-snap{border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-snap-row{display:grid;grid-template-columns:8.5rem 1fr;gap:.9rem;padding:.55rem .9rem;border-bottom:1px solid var(--rule);font-size:.83rem;line-height:1.5}
-.mz-snap-row:last-child{border-bottom:none}
-.mz-snap-k{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);padding-top:.18rem}
-.mz-snap-top{border:1px solid var(--rule);border-top:none;background:var(--bar);padding:.8rem .9rem}
-.mz-snap-top-h{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:.45rem}
-.mz-snap-top ol{margin:0;padding-left:1.1rem}
-.mz-snap-top li{font-size:.8rem;line-height:1.5;padding:.22rem 0}
-.mz-snap-top em{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--soft);font-style:normal}
-@media(max-width:620px){.mz-snap-row{grid-template-columns:1fr}}
-.mz-pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.09em;text-transform:uppercase;padding:.12rem .38rem;border:1px solid currentColor;white-space:nowrap}
-.mz-pill.notread{color:var(--query)}
-.mz-pill.notpresent{color:var(--soft)}
-.mz-pill.await{color:var(--query)}
-.mz-qhead{border:1px solid var(--ink);border-top:none;background:var(--bar);padding:.7rem .9rem;display:flex;gap:1.6rem;flex-wrap:wrap;font-size:.76rem;color:var(--soft)}
-.mz-qhead b{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-right:.4rem}
-.mz-qnote{font-style:italic;flex-basis:100%;font-size:.7rem}
-.mz-queue{border:1px solid var(--rule);border-top:none;background:#fff}
-.mz-q{border-bottom:1px solid var(--rule)}
-.mz-q:last-child{border-bottom:none}
-.mz-q-row{display:grid;grid-template-columns:6.5rem 1fr auto 1.4rem;gap:.7rem;align-items:center;padding:.55rem .9rem;cursor:pointer}
-.mz-q-row:hover{background:var(--bar)}
-.mz-q-t{font-size:.84rem;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mz-q-ref{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:14rem}
-.mz-q-x{font-family:'IBM Plex Mono',monospace;color:var(--soft);text-align:center}
-.mz-q.open .mz-q-t{white-space:normal}
-.mz-q-body{padding:0 .9rem .8rem 8.1rem;background:var(--bar)}
-.mz-q-why{font-size:.8rem;color:var(--soft);line-height:1.5}
-.mz-q-ev{list-style:none;margin:.5rem 0}
-.mz-q-ev li{font-size:.76rem;color:var(--ink);padding:.2rem 0 .2rem .8rem;position:relative;line-height:1.45}
-.mz-q-ev li:before{content:"-";position:absolute;left:0;color:var(--soft)}
-.mz-q-next{margin-top:.5rem;font-size:.8rem;padding-top:.5rem;border-top:1px dashed var(--rule)}
-.mz-q-next b{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--forest);display:block;margin-bottom:.15rem}
-.mz-f-ev{list-style:none;margin-top:.4rem}
-.mz-f-ev li{font-size:.74rem;color:var(--soft);padding:.15rem 0 .15rem .8rem;position:relative;line-height:1.4}
-.mz-f-ev li:before{content:"-";position:absolute;left:0}
-.mz-ratio-need{font-size:.7rem;color:var(--soft);margin-top:.28rem}
-.mz-ratio-need b{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-right:.4rem}
-@media(max-width:620px){.mz-q-row{grid-template-columns:1fr 1.4rem}.mz-q-ref{display:none}.mz-q-body{padding-left:.9rem}}
-.mz-stages{border:1px solid var(--forest);border-top:none;background:#fff;padding:1.2rem 1.1rem}
-.mz-stages-h{font-family:'Instrument Serif',Georgia,serif;font-size:1.3rem;color:var(--forest);margin-bottom:.9rem}
-.mz-stage{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.6rem;align-items:baseline;padding:.32rem 0;color:var(--soft);font-size:.86rem}
-.mz-stage.done{color:var(--ink)}
-.mz-stage.now{color:var(--forest);font-weight:600}
-.mz-stage-dot{font-family:'IBM Plex Mono',monospace;text-align:center}
-.mz-stage.done .mz-stage-dot{color:var(--tick)}
-.mz-stage.now .mz-stage-dot{animation:mzBlink 1.1s ease-in-out infinite}
-@keyframes mzBlink{0%,100%{opacity:1}50%{opacity:.35}}
-.mz-stage-s{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--soft);letter-spacing:.04em}
-.mz-live{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;margin-top:1rem;background:var(--rule);border:1px solid var(--rule)}
-.mz-live-c{background:#fff;padding:.6rem .7rem;animation:mzLand .4s ease-out both}
-@keyframes mzLand{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.mz-live-l{font-family:'IBM Plex Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
-.mz-live-v{font-family:'IBM Plex Mono',monospace;font-size:1.15rem;font-weight:600;margin-top:.2rem;font-variant-numeric:tabular-nums}
-.mz-trail{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-trail-s{padding:.9rem;border-right:1px solid var(--rule);position:relative}
-.mz-trail-v{font-family:'IBM Plex Mono',monospace;font-size:1.5rem;font-weight:600;color:var(--forest);line-height:1}
-.mz-trail-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-top:.35rem}
-.mz-trail-sub{font-size:.68rem;color:var(--soft);margin-top:.25rem;line-height:1.35}
-.mz-trail-arrow{position:absolute;right:-.42rem;top:1rem;color:var(--rule);font-size:.8rem;background:#fff;z-index:1}
-@media(max-width:620px){.mz-trail-arrow{display:none}}
-.mz-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-kpi-cell{padding:1rem .9rem;border-right:1px solid var(--rule)}
-.mz-kpi-l{font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.11em;text-transform:uppercase;color:var(--soft)}
-.mz-kpi-v{font-family:'IBM Plex Mono',monospace;font-size:1.75rem;font-weight:600;margin-top:.35rem;font-variant-numeric:tabular-nums;line-height:1}
-.mz-kpi-g{font-family:'IBM Plex Mono',monospace;font-size:.62rem;margin-top:.3rem;font-weight:600}
-.mz-kpi-g.up{color:var(--tick)}.mz-kpi-g.dn{color:var(--esc)}
-.mz-ratio-right{padding:.7rem .9rem;text-align:right}
-.mz-ratio-right .mz-ratio-val{padding:0}
-.mz-state{font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.09em;margin-top:.35rem;padding:.1rem .3rem;border:1px solid currentColor;display:inline-block}
-.mz-state.ok{color:var(--tick)}
-.mz-state.missing{color:var(--query)}
-.mz-state.blocked{color:var(--esc)}
-.mz-state.market{color:var(--soft)}
-.mz-chain{display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:baseline;margin-top:.35rem;padding:.35rem .5rem;background:var(--bar);font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--soft)}
-.mz-chain-i b{color:var(--ink);font-weight:500;text-transform:none}
-.mz-chain-eq{color:var(--forest);font-weight:600;margin-left:auto}
-.mz-score{border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-score-top{display:flex;align-items:center;gap:1.2rem;padding:1rem;border-bottom:1px solid var(--rule);flex-wrap:wrap}
-.mz-score-big{font-family:'IBM Plex Mono',monospace;font-size:2.6rem;font-weight:600;line-height:1}
-.mz-score-big.good{color:var(--tick)}.mz-score-big.warn{color:var(--query)}.mz-score-big.bad{color:var(--esc)}
-.mz-score-lab{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
-.mz-score-verdict{font-family:'Instrument Serif',serif;font-size:1.4rem}
-.mz-score-row{display:grid;grid-template-columns:9.5rem 1fr 6.5rem;gap:.8rem;align-items:center;padding:.6rem 1rem;border-bottom:1px solid var(--rule)}
-.mz-score-row:last-child{border-bottom:none}
-.mz-score-name{font-weight:500;font-size:.85rem}
-.mz-score-sub{font-family:'IBM Plex Mono',monospace;font-size:.55rem;color:var(--soft)}
-.mz-score-track{height:8px;background:var(--bar)}
-.mz-score-fill{height:100%}
-.mz-score-fill.good{background:var(--tick)}.mz-score-fill.warn{background:var(--query)}.mz-score-fill.bad{background:var(--esc)}
-.mz-score-tag{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;text-align:right}
-.mz-score-tag.good{color:var(--tick)}.mz-score-tag.warn{color:var(--query)}.mz-score-tag.bad{color:var(--esc)}.mz-score-tag.none{color:var(--soft)}
-.mz-cov{border:1px solid var(--ink);border-top:none;background:#fff}
-.mz-cov-row{display:grid;grid-template-columns:11rem 1fr 3.2rem;gap:.8rem;align-items:center;padding:.55rem 1rem;border-bottom:1px solid var(--rule)}
-.mz-cov-row:last-child{border-bottom:none}
-.mz-cov-n{font-size:.82rem}
-.mz-cov-sub{font-family:'IBM Plex Mono',monospace;font-size:.52rem;color:var(--soft)}
-.mz-cov-track{height:7px;background:var(--bar)}
-.mz-cov-fill{height:100%;background:var(--forest)}
-.mz-cov-fill.zero{background:var(--esc)}.mz-cov-fill.part{background:var(--query)}
-.mz-cov-p{font-family:'IBM Plex Mono',monospace;font-size:.72rem;text-align:right}
-.mz-esc-card{border:1px solid var(--rule);border-left:3px solid var(--esc);background:#fff;padding:1rem 1.05rem;margin-top:.7rem}
-.mz-esc-card.unread{border-left-color:var(--query);background:rgba(168,93,0,.03)}
-.mz-esc-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
-.mz-esc-t{font-size:.9rem;font-weight:600;color:var(--esc)}
-.mz-esc-state{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.1em;padding:.12rem .4rem;border:1px solid currentColor;white-space:nowrap}
-.mz-esc-state.notread{color:var(--query)}
-.mz-esc-state.notpresent{color:var(--soft)}
-.mz-esc-w{font-size:.8rem;color:var(--soft);margin-top:.35rem;line-height:1.5}
-.mz-esc-d{font-size:.82rem;margin-top:.6rem;padding-top:.6rem;border-top:1px dashed var(--rule);line-height:1.5}
-.mz-esc-d b{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;color:var(--esc);display:block;margin-bottom:.2rem}
-.mz-owner{margin-top:.7rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-.mz-owner label{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--soft)}
-.mz-legend{display:flex;gap:1.4rem;flex-wrap:wrap;padding:.75rem .9rem;border:1px solid var(--rule);border-top:none;background:var(--bar);font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:var(--soft)}
-.mz-ev{border:1px solid var(--rule);border-top:none;background:#fff;padding:1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--soft);line-height:1.9;word-break:break-all}
-.mz-ev b{color:var(--ink)}
-.mz-eval{border:1px solid var(--rule);border-top:none;background:#fff;padding:0 0 1rem}
-.mz-eval-banner{background:var(--bar);padding:.6rem .9rem;font-size:.72rem;color:var(--soft);line-height:1.4;border-bottom:1px solid var(--rule)}
-.mz-eval-head{font-family:'Instrument Serif',Georgia,serif;font-size:1.45rem;line-height:1.25;padding:1rem .9rem .3rem}
-.mz-eval-over{font-size:.9rem;line-height:1.6;padding:0 .9rem 1rem;border-bottom:1px solid var(--rule)}
-.mz-eval-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))}
-.mz-eval-area{padding:.85rem .9rem;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);border-left:3px solid var(--rule)}
-.mz-eval-area.read-positive{border-left-color:var(--tick)}
-.mz-eval-area.read-watch{border-left-color:var(--query)}
-.mz-eval-area.read-concern{border-left-color:var(--esc)}
-.mz-eval-area-h{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
-.mz-eval-area-h>span:first-child{font-family:'IBM Plex Mono',monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
-.mz-eval-tag{font-family:'IBM Plex Mono',monospace;font-size:.54rem;letter-spacing:.08em;text-transform:uppercase;padding:.1rem .35rem;border:1px solid currentColor}
-.mz-eval-tag.read-positive{color:var(--tick)}.mz-eval-tag.read-watch{color:var(--query)}.mz-eval-tag.read-concern{color:var(--esc)}
-.mz-eval-area-t{font-size:.82rem;line-height:1.5;color:var(--soft);margin-top:.4rem}
-.mz-eval-sc{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
-.mz-eval-col{padding:.85rem .9rem;border-right:1px solid var(--rule)}
-.mz-eval-col-h{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:.5rem}
-.mz-eval-col-h.pos{color:var(--tick)}.mz-eval-col-h.neg{color:var(--esc)}
-.mz-eval-col ul{list-style:none}
-.mz-eval-col li{font-size:.82rem;line-height:1.45;padding:.3rem 0 .3rem .9rem;position:relative}
-.mz-eval-col li:before{content:"-";position:absolute;left:0;color:var(--soft)}
-.mz-eval-rec{padding:.9rem}
-.mz-eval-rec-h{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--forest)}
-.mz-eval-rec-note{font-size:.72rem;color:var(--soft);margin:.2rem 0 .7rem;font-style:italic}
-.mz-eval-rec-item{border-left:2px solid var(--forest);padding:.1rem 0 .1rem .8rem;margin-bottom:.7rem}
-.mz-eval-rec-for{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--forest);margin-bottom:.15rem}
-.mz-eval-rec-item p{font-size:.85rem;line-height:1.5}
-.mz-tray{border:1px solid var(--forest);border-top:none;background:#fff}
-.mz-tray-h{background:rgba(27,77,62,.06);padding:.5rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--forest);border-bottom:1px solid var(--rule)}
-.mz-tray-row{display:flex;align-items:center;gap:.8rem;padding:.55rem .9rem;border-bottom:1px solid var(--rule)}
-.mz-tray-row:last-child{border-bottom:none}
-.mz-tray-name{font-family:'IBM Plex Mono',monospace;font-size:.74rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mz-tray-x{font-family:'IBM Plex Mono',monospace;font-size:.58rem;text-transform:uppercase;color:var(--esc);background:none;border:1px solid var(--esc);padding:.25rem .5rem;cursor:pointer}
-.mz-retry{border:1px solid var(--query);border-left-width:3px;background:#fff;padding:.85rem 1.05rem;margin-top:1rem;display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:.82rem}
-.mz-err{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
-.mz-err-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--esc)}
-.mz-note{border:1px solid var(--rule);border-top:none;background:#fff;padding:.85rem .9rem;font-size:.8rem;color:var(--soft);line-height:1.5}
-.mz-empty{padding:3.4rem 1rem;text-align:center;border:1px solid var(--rule);border-top:none;background:#fff}
-.mz-empty-t{font-family:'Instrument Serif',Georgia,serif;font-size:1.35rem;color:var(--soft);font-style:italic}
-.mz-empty-s{font-size:.83rem;color:var(--soft);margin-top:.5rem;max-width:34rem;margin-left:auto;margin-right:auto}
-.mz-foot{margin-top:3rem;border-top:2px solid var(--ink);padding-top:1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:var(--soft);line-height:1.7}
-.mz-foot b{color:var(--ink)}
-@media(max-width:620px){
-.mz-row{grid-template-columns:2.1rem 1fr}
-.mz-ref{grid-column:2;border-left:none;text-align:left;border-top:1px dashed var(--rule)}
-.mz-thesis{text-align:left;max-width:none}
-.mz-eval-sc{grid-template-columns:1fr}}
-/* ---- Print: a report, not a printed webpage --------------------------- */
-.mz-cover{display:none}
-@page{size:A4;margin:18mm 16mm 20mm}
-@media print{
-.mz{background:#fff;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.mz-wrap{max-width:none;padding:0}
+/* ---------- 1a. ENGINE: normalization, hardened ---------- */
+const SCALE = { units:1, thousands:1e3, millions:1e6, billions:1e9 };
 
-/* Screen furniture has no business in a report. */
-.mz-intake,.mz-btn,.mz-thesis,.mz-panel,.mz-retry,.mz-tray,.mz-stages,.mz-note,
-.mz-head,.mz-q-x,.mz-owner,.mz-empty{display:none!important}
-
-/* Cover page. */
-.mz-cover{display:block;height:245mm;position:relative;page-break-after:always}
-.mz-cover-rule{border-top:3px solid var(--ink);margin-bottom:2.4rem}
-.mz-cover-mark{font-family:'Instrument Serif',Georgia,serif;font-size:4.2rem;line-height:.95;letter-spacing:-.02em}
-.mz-cover-mark span{font-size:.36em;color:var(--soft);margin-left:.6rem}
-.mz-cover-kind{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--soft);margin-top:.7rem}
-.mz-cover-co{font-family:'Instrument Serif',Georgia,serif;font-size:2.4rem;line-height:1.15;margin-top:5.5rem}
-.mz-cover-meta{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--soft);margin-top:.8rem;line-height:2}
-.mz-cover-foot{position:absolute;bottom:0;left:0;right:0;border-top:1px solid var(--rule);padding-top:.8rem;
-display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--soft);line-height:1.8}
-.mz-cover-note{margin-top:2.4rem;font-size:.8rem;line-height:1.6;color:var(--soft);max-width:34rem;border-left:2px solid var(--forest);padding-left:.9rem}
-
-/* Running header on every page after the cover. */
-.mz-sec{margin-top:9mm;break-inside:auto}
-.mz-sec-head{border-bottom:1.5px solid var(--ink);break-after:avoid}
-.mz-sec-title{font-size:.62rem}
-
-/* Keep atomic blocks whole. */
-.mz-row,.mz-fig,.mz-arith,.mz-ratio,.mz-score-row,.mz-cov-row,.mz-q,.mz-trail-s,
-.mz-kpi-cell,.mz-eval-area,.mz-eval-rec-item{break-inside:avoid;page-break-inside:avoid}
-
-/* Colour blocks flatten but keep their meaning. */
-.mz-class{background:#fff!important;color:var(--ink)!important;border:1.5px solid var(--ink)}
-.mz-class-lens,.mz-class-meta,.mz-class-why{color:var(--ink)!important;opacity:1}
-.mz-strip,.mz-rfam-h,.mz-qhead{background:#fff!important;color:var(--ink)!important;border-bottom:1px solid var(--ink)}
-
-/* The queue prints open: a reader cannot click a plus sign on paper. */
-.mz-q-body{display:block!important;background:#fff;padding:.2rem 0 .7rem 8.1rem}
-.mz-q-row{padding-left:0;padding-right:0}
-
-/* Tighten the density that reads fine on screen and wastes paper. */
-.mz-kpi-cell{padding:.7rem}
-.mz-bar-fill,.mz-band-pin,.mz-band-zone,.mz-score-fill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.mz-bars{break-inside:avoid}
-.mz-kpi-v{font-size:1.4rem}
-.mz-ratio-main,.mz-ratio-val{padding:.5rem .7rem}
-.mz-legend{font-size:.55rem;padding:.5rem .7rem}
-a[href]:after{content:""}
-}
-`;
-
-const MARK = { verified: "\u2713", review: "?", escalate: "\u2717" };
-const SEV_RANK = { high: 0, medium: 1, low: 2 };
-
-const STATEMENTS = [
-  { key: "income_statement", label: "Income statement" },
-  { key: "balance_sheet", label: "Balance sheet" },
-  { key: "cash_flow", label: "Cash flow" },
-  { key: "equity_statement", label: "Changes in equity" },
-  { key: "notes", label: "Notes" },
-  { key: "auditor_report", label: "Auditor report" }
-];
-const STATEMENT_PROOF = {
-  income_statement: ["revenue", "operatingProfit", "netProfit", "costOfSales", "grossProfit"],
-  balance_sheet: ["totalAssets", "totalLiabilities", "totalEquity", "currentAssets", "currentLiabilities"],
-  cash_flow: ["operatingCashFlow", "capex", "dividendsPaid"]
-};
-
-const SOURCE_OF = {
-  revenue: "Income statement", priorRevenue: "Income statement", costOfSales: "Income statement",
-  grossProfit: "Income statement", operatingProfit: "Income statement", netProfit: "Income statement",
-  priorNetProfit: "Income statement", financeCosts: "Income statement", ebitda: "Income statement",
-  totalAssets: "Balance sheet", priorTotalAssets: "Balance sheet", totalLiabilities: "Balance sheet",
-  totalEquity: "Balance sheet", currentAssets: "Balance sheet", currentLiabilities: "Balance sheet",
-  inventory: "Balance sheet", tradeReceivables: "Balance sheet", fixedAssets: "Balance sheet",
-  cashAndEquivalents: "Balance sheet", shortTermDeposits: "Balance sheet", netDebt: "Balance sheet",
-  operatingCashFlow: "Cash flow statement", capex: "Cash flow statement", dividendsPaid: "Cash flow statement",
-  sharesOutstanding: "Share data", marketPrice: "Market data", dividendPerShare: "Share data"
-};
-const NEED_LABEL = {
-  currentAssets: "current assets", currentLiabilities: "current liabilities", cashAndEquivalents: "cash",
-  shortTermDeposits: "short-term deposits", revenue: "revenue", priorRevenue: "prior-year revenue",
-  operatingProfit: "operating profit", netProfit: "net profit", financeCosts: "finance costs",
-  netDebt: "net debt", ebitda: "EBITDA", operatingCashFlow: "operating cash flow",
-  sharesOutstanding: "share count", marketPrice: "market price", dividendPerShare: "dividend per share",
-  costOfSales: "cost of sales", grossProfit: "gross profit", priorNetProfit: "prior-year net profit",
-  totalAssets: "total assets", priorTotalAssets: "prior-year total assets",
-  totalLiabilities: "total liabilities", totalEquity: "total equity", inventory: "inventory",
-  tradeReceivables: "trade receivables", fixedAssets: "fixed assets",
-  capex: "capital expenditure", dividendsPaid: "dividends paid"
-};
-
-const FAMILIES = ["Profitability", "Liquidity", "Solvency", "Efficiency", "Cash conversion", "Growth", "Market value"];
-
-const RATIO_DEFS = [
-  { family: "Liquidity", name: "Current ratio", formula: "Current assets \u00f7 Current liabilities",
-    needs: ["currentAssets", "currentLiabilities"], calc: (v) => v.currentAssets / v.currentLiabilities,
-    unit: "x", dir: "high", bands: [1.0, 1.5], typical: "1.5-3.0x in most industries.",
-    plain: (r) => r >= 1 ? "Covers short-term obligations " + r.toFixed(2) + " times over." : "Below 1.0: current liabilities exceed current assets." },
-  { family: "Liquidity", name: "Quick ratio", formula: "(Current assets \u2212 Inventory) \u00f7 Current liabilities",
-    needs: ["currentAssets", "currentLiabilities"], calc: (v) => (v.currentAssets - (v.inventory || 0)) / v.currentLiabilities,
-    unit: "x", dir: "high", bands: [0.8, 1.2], typical: "Around 1.0x.",
-    plain: (r) => "Excluding inventory, liquid assets cover current liabilities " + r.toFixed(2) + " times." },
-  { family: "Liquidity", name: "Cash ratio", formula: "(Cash + Deposits) \u00f7 Current liabilities",
-    needs: ["cashAndEquivalents", "currentLiabilities"], calc: (v) => (v.cashAndEquivalents + (v.shortTermDeposits || 0)) / v.currentLiabilities,
-    unit: "x", dir: "high", bands: [0.2, 0.5], typical: "0.2-0.5x.",
-    plain: (r) => "Cash covers " + (r * 100).toFixed(0) + "% of current liabilities." },
-  { family: "Liquidity", name: "Working capital", formula: "Current assets \u2212 Current liabilities",
-    needs: ["currentAssets", "currentLiabilities"], calc: (v) => v.currentAssets - v.currentLiabilities,
-    raw: true, typical: "Positive for most going concerns.",
-    plain: (r) => r >= 0 ? "Buffer of " + Math.abs(r).toLocaleString("en-US") + "." : "Negative by " + Math.abs(r).toLocaleString("en-US") + "." },
-  { family: "Profitability", name: "Gross profit margin", formula: "Gross profit \u00f7 Revenue",
-    needs: ["grossProfit", "revenue"], calc: (v) => v.grossProfit / v.revenue,
-    pct: true, dir: "high", bands: [0.2, 0.4], typical: "20-40% in industry.",
-    plain: (r) => (r * 100).toFixed(1) + "% of revenue survives direct costs." },
-  { family: "Profitability", name: "Operating profit margin", formula: "Operating profit \u00f7 Revenue",
-    needs: ["operatingProfit", "revenue"], calc: (v) => v.operatingProfit / v.revenue,
-    pct: true, dir: "high", bands: [0.1, 0.2], typical: "10-20% is solid.",
-    plain: (r) => (r * 100).toFixed(1) + "% of revenue remains after operating costs." },
-  { family: "Profitability", name: "Net profit margin", formula: "Net profit \u00f7 Revenue",
-    needs: ["netProfit", "revenue"], calc: (v) => v.netProfit / v.revenue,
-    pct: true, dir: "high", bands: [0.05, 0.15], typical: "5-15% across most industries.",
-    plain: (r) => (r * 100).toFixed(1) + " fils of every dirham becomes final profit." },
-  { family: "Profitability", name: "EBITDA margin", formula: "EBITDA \u00f7 Revenue",
-    needs: ["ebitda", "revenue"], calc: (v) => v.ebitda / v.revenue,
-    pct: true, dir: "high", bands: [0.15, 0.3], typical: "15-30%, higher for infrastructure.",
-    plain: (r) => (r * 100).toFixed(1) + "% of revenue converts to EBITDA." },
-  { family: "Profitability", name: "Return on assets (ROA)", formula: "Net profit \u00f7 Total assets",
-    needs: ["netProfit", "totalAssets"], calc: (v) => v.netProfit / v.totalAssets,
-    pct: true, dir: "high", bands: [0.03, 0.08], typical: "3-8% for asset-heavy businesses.",
-    plain: (r) => "Every dirham of assets produced " + (r * 100).toFixed(1) + " fils of profit." },
-  { family: "Profitability", name: "Return on equity (ROE)", formula: "Net profit \u00f7 Total equity",
-    needs: ["netProfit", "totalEquity"], calc: (v) => v.netProfit / v.totalEquity,
-    pct: true, dir: "high", bands: [0.08, 0.15], typical: "8-15% is respectable.",
-    plain: (r) => "Shareholders earned " + (r * 100).toFixed(1) + "% on their equity." },
-  { family: "Solvency", name: "Interest coverage ratio", formula: "Operating profit \u00f7 Finance costs",
-    needs: ["operatingProfit", "financeCosts"], calc: (v) => v.operatingProfit / v.financeCosts,
-    unit: "x", dir: "high", bands: [2, 4], typical: "Above 3x is comfortable.",
-    plain: (r) => "Operating profit covers finance costs " + r.toFixed(1) + " times." },
-  { family: "Solvency", name: "Net debt-to-EBITDA", formula: "Net debt \u00f7 EBITDA",
-    needs: ["netDebt", "ebitda"], calc: (v) => v.netDebt / v.ebitda,
-    unit: "x", dir: "low", bands: [3, 2], typical: "Under 3x is generally acceptable.",
-    plain: (r) => r.toFixed(1) + " years of EBITDA would repay net debt." },
-  { family: "Solvency", name: "Debt ratio", formula: "Total liabilities \u00f7 Total assets",
-    needs: ["totalLiabilities", "totalAssets"], calc: (v) => v.totalLiabilities / v.totalAssets,
-    pct: true, dir: "low", bands: [0.6, 0.4], typical: "0.4-0.6 in most sectors.",
-    plain: (r) => (r * 100).toFixed(1) + "% of assets are funded by liabilities." },
-  { family: "Solvency", name: "Debt-to-equity", formula: "Total liabilities \u00f7 Total equity",
-    needs: ["totalLiabilities", "totalEquity"], calc: (v) => v.totalLiabilities / v.totalEquity,
-    unit: "x", dir: "low", bands: [2, 1], typical: "1.0-2.0x in most sectors.",
-    plain: (r) => "Creditors put in " + r.toFixed(2) + " for every 1.00 from shareholders." },
-  { family: "Solvency", name: "Equity ratio", formula: "Total equity \u00f7 Total assets",
-    needs: ["totalEquity", "totalAssets"], calc: (v) => v.totalEquity / v.totalAssets,
-    pct: true, dir: "high", bands: [0.3, 0.5], typical: "0.3-0.6.",
-    plain: (r) => (r * 100).toFixed(1) + "% of assets are owned outright." },
-  { family: "Efficiency", name: "Asset turnover", formula: "Revenue \u00f7 Total assets",
-    needs: ["revenue", "totalAssets"], calc: (v) => v.revenue / v.totalAssets,
-    unit: "x", dir: "high", bands: [0.5, 1.0], typical: "Under 0.5x for infrastructure.",
-    plain: (r) => "Each dirham of assets generated " + r.toFixed(2) + " of revenue." },
-  { family: "Efficiency", name: "Fixed asset turnover", formula: "Revenue \u00f7 Fixed assets",
-    needs: ["revenue", "fixedAssets"], calc: (v) => v.revenue / v.fixedAssets,
-    unit: "x", dir: "high", bands: [0.5, 1.5], typical: "Highly sector-dependent.",
-    plain: (r) => "Each dirham of fixed assets generated " + r.toFixed(2) + " of revenue." },
-  { family: "Efficiency", name: "Receivable turnover", formula: "Revenue \u00f7 Trade receivables",
-    needs: ["revenue", "tradeReceivables"], calc: (v) => v.revenue / v.tradeReceivables,
-    unit: "x", dir: "high", bands: [4, 8], typical: "6-12x, meaning 30-60 day terms.",
-    plain: (r) => "Receivables collected and rebuilt " + r.toFixed(1) + " times." },
-  { family: "Efficiency", name: "Days sales outstanding", formula: "(Trade receivables \u00f7 Revenue) \u00d7 365",
-    needs: ["tradeReceivables", "revenue"], calc: (v) => (v.tradeReceivables / v.revenue) * 365,
-    unit: " days", dir: "low", bands: [90, 45], typical: "30-60 days on standard terms.",
-    plain: (r) => "On average " + r.toFixed(0) + " days between billing and collection." },
-  { family: "Cash conversion", name: "Operating cash-flow margin", formula: "Operating cash flow \u00f7 Revenue",
-    needs: ["operatingCashFlow", "revenue"], calc: (v) => v.operatingCashFlow / v.revenue,
-    pct: true, dir: "high", bands: [0.1, 0.2], typical: "10-20%.",
-    plain: (r) => (r * 100).toFixed(1) + "% of revenue converted into operating cash." },
-  { family: "Cash conversion", name: "Cash conversion ratio", formula: "Operating cash flow \u00f7 Net profit",
-    needs: ["operatingCashFlow", "netProfit"], calc: (v) => v.operatingCashFlow / v.netProfit,
-    unit: "x", dir: "high", bands: [0.8, 1.0], typical: "Around 1.0x or above.",
-    plain: (r) => "Each dirham of profit backed by " + r.toFixed(2) + " of operating cash." },
-  { family: "Cash conversion", name: "Free cash flow", formula: "Operating cash flow \u2212 Capex",
-    needs: ["operatingCashFlow", "capex"], calc: (v) => v.operatingCashFlow - v.capex,
-    raw: true, typical: "Positive and growing for a mature business.",
-    plain: (r) => r >= 0 ? "Generated " + Math.abs(r).toLocaleString("en-US") + " after reinvestment." : "Consumed " + Math.abs(r).toLocaleString("en-US") + " after reinvestment." },
-  { family: "Cash conversion", name: "Free cash flow margin", formula: "(Operating cash flow \u2212 Capex) \u00f7 Revenue",
-    needs: ["operatingCashFlow", "capex", "revenue"], calc: (v) => (v.operatingCashFlow - v.capex) / v.revenue,
-    pct: true, dir: "high", bands: [0.05, 0.15], typical: "5-15%.",
-    plain: (r) => (r * 100).toFixed(1) + "% of revenue became free cash." },
-  { family: "Growth", name: "Revenue growth rate", formula: "(Revenue \u2212 Prior revenue) \u00f7 Prior revenue",
-    needs: ["revenue", "priorRevenue"], calc: (v) => (v.revenue - v.priorRevenue) / v.priorRevenue,
-    pct: true, growth: true, dir: "high", bands: [0, 0.1], typical: "Mid-single digits is steady for a mature entity.",
-    plain: (r) => "Revenue " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
-  { family: "Growth", name: "Net profit growth", formula: "(Net profit \u2212 Prior net profit) \u00f7 Prior net profit",
-    needs: ["netProfit", "priorNetProfit"], calc: (v) => (v.netProfit - v.priorNetProfit) / v.priorNetProfit,
-    pct: true, growth: true, dir: "high", bands: [0, 0.1], typical: "Steady positive growth beats a volatile average.",
-    plain: (r) => "Net profit " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
-  { family: "Growth", name: "Asset growth", formula: "(Total assets \u2212 Prior) \u00f7 Prior total assets",
-    needs: ["totalAssets", "priorTotalAssets"], calc: (v) => (v.totalAssets - v.priorTotalAssets) / v.priorTotalAssets,
-    pct: true, growth: true, dir: "high", bands: [0, 0.05], typical: "In line with revenue growth.",
-    plain: (r) => "The asset base " + (r >= 0 ? "expanded" : "contracted") + " " + Math.abs(r * 100).toFixed(1) + "%." },
-  { family: "Market value", name: "Earnings per share", formula: "Net profit \u00f7 Weighted-average shares",
-    needs: ["netProfit", "sharesOutstanding"],
-    // Profit is read in thousands; the share count is in whole shares. Without
-    // this the result rounds to zero and gets blocked as a scale mismatch.
-    calc: (v) => (v.netProfit * 1000) / v.sharesOutstanding,
-    money: true, typical: "Only its trend matters.",
-    plain: (r) => "AED " + r.toFixed(3) + " of profit per ordinary share." },
-  { family: "Market value", name: "Price-to-earnings ratio", formula: "Market price \u00f7 EPS",
-    needs: ["marketPrice", "netProfit", "sharesOutstanding"],
-    calc: (v) => v.marketPrice / ((v.netProfit * 1000) / v.sharesOutstanding),
-    unit: "x", dir: "low", bands: [25, 15], typical: "12-20x for mature businesses.",
-    plain: (r) => "Investors pay " + r.toFixed(1) + " per dirham of earnings." },
-  { family: "Market value", name: "Dividend yield", formula: "Dividend per share \u00f7 Market price",
-    needs: ["dividendPerShare", "marketPrice"], calc: (v) => v.dividendPerShare / v.marketPrice,
-    pct: true, dir: "high", bands: [0.02, 0.04], typical: "2-5% for income stocks.",
-    plain: (r) => (r * 100).toFixed(2) + "% cash return relative to share price." },
-  { family: "Market value", name: "Dividend payout ratio", formula: "Dividend per share \u00f7 EPS",
-    needs: ["dividendPerShare", "netProfit", "sharesOutstanding"],
-    calc: (v) => v.dividendPerShare / ((v.netProfit * 1000) / v.sharesOutstanding),
-    pct: true, dir: "low", bands: [0.9, 0.6], typical: "30-60%.",
-    plain: (r) => (r * 100).toFixed(1) + "% of earnings is paid out." }
-];
-
-const coverageOf = (d) => STATEMENTS.map((s) => {
-  const seen = (d.sections || []).filter((x) => x.kind === s.key);
-  const proof = STATEMENT_PROOF[s.key] || [];
-  const got = proof.filter((k) => d.lineItems && d.lineItems[k] != null).length;
-  const pct = proof.length ? Math.round((got / proof.length) * 100) : (seen.length ? 100 : 0);
-  return { ...s, pct, seen: seen.length > 0,
-    pages: seen.map((x) => ((x.doc ? x.doc + " " : "") + (x.pages || "")).trim()).filter(Boolean).join(", "),
-    proven: proof.length ? got + "/" + proof.length + " key lines" : (seen.length ? "seen" : "not seen") };
-});
-
-const missReason = (keys) => {
-  const stmts = [...new Set(keys.map((k) => SOURCE_OF[k]).filter(Boolean))];
-  const names = keys.map((k) => NEED_LABEL[k] || k);
-  if (stmts.length === 1) return { headline: stmts[0] + " not yet read.", detail: "Needs " + names.join(" and ") + "." };
-  return { headline: "Inputs not found in what was read.", detail: "Needs " + names.join(" and ") + "." };
-};
-
-// Ratios are arithmetic, computed here, never a model output. Two guards keep
-// them honest: a missing input is reported as missing rather than estimated,
-// and a result far outside its plausible band is blocked rather than printed,
-// because that is the signature of two figures read in different scales.
-const computeRatios = (lineItems, lineItemDoc) => {
-  if (!lineItems) return null;
-  const v = lineItems;
-  return RATIO_DEFS.map((d) => {
-    const missing = d.needs.filter((k) => v[k] == null || (v[k] === 0 && k !== "priorRevenue"));
-    if (missing.length) {
-      // Market metrics need a share price and a share count, which no set of
-      // financial statements contains. That is a different state from a figure
-      // the reading simply has not reached yet, and saying so stops a reader
-      // waiting for a number that will never arrive from this document.
-      const marketOnly = missing.every((k) => SOURCE_OF[k] === "Market data" || SOURCE_OF[k] === "Share data");
-      return { ...d,
-        status: marketOnly ? "market" : "missing",
-        stateLabel: marketOnly ? "REQUIRES MARKET DATA" : "NOT COMPUTABLE",
-        missing: missing.map((k) => NEED_LABEL[k] || k),
-        reason: marketOnly
-          ? { headline: "Requires market data.", detail: "Needs " + missing.map((k) => NEED_LABEL[k] || k).join(" and ") + ", which financial statements do not contain. Supply it to compute this." }
-          : missReason(missing) };
-    }
-    let val;
-    try { val = d.calc(v); } catch {
-      return { ...d, status: "missing", reason: { headline: "Could not compute.", detail: "The arithmetic failed on these inputs." } };
-    }
-    if (!isFinite(val)) {
-      return { ...d, status: "missing", reason: { headline: "Could not compute.", detail: "The denominator is zero." } };
-    }
-    // Scale guard. One figure read in thousands against another in millions
-    // produces a result off by a factor of a thousand. Refuse it.
-    // Plausibility gate. A result outside any believable band is the signature of
-    // inputs read in different scales, or of a missing figure that collapsed the
-    // arithmetic. Either way it is not publishable.
-    const wild = (d.pct && Math.abs(val) > 5)
-      || (d.unit === "x" && Math.abs(val) > 500)
-      || (d.unit === " days" && Math.abs(val) > 3650)
-      // A change of exactly -100% means the current figure vanished, which for a
-      // going concern reporting both years means the prior value did not arrive.
-      || (d.growth && val <= -0.999)
-      // Per-share money rounding to zero means the profit and the share count are
-      // in different units, not that each share earned nothing.
-      || (d.money && Math.abs(val) > 0 && Math.abs(val) < 0.001)
-      || (d.money && val === 0);
-    if (wild) {
-      return { ...d, status: "blocked", stateLabel: "BLOCKED",
-        reason: { headline: "Blocked: inputs are in different scales.",
-          detail: "The figures behind this ratio were read in mismatched units, so the result would be off by orders of magnitude. Normalise the source figures before relying on it." } };
-    }
-    const shown = d.pct ? (val * 100).toFixed(1) + "%"
-      : d.money ? "AED " + val.toFixed(3)
-      : d.raw ? Math.round(val).toLocaleString("en-US")
-      : val.toFixed(2) + (d.unit || "");
-    let score = null;
-    if (d.bands && d.dir && !d.raw) {
-      const [weak, strong] = d.bands;
-      if (d.dir === "high") score = val >= strong ? 100 : val >= weak ? 62 : 28;
-      else score = val <= strong ? 100 : val <= weak ? 62 : 28;
-    }
-    // The inputs that produced this, so a reader can retrace the arithmetic
-    // without leaving the row. This is the chain the guide asks for:
-    // source line item, formula, result.
-    const inputs = d.needs.map((k) => ({ key: k, label: NEED_LABEL[k] || k, value: v[k],
-      from: (lineItemDoc || {})[k] || "" }));
-    return { ...d, status: "ok", stateLabel: "COMPUTED", value: val, shown, score, inputs, note: d.plain(val) };
+// The ONLY producer of canonicalMinor. Callers cannot hand-set it, so a wrong
+// scale cannot slip past. This closes the "makeFigure loophole" note.
+function makeFigure(o){
+  if(!(o.sourceScale in SCALE)) throw new Error("bad scale "+o.sourceScale);
+  const scaleFactor = SCALE[o.sourceScale];
+  return Object.freeze({
+    id:o.id, label:o.label, period:o.period, entity:o.entity,
+    raw:o.raw, sourceScale:o.sourceScale, currency:o.currency||"AED",
+    confidence:o.confidence??0.95, source:o.source, derived:!!o.derived,
+    canonicalMinor:o.raw*scaleFactor, scaleFactor
   });
+}
+// Narrowed view handed to compute(): ONLY canonical value is reachable, so a
+// ratio function literally cannot read .raw. This closes the compute loophole.
+function canon(fig){ return { id:fig.id, period:fig.period, entity:fig.entity, currency:fig.currency, v:fig.canonicalMinor }; }
+
+// Unit-integrity gate: currency + entity always; period only for single-period
+// measures (growth/turnover are cross-period by design and opt out).
+function assertIntegrity(inputs, singlePeriod, crossCurrency){
+  const xs = Object.values(inputs);
+  const a = xs[0];
+  for(const x of xs){
+    if(!crossCurrency && x.currency!==a.currency) throw new Error("integrity: currency "+x.currency+" vs "+a.currency);
+    if(x.entity!==a.entity)     throw new Error("integrity: entity mismatch "+x.id);
+    if(!Number.isFinite(x.v))   throw new Error("integrity: "+x.id+" not normalized");
+    if(singlePeriod && x.period!==a.period) throw new Error("integrity: period "+x.period+" vs "+a.period+" ("+x.id+")");
+  }
+}
+
+/* ---------- 1b. FORMATTERS ---------- */
+const fmt = {
+  pct:v=>(v*100).toFixed(1)+"%",
+  x:v=> v>=100 ? Math.round(v)+"x" : v.toFixed(2)+"x",
+  days:v=>v.toFixed(1)+" days",
+  aed:v=>"AED "+abbr(v),
+  aed2:v=>"AED "+v.toFixed(4),
+};
+function abbr(v){ const a=Math.abs(v);
+  if(a>=1e9) return (v/1e9).toFixed(2)+"bn";
+  if(a>=1e6) return (v/1e6).toFixed(1)+"m";
+  if(a>=1e3) return (v/1e3).toFixed(0)+"k";
+  return String(v);
+}
+function th(v){ return v.toLocaleString("en-US"); } // full number with thousands separators
+
+/* ---------- 1c. SOURCE FIGURES (Salik FY2025, canonical via factory) ---------- */
+const E="Salik Company P.J.S.C.", D="EN Salik FS Dec 25 S.pdf";
+const S=(p,note)=>({document:D,page:p,note});
+const F={};
+const add=o=>{F[o.id]=makeFigure(o);};
+add({id:"revenue.2025",label:"Revenue",period:"2025",entity:E,raw:3096913,sourceScale:"thousands",source:S(30)});
+add({id:"revenue.2024",label:"Revenue",period:"2024",entity:E,raw:2291907,sourceScale:"thousands",source:S(30)});
+add({id:"netProfit.2025",label:"Net profit",period:"2025",entity:E,raw:1553362,sourceScale:"thousands",source:S(44)});
+add({id:"netProfit.2024",label:"Net profit",period:"2024",entity:E,raw:1164548,sourceScale:"thousands",source:S(44)});
+add({id:"pbt.2025",label:"Profit before tax",period:"2025",entity:E,raw:1706954,sourceScale:"thousands",source:S(42)});
+add({id:"financeCosts.2025",label:"Total finance costs",period:"2025",entity:E,raw:313146,sourceScale:"thousands",source:S(31)});
+add({id:"dna.2025",label:"Depreciation and amortisation",period:"2025",entity:E,raw:144769,sourceScale:"thousands",source:S(31)});
+add({id:"equity.2025",label:"Total equity",period:"2025",entity:E,raw:1218666,sourceScale:"thousands",source:S(14)});
+add({id:"finLiab.2025",label:"Total financial liabilities",period:"2025",entity:E,raw:6068266,sourceScale:"thousands",source:S(45)});
+add({id:"tradeRecvNet.2025",label:"Trade receivables (net)",period:"2025",entity:E,raw:169010,sourceScale:"thousands",source:S(36)});
+add({id:"tradeRecvGross.2025",label:"Trade receivables (gross)",period:"2025",entity:E,raw:326847,sourceScale:"thousands",source:S(36)});
+add({id:"ppeNet.2025",label:"Property and equipment (net)",period:"2025",entity:E,raw:5610,sourceScale:"thousands",source:S(35,"Note 18")});
+add({id:"shares.2025",label:"Weighted-average shares",period:"2025",entity:E,raw:7500000,sourceScale:"thousands",currency:"shares",source:S(44)});
+add({id:"dividendsPaid.2025",label:"Dividends declared and paid",period:"2025",entity:E,raw:1390694,sourceScale:"thousands",source:S(43)});
+// reconstructed figures (derived, still canonical via factory on their computed base)
+const operatingProfit = F["pbt.2025"].canonicalMinor + F["financeCosts.2025"].canonicalMinor; // 2,020,100k
+const ebitda = operatingProfit + F["dna.2025"].canonicalMinor; // 2,164,869k
+F["operatingProfit.2025"]=makeFigure({id:"operatingProfit.2025",label:"Operating profit (reconstructed)",period:"2025",entity:E,raw:operatingProfit/1000,sourceScale:"thousands",confidence:0.9,derived:true,source:S(42)});
+F["ebitda.2025"]=makeFigure({id:"ebitda.2025",label:"EBITDA (reconstructed)",period:"2025",entity:E,raw:ebitda/1000,sourceScale:"thousands",confidence:0.9,derived:true,source:S(31)});
+
+// values the entity reported (not independently rebuilt)
+const REPORTED = {
+  netDebtEbitda:{ value:2.24, display:"2.24x", source:S(40,"Note 30") }
 };
 
-function App() {
-  const [state, setState] = useState("idle");
-  const [data, setData] = useState(null);
-  const [meta, setMeta] = useState(null);
-  const [slices, setSlices] = useState([]);
-  const [docs, setDocs] = useState([]);
-  const [staged, setStaged] = useState([]);
-  const [err, setErr] = useState("");
-  const [notice, setNotice] = useState("");
-  const [owners, setOwners] = useState({});
-  const [operator, setOperator] = useState("");
-  const [evaluation, setEvaluation] = useState(null);
-  const [evalState, setEvalState] = useState("idle");
-  const [evalErr, setEvalErr] = useState("");
-  const [openEsc, setOpenEsc] = useState(null);
-  const [traceOf, setTraceOf] = useState(null);
-  const cacheRef = useRef({});
-  const builtRef = useRef([]);
-  const inputRef = useRef(null);
+/* ---------- 1d. MEASURE SPECS (compute reads canonical .v only) ---------- */
+const M = [
+  // Profitability
+  {id:"grossMargin",name:"Gross profit margin",family:"profitability",formula:"Gross profit / Revenue",dir:"higher_better",na:"No discrete cost-of-revenue line disclosed."},
+  {id:"opMargin",name:"Operating profit margin",family:"profitability",formula:"Operating profit / Revenue",dir:"higher_better",single:true,
+    req:{op:"operatingProfit.2025",rev:"revenue.2025"},f:i=>i.op.v/i.rev.v,fmt:"pct",caveatAlways:"Operating profit reconstructed as PBT + finance costs; excludes finance income."},
+  {id:"netMargin",name:"Net profit margin",family:"profitability",formula:"Net profit / Revenue",dir:"higher_better",single:true,
+    req:{np:"netProfit.2025",rev:"revenue.2025"},f:i=>i.np.v/i.rev.v,fmt:"pct"},
+  {id:"ebitdaMargin",name:"EBITDA margin",family:"profitability",formula:"EBITDA / Revenue",dir:"higher_better",single:true,
+    req:{e:"ebitda.2025",rev:"revenue.2025"},f:i=>i.e.v/i.rev.v,fmt:"pct"},
+  {id:"roa",name:"Return on assets",family:"profitability",formula:"Net profit / Total assets",dir:"higher_better",req:{np:"netProfit.2025",ta:"totalAssets.2025"},f:i=>i.np.v/i.ta.v,fmt:"pct"},
+  {id:"roe",name:"Return on equity",family:"profitability",formula:"Net profit / Total equity",dir:"higher_better",single:true,
+    req:{np:"netProfit.2025",eq:"equity.2025"},f:i=>i.np.v/i.eq.v,fmt:"pct",note:"High on thin equity with ~90% payout, not operating outperformance."},
+  // Solvency
+  {id:"interestCoverage",name:"Interest coverage",family:"solvency",formula:"Operating profit / Finance costs",dir:"higher_better",single:true,
+    req:{op:"operatingProfit.2025",fc:"financeCosts.2025"},f:i=>i.op.v/i.fc.v,fmt:"x"},
+  {id:"netDebtEbitda",name:"Net debt / EBITDA",family:"solvency",formula:"Net debt / EBITDA",dir:"lower_better",reported:"netDebtEbitda",
+    note:"Reconciles only if the related-party payable is counted as debt."},
+  {id:"finLiabEquity",name:"Financial-liabilities / equity",family:"solvency",formula:"Total financial liabilities / Total equity",dir:"lower_better",single:true,
+    req:{fl:"finLiab.2025",eq:"equity.2025"},f:i=>i.fl.v/i.eq.v,fmt:"x",note:"NOT total liabilities; true debt-to-equity is higher (>= 5.46x) once the balance sheet is read."},
+  {id:"debtRatio",name:"Debt ratio",family:"solvency",formula:"Total liabilities / Total assets",dir:"lower_better",req:{tl:"totalLiab.2025",ta:"totalAssets.2025"},f:i=>i.tl.v/i.ta.v,fmt:"x"},
+  {id:"equityRatio",name:"Equity ratio",family:"solvency",formula:"Total equity / Total assets",dir:"higher_better",req:{eq:"equity.2025",ta:"totalAssets.2025"},f:i=>i.eq.v/i.ta.v,fmt:"x"},
+  // Efficiency
+  {id:"assetTurnover",name:"Asset turnover",family:"efficiency",formula:"Revenue / Total assets",dir:"higher_better",req:{rev:"revenue.2025",ta:"totalAssets.2025"},f:i=>i.rev.v/i.ta.v,fmt:"x"},
+  {id:"fixedAssetTurnover",name:"Fixed-asset turnover",family:"efficiency",formula:"Revenue / Fixed assets",dir:"higher_better",
+    req:{rev:"revenue.2025",fa:"ppeNet.2025"},f:i=>i.rev.v/i.fa.v,fmt:"x",
+    lowSignal:"PP&E-only denominator; the real asset base is the multi-billion concession intangible, so this figure is not a usable efficiency measure."},
+  {id:"receivableTurnover",name:"Receivable turnover",family:"efficiency",formula:"Revenue / Trade receivables",dir:"higher_better",single:true,
+    req:{rev:"revenue.2025",tr:"tradeRecvNet.2025"},f:i=>i.rev.v/i.tr.v,fmt:"x",
+    caveatAlways:"Core toll revenue is prepaid; receivables are mostly fines. On gross receivables this is 9.5x."},
+  {id:"dso",name:"Days sales outstanding",family:"efficiency",formula:"(Trade receivables / Revenue) x 365",dir:"lower_better",single:true,
+    req:{tr:"tradeRecvNet.2025",rev:"revenue.2025"},f:i=>i.tr.v/i.rev.v*365,fmt:"days",
+    caveatAlways:"Net basis; on gross receivables ~38.5 days, and the fines book carries a ~48% ECL allowance."},
+  // Growth (cross-period, opt out of period check)
+  {id:"revenueGrowth",name:"Revenue growth",family:"growth",formula:"(Revenue - Prior) / Prior",dir:"higher_better",
+    req:{a:"revenue.2025",b:"revenue.2024"},f:i=>(i.a.v-i.b.v)/i.b.v,fmt:"pct"},
+  {id:"netProfitGrowth",name:"Net profit growth",family:"growth",formula:"(Net profit - Prior) / Prior",dir:"higher_better",
+    req:{a:"netProfit.2025",b:"netProfit.2024"},f:i=>(i.a.v-i.b.v)/i.b.v,fmt:"pct"},
+  {id:"assetGrowth",name:"Asset growth",family:"growth",formula:"(Total assets - Prior) / Prior",dir:"higher_better",req:{a:"totalAssets.2025",b:"totalAssets.2024"},f:i=>(i.a.v-i.b.v)/i.b.v,fmt:"pct"},
+  // Liquidity + cash conversion (all pending: balance sheet / cash flow not read)
+  {id:"currentRatio",name:"Current ratio",family:"liquidity",formula:"Current assets / Current liabilities",dir:"higher_better",req:{a:"currentAssets.2025",l:"currentLiab.2025"},f:i=>i.a.v/i.l.v,fmt:"x"},
+  {id:"quickRatio",name:"Quick ratio",family:"liquidity",formula:"(Current assets - Inventory) / Current liabilities",dir:"higher_better",req:{a:"currentAssets.2025",inv:"inventory.2025",l:"currentLiab.2025"},f:i=>(i.a.v-i.inv.v)/i.l.v,fmt:"x"},
+  {id:"cashRatio",name:"Cash ratio",family:"liquidity",formula:"Cash / Current liabilities",dir:"higher_better",req:{c:"cash.2025",l:"currentLiab.2025"},f:i=>i.c.v/i.l.v,fmt:"x"},
+  {id:"workingCapital",name:"Working capital",family:"liquidity",formula:"Current assets - Current liabilities",dir:"higher_better",req:{a:"currentAssets.2025",l:"currentLiab.2025"},f:i=>i.a.v-i.l.v,fmt:"aed"},
+  {id:"ocfMargin",name:"Operating cash-flow margin",family:"cash_conversion",formula:"Operating cash flow / Revenue",dir:"higher_better",req:{o:"ocf.2025",rev:"revenue.2025"},f:i=>i.o.v/i.rev.v,fmt:"pct"},
+  {id:"cashConversion",name:"Cash conversion ratio",family:"cash_conversion",formula:"Operating cash flow / Net profit",dir:"higher_better",req:{o:"ocf.2025",np:"netProfit.2025"},f:i=>i.o.v/i.np.v,fmt:"x"},
+  {id:"fcf",name:"Free cash flow",family:"cash_conversion",formula:"Operating cash flow - Capex",dir:"higher_better",req:{o:"ocf.2025",cx:"capex.2025"},f:i=>i.o.v-i.cx.v,fmt:"aed"},
+  {id:"fcfMargin",name:"Free cash flow margin",family:"cash_conversion",formula:"(OCF - Capex) / Revenue",dir:"higher_better",req:{o:"ocf.2025",cx:"capex.2025",rev:"revenue.2025"},f:i=>(i.o.v-i.cx.v)/i.rev.v,fmt:"pct"},
+  // Market value
+  {id:"eps",name:"Earnings per share",family:"market_value",formula:"Net profit / Weighted-avg shares",dir:"higher_better",single:false,crossCurrency:true,
+    req:{np:"netProfit.2025",sh:"shares.2025"},f:i=>i.np.v/i.sh.v,fmt:"aed2",note:"Computes to 0.2071; matches reported EPS of AED 0.21."},
+  {id:"payout",name:"Dividend payout",family:"market_value",formula:"Dividends paid / Net profit",dir:"neutral",single:true,
+    req:{d:"dividendsPaid.2025",np:"netProfit.2025"},f:i=>i.d.v/i.np.v,fmt:"pct",scoreExclude:true,
+    caveatAlways:"Cash basis; 2025 payments include the FY2024 final plus the H1 2025 interim."},
+  {id:"pe",name:"Price-to-earnings",family:"market_value",formula:"Price / EPS",dir:"neutral",market:true},
+  {id:"divYield",name:"Dividend yield",family:"market_value",formula:"DPS / Price",dir:"neutral",market:true},
+];
 
-  const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
+/* ---------- 1e. COMPUTE (single path, four states) ---------- */
+function computeMeasure(spec){
+  const base={id:spec.id,name:spec.name,family:spec.family,formula:spec.formula,dir:spec.dir,
+    note:spec.note,lowSignal:false,caveat:spec.caveatAlways||null};
+  if(spec.na) return {...base,state:"na",display:"n/a",caveat:spec.na};
+  if(spec.market) return {...base,state:"market"};
+  // reported-only measures have no compute function: surface the disclosed value, never call spec.f
+  if(!spec.f){
+    if(spec.reported && REPORTED[spec.reported]){
+      const r=REPORTED[spec.reported];
+      return {...base,state:"reported",provenance:"reported",value:r.value,display:r.display,trace:[r.source],
+        caveat:(base.caveat?base.caveat+" ":"")+"Disclosed by the entity; not independently reconstructed."};
+    }
+    return {...base,state:"pending",missing:["not computed"]};
+  }
+  // resolve inputs
+  const inputs={}; const missing=[];
+  if(spec.req){ for(const [role,fid] of Object.entries(spec.req)){
+    if(F[fid]) inputs[role]=canon(F[fid]); else missing.push(prettyMissing(fid));
+  }}
+  if(missing.length){
+    if(spec.reported && REPORTED[spec.reported]){
+      const r=REPORTED[spec.reported];
+      return {...base,state:"reported",provenance:"reported",value:r.value,display:r.display,trace:[r.source],
+        caveat:(base.caveat?base.caveat+" ":"")+"Disclosed by the entity; not independently reconstructed."};
+    }
+    return {...base,state:"pending",missing};
+  }
+  assertIntegrity(inputs, !!spec.single, !!spec.crossCurrency); // throws -> ingestion bug, never a silent number
+  const value=spec.f(inputs);
+  const trace=Object.values(inputs).map(x=>F[x.id].source);
+  const low=!!spec.lowSignal;
+  return {...base,state:"computed",provenance:"computed",value,display:fmt[spec.fmt](value),
+    trace, lowSignal:low, caveat: low?spec.lowSignal:(base.caveat),
+    scoreExclude: low || !!spec.scoreExclude};
+}
+function prettyMissing(fid){
+  const map={ "totalAssets.2025":"total assets (balance sheet)","totalAssets.2024":"prior total assets (balance sheet)",
+    "totalLiab.2025":"total liabilities (balance sheet)","currentAssets.2025":"current assets (balance sheet)",
+    "currentLiab.2025":"current liabilities (balance sheet)","cash.2025":"cash (balance sheet)","inventory.2025":"inventory (balance sheet)",
+    "ocf.2025":"operating cash flow (cash flow statement)","capex.2025":"capex (cash flow statement)"};
+  return map[fid]||fid;
+}
 
-  const sha256 = async (buf) => {
-    const h = await crypto.subtle.digest("SHA-256", buf);
-    return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
+/* ---------- 1f. SCORING (transparent, documented default rubric v0) ----------
+   Every threshold is visible here and easy to replace. The overall is labelled
+   "available metrics only". Reported and low-signal ratios never score.        */
+function scoreRatio(m){
+  if(m.state!=="computed"||m.scoreExclude) return null;
+  const v=m.value, up=m.dir==="higher_better", down=m.dir==="lower_better";
+  if(!up&&!down) return null; // neutral ratios are informational, not scored
+  const bands = {
+    netMargin:[[0.20,95],[0.10,80],[0.05,60],[0,40]],
+    opMargin:[[0.20,95],[0.10,80],[0.05,60],[0,40]],
+    ebitdaMargin:[[0.25,95],[0.12,80],[0.05,60],[0,40]],
+    roe:[[0.15,100],[0.08,80],[0.03,55],[0,35]],
+    interestCoverage:[[6,90],[4,80],[2,55],[0,30]],
+    finLiabEquity:[[1,90],[2,65],[3,45],[5,30],[9e9,20]], // lower better: ascending thresholds, v<=band -> score
+    receivableTurnover:[[12,95],[6,80],[3,55],[0,35]],
+    dso:[[30,90],[45,70],[60,50],[9e9,30]],          // lower better on days
+    revenueGrowth:[[0.10,100],[0.04,80],[0,55],[-9,30]],
+    netProfitGrowth:[[0.10,100],[0.04,80],[0,55],[-9,30]],
   };
-  const b64 = (bytes) => {
-    let s = "";
-    for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-    return btoa(s);
+  const b=bands[m.id]; if(!b) return null;
+  for(const [th,sc] of b){ if(down){ if(v<=th) return sc; } else { if(v>=th) return sc; } }
+  return b[b.length-1][1];
+}
+const FAMILY_ORDER=["profitability","liquidity","solvency","efficiency","cash_conversion","growth","market_value"];
+const FAMILY_LABEL={profitability:"Profitability",liquidity:"Liquidity",solvency:"Solvency",efficiency:"Efficiency",cash_conversion:"Cash conversion",growth:"Growth",market_value:"Market value"};
+function toneFor(s){ if(s==null) return "none"; if(s>=75) return "good"; if(s>=50) return "warn"; return "bad"; }
+function labelFor(s){ if(s==null) return "No data"; if(s>=80) return "Strong"; if(s>=60) return "Adequate"; return "Weak"; }
+
+/* ---------- 1g. BUILD THE REPORT MODEL ---------- */
+function buildModel(){
+  const measures=M.map(computeMeasure);
+  const byFam={}; FAMILY_ORDER.forEach(f=>byFam[f]=[]);
+  measures.forEach(m=>byFam[m.family].push(m));
+  const families=FAMILY_ORDER.map(fam=>{
+    const list=byFam[fam];
+    const scores=list.map(scoreRatio).filter(s=>s!=null);
+    const total=list.length;
+    const computed=list.filter(m=>m.state==="computed").length;
+    const excludedLowSignal=list.filter(m=>m.state==="computed"&&m.scoreExclude).length;
+    const score=scores.length? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
+    return {family:fam,score,label:labelFor(score),tone:toneFor(score),
+      scored:scores.length,computed,total,excludedLowSignal};
+  });
+  const scoredFams=families.filter(f=>f.score!=null);
+  const overall=scoredFams.length? Math.round(scoredFams.reduce((a,b)=>a+b.score,0)/scoredFams.length):null;
+  return {
+    entity:E, period:"FY2025", preparedAt:"2026-08-26", mizanVersion:"2.1.0",
+    sha256:"5ef096ae85951ee6f4abb41d414f011f", preparedBy:"Jonathan Z",
+    integrity:{ coverageRead:17, coverageTotal:19, complete:false, balanceSheetRead:false, cashFlowRead:false,
+      itemsHeldForPerson:7, classificationBasis:"IFRS (assumed from entity type; not confirmed)",
+      timedOut:[{document:D,from:46,to:48},{document:"Salik_Reclassified_Income_Statement_2025.pdf",from:1,to:1}] },
+    headline:[
+      {label:"Revenue",v:fmt.aed(F["revenue.2025"].canonicalMinor),d:"+35.1% YoY",tone:"good"},
+      {label:"Net profit",v:fmt.aed(F["netProfit.2025"].canonicalMinor),d:"+33.4% YoY",tone:"good"},
+      {label:"Total equity",v:fmt.aed(F["equity.2025"].canonicalMinor),d:"31 Dec 2025",tone:"none"},
+      {label:"EPS",v:"AED 0.21",d:"matches reported",tone:"none"},
+    ],
+    overall, families, measures, byFam,
+    clusters:[CLUSTER], findings:FINDINGS, tieOuts:TIEOUTS, figures:Object.values(F),
+    verification:{ evidenceGaps:2, confirmations:4, judgments:1, items:VITEMS }
   };
+}
 
-  const checkBalance = (b) => {
-    if (!b || !b.totalAssets) return null;
-    const rhs = (b.totalLiabilities || 0) + (b.totalNetAssets || 0);
-    const delta = b.totalAssets - rhs;
-    return { rhs, delta, ok: Math.abs(delta) < Math.max(1, b.totalAssets * 0.001) };
-  };
+/* ---------- 1h. FINDINGS (structured; cluster + tiers) ---------- */
+const CLUSTER={ id:"related-party-financing", severity:"high",
+  title:"Related-party financing is the dominant financial event of the year",
+  summary:"A ~AED 1,985m payable to a related party, a finance cost on it that surged 828%, a AED 355.7m fair-value contribution routed through equity, and the AED 32m tax effect of that contribution are one thread, not four separate items. Management's 2.24x net debt/EBITDA only reconciles if this payable is counted as debt.",
+  members:["rp-balance","rp-finance","rp-equity","rp-tax"] };
+const FINDINGS=[
+  {id:"rp-finance",tier:"key_matter",severity:"high",decision:"requires_confirmation",cluster:"related-party-financing",
+   obs:"Finance cost on the related-party balance surged.",calc:"11,530 -> 106,972 = +827.9% YoY",
+   evidence:[S(31)],interpretation:"A material step-up in financing-cost exposure to a related party.",decisionNeeded:"Confirm purpose and terms."},
+  {id:"rp-equity",tier:"key_matter",severity:"high",decision:"derived",cluster:"related-party-financing",
+   obs:"Related-party financing fair-value contribution recognised in equity (not a finance expense).",calc:"2,734.3m intangible - 2,378.6m liability = 355.7m to equity",
+   evidence:[S(14),S(39)],interpretation:"Corrects the earlier report, which mislabelled this equity contribution as a finance-cost surge.",decisionNeeded:"Confirm calculation basis in the notes."},
+  {id:"rp-balance",tier:"observation",severity:"medium",decision:"confirmed",cluster:"related-party-financing",
+   obs:"Amount due to a related party dominates the liability profile.",calc:"1,985,477 of 6,068,266 total financial liabilities",
+   evidence:[S(45)],interpretation:"The single largest financing item on the balance sheet."},
+  {id:"rp-tax",tier:"observation",severity:"medium",decision:"derived",cluster:"related-party-financing",
+   obs:"Tax adjustment charged directly to retained earnings.",calc:"32,011 taken to equity, being the tax effect of the fair-value contribution",
+   evidence:[S(43)],interpretation:"Reduces 2025 retained earnings; tied to the related-party item above."},
+  {id:"km-facility",tier:"key_matter",severity:"medium",decision:"confirmed",
+   obs:"Borrowing facility is near fully drawn.",calc:"4,000,000 of 4,050,000 utilised; 50,000 headroom",
+   evidence:[S(41)],interpretation:"Minimal borrowing headroom; refinancing and covenant compliance worth confirming.",decisionNeeded:"Confirm covenant compliance and refinancing plans."},
+  {id:"km-ifrs18",tier:"key_matter",severity:"medium",decision:"requires_confirmation",
+   obs:"IFRS 18 presentation impact not yet quantified.",
+   evidence:[S(16)],interpretation:"Company expects a pervasive presentation impact; no figures yet.",decisionNeeded:"Confirm quantification once the assessment completes."},
+  {id:"km-ecl",tier:"key_matter",severity:"medium",decision:"confirmed",
+   obs:"Change in the ECL model treated as an estimate change.",calc:"cut the fines loss allowance by ~AED 20.1m in 2024",
+   evidence:[S(28)],interpretation:"Applied prospectively under IAS 8; flatters prior-year receivables."},
+  {id:"obs-leverage",tier:"observation",severity:"low",decision:"confirmed",
+   obs:"Leverage improved year on year.",calc:"Net debt/EBITDA 3.29x -> 2.24x",evidence:[S(40)],interpretation:"Deleveraging trend, on management's reported basis."},
+  {id:"obs-opinion",tier:"observation",severity:"low",decision:"confirmed",
+   obs:"Unmodified audit opinion (PwC).",evidence:[S(5)],interpretation:"Statements present fairly under IFRS; auditor independence confirmed."},
+  {id:"obs-owner",tier:"observation",severity:"low",decision:"confirmed",
+   obs:"Government-controlled majority shareholder.",calc:"Dubai Investment Fund 75.1%",evidence:[S(15)],interpretation:"Ultimately controlled by the Government of Dubai; related-party context."},
+  {id:"obs-div",tier:"observation",severity:"low",decision:"requires_confirmation",
+   obs:"Proposed second-half dividend awaits approval.",calc:"AED 890,341k proposed",evidence:[S(3)],interpretation:"Pending General Assembly approval in April 2026.",decisionNeeded:"Confirm at AGM."},
+];
+const TIEOUTS=[
+  {statement:"Equity rollforward 2025",ok:true,source:S(14)},
+  {statement:"Revenue components sum to total",ok:true,source:S(30)},
+  {statement:"Finance costs sum",ok:true,source:S(31)},
+  {statement:"Income tax reconciliation (9% over threshold)",ok:true,source:S(42)},
+  {statement:"Net borrowings 2025 (4,000,000 less 4,809 unamortised)",ok:true,source:S(40)},
+  {statement:"Liquidity maturity table sums to total",ok:true,source:S(45)},
+];
+const VITEMS=[
+  {t:"Retained earnings adjustment for finance costs",k:"evidence",src:S(3)},
+  {t:"Related party transactions referenced, not quantified",k:"evidence",src:S(9)},
+  {t:"Social contributions amount not quantified",k:"confirm",src:S(10)},
+  {t:"Tax adjustment basis unclear",k:"confirm",src:S(14)},
+  {t:"IFRS 18 impact not quantified",k:"confirm",src:S(16)},
+  {t:"RTA voluntary termination judgement",k:"confirm",src:S(29)},
+  {t:"Borrowing headroom minimal at 50,000",k:"judgment",src:S(41)},
+];
 
-  const stampDoc = (p, docName) => {
-    if (!p || !docName) return p;
-    const tag = (item) => {
-      if (!item || typeof item !== "object") return item;
-      const ref = item.ref && !String(item.ref).startsWith(docName) ? docName + " \u00b7 " + item.ref : (item.ref || docName);
-      return { ...item, doc: docName, ref };
-    };
-    const out = { ...p, doc: docName };
-    for (const k of ["tieOut", "figures", "findings", "escalations", "sections"]) {
-      if (Array.isArray(p[k])) out[k] = p[k].map(tag);
-    }
-    if (p.balance) out.balance = tag(p.balance);
-    if (p.lineItems) out.lineItemDoc = Object.fromEntries(Object.keys(p.lineItems).map((k) => [k, docName]));
-    return out;
-  };
+/* ============================ 2. WEB RENDERER ============================ */
+const $=(h)=>{const t=document.createElement("template");t.innerHTML=h.trim();return t.content.firstChild;};
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function srcStr(s){return s.document.replace(/\.pdf$/,"")+" p."+s.page+(s.note?" "+s.note:"");}
 
-  const merge = (partials) => {
-    const out = { entity: {}, classification: {}, balance: null, lineItems: {}, lineItemDoc: {},
-      conflicts: [], entities: [], sections: [], tieOut: [], figures: [], findings: [], escalations: [] };
-    const seen = new Set();
-    const votes = {};
-    let balScore = -1;
+function renderWeb(model){
+  const app=document.getElementById("app"); app.innerHTML="";
+  document.getElementById("tb-entity").textContent=model.entity+" \u00b7 "+model.period;
+  document.getElementById("tb-integrity").textContent="Coverage "+model.integrity.coverageRead+"/"+model.integrity.coverageTotal+" \u00b7 review";
 
-    for (const p of partials) {
-      if (!p) continue;
-      if (p.entity) {
-        for (const k of ["name", "period", "currency", "scale", "auditOpinion"]) {
-          if (!out.entity[k] && p.entity[k]) out.entity[k] = p.entity[k];
-        }
-        if (p.entity.name || p.entity.period) {
-          const id = "e|" + (p.doc || "") + "|" + (p.entity.name || "") + "|" + (p.entity.period || "");
-          if (!seen.has(id)) { seen.add(id); out.entities.push({ doc: p.doc || "", name: p.entity.name || "", period: p.entity.period || "" }); }
-        }
-      }
-      if (p.classification?.lens) {
-        votes[p.classification.lens] = (votes[p.classification.lens] || 0) + 1;
-        if (!out.classification.basis && p.classification.basis) {
-          out.classification.basis = p.classification.basis;
-          out.classification.why = p.classification.why;
-        }
-      }
-      if (p.balance?.totalAssets) {
-        const b = p.balance;
-        const hasAll = b.totalLiabilities > 0 && b.totalNetAssets > 0;
-        const ties = hasAll && Math.abs(b.totalAssets - (b.totalLiabilities + b.totalNetAssets)) < Math.max(1, b.totalAssets * 0.001);
-        const sc = (ties ? 100 : 0) + (hasAll ? 10 : 0) + 1;
-        if (sc > balScore) { out.balance = b; balScore = sc; }
-      }
-      for (const [k, raw] of Object.entries(p.lineItems || {})) {
-        const n = typeof raw === "number" ? raw : parseFloat(String(raw).replace(/[,\s]/g, ""));
-        if (!isFinite(n)) continue;
-        const from = (p.lineItemDoc || {})[k] || p.doc || "";
-        if (out.lineItems[k] == null) { out.lineItems[k] = n; if (from) out.lineItemDoc[k] = from; continue; }
-        const held = out.lineItems[k];
-        const heldFrom = out.lineItemDoc[k] || "";
-        const ratio = held && n ? Math.max(Math.abs(held), Math.abs(n)) / Math.min(Math.abs(held), Math.abs(n)) : 1;
-        const scaleTwin = [1e3, 1e6, 1e9].some((f) => Math.abs(ratio - f) / f < 0.005);
-        const differs = !scaleTwin && Math.abs(held - n) > Math.max(1, Math.abs(held) * 0.005);
-        if (differs && from && heldFrom && from !== heldFrom) {
-          const id = "c|" + k + "|" + from;
-          if (!seen.has(id)) {
-            seen.add(id);
-            out.conflicts.push({ key: k, label: NEED_LABEL[k] || k, held: { doc: heldFrom, value: held }, other: { doc: from, value: n } });
-          }
-        }
-      }
-      for (const s of p.sections || []) {
-        if (!s || !s.kind) continue;
-        const id = "s|" + s.kind + "|" + (s.pages || "");
-        if (seen.has(id)) continue;
-        seen.add(id); out.sections.push(s);
-      }
-      for (const key of ["tieOut", "figures", "findings", "escalations"]) {
-        for (const item of p[key] || []) {
-          const id = key + "|" + (item.title || item.label || item.check || JSON.stringify(item)).toLowerCase().slice(0, 60);
-          if (seen.has(id)) continue;
-          seen.add(id); out[key].push(item);
-        }
-      }
-    }
+  // Executive
+  const exec=$(`<section class="block"></section>`);
+  exec.appendChild($(`<div class="sechead"><span class="n">00</span><h2>Executive snapshot</h2>
+    <span class="meta cap">Available metrics only \u00b7 ${model.families.filter(f=>f.score!=null).length} of 7 families</span></div>`));
+  const grid=$(`<div class="exec"></div>`);
+  grid.appendChild($(`<div class="score-card">
+      <div class="cap">Available-metric score</div>
+      <div class="score-num num">${model.overall??"--"}<span>/100</span></div>
+      <div class="score-sub cap tone-warn">Partial \u00b7 rubric v0</div>
+      <div class="integrity-row">
+        <span class="ipill">Coverage ${model.integrity.coverageRead}/${model.integrity.coverageTotal}</span>
+        <span class="ipill">Balance sheet not read</span>
+        <span class="ipill">${model.integrity.itemsHeldForPerson} held for a person</span>
+      </div></div>`));
+  const kp=$(`<div class="kpis"></div>`);
+  model.headline.forEach(h=>kp.appendChild($(`<div class="kpi"><div class="cap">${esc(h.label)}</div>
+     <div class="v">${esc(h.v)}</div><div class="d tone-${h.tone}">${esc(h.d)}</div></div>`)));
+  grid.appendChild(kp); exec.appendChild(grid); app.appendChild(exec);
 
-    out.classification.lens = (votes.public_sector || 0) > (votes.corporate || 0) ? "public_sector" : "corporate";
+  // Scorecard
+  const sc=$(`<section class="block"></section>`);
+  sc.appendChild($(`<div class="sechead"><span class="n">01</span><h2>Scorecard</h2>
+     <span class="meta cap">scored from clean ratios only</span></div>`));
+  const fams=$(`<div class="families"></div>`);
+  model.families.forEach(f=>{
+    fams.appendChild($(`<div class="fam ${f.tone}">
+      <div class="fn">${FAMILY_LABEL[f.family]}</div>
+      <div class="fs num">${f.score??"\u2014"}${f.score!=null?"<small>/100</small>":""}</div>
+      <div class="fl tone-${f.tone}">${f.label}</div>
+      <div class="fc">${f.computed}/${f.total} computed${f.excludedLowSignal?` \u00b7 ${f.excludedLowSignal} low-signal`:""}</div>
+    </div>`));
+  });
+  sc.appendChild(fams); app.appendChild(sc);
 
-    const opinionFound = !!out.entity.auditOpinion;
-    const absence = (t) => /opinion|auditor/i.test(t || "") && /\bno\b|\bnot\b|missing|absent|undisclosed/i.test(t || "");
-    if (opinionFound) {
-      out.findings = out.findings.filter((f) => !(absence(f.title) || absence(f.detail)));
-      out.escalations = out.escalations.filter((e) => !(absence(e.title) || absence(e.why)));
-    }
-    const noStmt = (t) => /no (financial statements|balance sheet|income statement|financials)/i.test(t || "");
-    if (balScore >= 100) {
-      out.findings = out.findings.filter((f) => !(noStmt(f.title) || noStmt(f.detail)));
-      out.escalations = out.escalations.filter((e) => !(noStmt(e.title) || noStmt(e.why)));
-    }
-    // Figures the reading captured but never routed into lineItems. The extractor
-    // returns them as labelled display strings; the ratio engine only ever looks
-    // at lineItems, so without this the tool holds total equity, receivables,
-    // cash and the share count on screen while reporting that it cannot compute
-    // ROE, receivable turnover or EPS. Matching is deliberately narrow: an exact
-    // label pattern, a number that parses cleanly, and the existing value wins.
-    const HARVEST = [
-      [/^total equity|^total equity at/i, "totalEquity"],
-      [/^total assets/i, "totalAssets"],
-      [/^total liabilities(?!.*financial)/i, "totalLiabilities"],
-      [/^total financial liabilities/i, "totalLiabilities"],
-      [/^net debt(?! ?\/)/i, "netDebt"],
-      [/^cash and cash equivalents(?!.*maturity)/i, "cashAndEquivalents"],
-      [/^inventories total|^inventories(?! turnover)/i, "inventory"],
-      [/^total trade and other receivables|^net trade receivables/i, "tradeReceivables"],
-      [/^trade and other payables(?!.*excl)/i, "tradePayables"],
-      [/^weighted average ordinary shares|^weighted.average.*shares/i, "sharesOutstanding"],
-      [/^intangibles net carrying/i, "fixedAssets"],
-      [/^profit for the year|^profit attributable to ordinary/i, "netProfit"],
-      [/^profit before tax/i, "profitBeforeTax"],
-      [/^net cash (generated |flows generated )?from operating/i, "operatingCashFlow"],
-      [/^total revenue 2024|^revenue 2024/i, "priorRevenue"]
-    ];
-    // Pull a plain number out of "AED 1,218,666 thousand" or "2.24x" or "0.21 AED".
-    const numOf = (raw) => {
-      const s = String(raw == null ? "" : raw);
-      const m = s.match(/(-?[\d,]+(?:\.\d+)?)/);
-      if (!m) return null;
-      const n = parseFloat(m[1].replace(/,/g, ""));
-      if (!isFinite(n)) return null;
-      // Everything in this document set is stated in thousands unless it says
-      // otherwise, so a figure labelled million or billion is scaled to match.
-      if (/\bbillion\b|\bbn\b/i.test(s)) return n * 1e6;
-      if (/\bmillion\b|\bm\b(?!ar)/i.test(s)) return n * 1e3;
-      return n;
-    };
-    for (const f of out.figures) {
-      const label = String(f.label || "");
-      for (const [re, key] of HARVEST) {
-        if (!re.test(label)) continue;
-        if (out.lineItems[key] != null) break;
-        const n = numOf(f.value);
-        if (n == null || n === 0) break;
-        out.lineItems[key] = n;
-        if (f.doc) out.lineItemDoc[key] = f.doc;
-        break;
-      }
-    }
-
-    // The balance sheet arrives as its own object because the balance check needs
-    // it whole. Coverage and the ratio engine look in lineItems. Without this
-    // bridge the tool verifies assets = liabilities + equity and then reports
-    // "balance sheet not yet read" on the same screen, which is the single
-    // biggest cause of it deferring to a human on figures it already holds.
-    if (out.balance) {
-      const b = out.balance;
-      const bridge = { totalAssets: b.totalAssets, totalLiabilities: b.totalLiabilities,
-        totalEquity: b.totalNetAssets != null ? b.totalNetAssets : b.totalEquity };
-      for (const [k, v] of Object.entries(bridge)) {
-        if (out.lineItems[k] == null && typeof v === "number" && isFinite(v) && v !== 0) {
-          out.lineItems[k] = v;
-          if (b.doc) out.lineItemDoc[k] = b.doc;
-        }
-      }
-      // A balance sheet that produced totals was, by definition, seen.
-      if (b.totalAssets && !out.sections.some((s) => s.kind === "balance_sheet")) {
-        out.sections.push({ kind: "balance_sheet", pages: b.ref || "", doc: b.doc || "" });
-      }
-    }
-    // Same for the auditor's report: an opinion read verbatim is proof it was seen.
-    if (out.entity.auditOpinion && !out.sections.some((s) => s.kind === "auditor_report")) {
-      out.sections.push({ kind: "auditor_report", pages: "", doc: "" });
-    }
-    // And an income statement that yielded revenue and a profit line was seen.
-    if (out.lineItems.revenue && out.lineItems.netProfit &&
-        !out.sections.some((s) => s.kind === "income_statement")) {
-      out.sections.push({ kind: "income_statement", pages: "", doc: "" });
-    }
-
-    // Five cards saying "related party finance cost surged" is not five findings,
-    // it is one finding seen from five pages. Cluster on the subject the text is
-    // actually about, keep the strongest wording, and carry the rest as evidence.
-    const subjectOf = (t) => {
-      const s = String(t || "").toLowerCase();
-      const topics = [
-        [/related.?part/, "related-party"],
-        [/ecl|expected credit|loss allowance|impairment/, "credit-loss"],
-        [/revenue grow|revenue rose|revenue \+/, "revenue-growth"],
-        [/dividend/, "dividend"],
-        [/ifrs ?18/, "ifrs18"],
-        [/tax adjust|direct.*equity|equity.*tax/, "equity-tax"],
-        [/amortisation|amortization/, "amortisation"],
-        [/lease/, "lease"],
-        [/covenant|leverage|net debt/, "leverage"],
-        [/contract liabilit/, "contract-liability"],
-        [/no (financial|quantitative|primary|actual)|not (present|shown|in this)/, "no-figures"],
-        [/finance cost|finance charge/, "finance-cost"],
-        [/concession|toll gate/, "concession"]
-      ];
-      for (const [re, key] of topics) if (re.test(s)) return key;
-      return null;
-    };
-    const clusterList = (arr, titleKey, bodyKey) => {
-      const byTopic = new Map(); const out2 = [];
-      for (const item of arr) {
-        const topic = subjectOf(item[titleKey] + " " + (item[bodyKey] || ""));
-        if (!topic) { out2.push(item); continue; }
-        if (!byTopic.has(topic)) {
-          byTopic.set(topic, { ...item, evidence: [] });
-          out2.push(byTopic.get(topic));
-        } else {
-          const head = byTopic.get(topic);
-          // Keep the more severe framing as the headline.
-          if ((SEV_RANK[item.severity] ?? 3) < (SEV_RANK[head.severity] ?? 3)) {
-            head.title = item.title; head.severity = item.severity;
-          }
-          const line = (item[bodyKey] || item[titleKey] || "").trim();
-          if (line && !head.evidence.some((e) => e.text === line)) {
-            head.evidence.push({ text: line, ref: item.ref || "" });
-          }
-        }
-      }
-      return out2;
-    };
-    out.findings = clusterList(out.findings, "title", "detail");
-    out.escalations = clusterList(out.escalations, "title", "why");
-
-    out.findings.sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
-    return out;
-  };
-
-  // Why a slice did not come back matters more than the fact that it did not.
-  // A timeout says the request died before the model finished; it says nothing
-  // at all about whether the pages were readable. Treating those two as one
-  // state is how a reader failure becomes a false accounting conclusion.
-  const classify = (msg) => {
-    const m = String(msg || "");
-    if (/504|timed? ?out|gateway/i.test(m)) return "TIMEOUT";
-    if (/failed to fetch|networkerror|load failed/i.test(m)) return "TIMEOUT";
-    if (/rate[ _-]?limit|429/i.test(m)) return "RATE_LIMIT";
-    if (/overloaded|529|503/i.test(m)) return "OVERLOADED";
-    if (/unreadable|incomplete|output cap/i.test(m)) return "EXTRACTION_FAILED";
-    if (/api[ _-]?key|401|403/i.test(m)) return "AUTH";
-    return "ERROR";
-  };
-  const KIND_TEXT = {
-    TIMEOUT: "processing was interrupted before it finished, so these pages are not classified as unreadable",
-    RATE_LIMIT: "the rate window was exhausted, so these pages were never read",
-    OVERLOADED: "the service was overloaded, so these pages were never read",
-    EXTRACTION_FAILED: "the pages were reached but nothing usable could be extracted",
-    AUTH: "the server rejected the request",
-    ERROR: "the request did not complete"
-  };
-
-  const readSlice = async (payload) => {
-    let lastErr = "Unreachable."; let kind = "ERROR";
-    for (let attempt = 0; attempt <= RETRIES; attempt++) {
-      try {
-        const r = await fetch("/.netlify/functions/chunk", {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-        });
-        const j = await r.json().catch(() => ({ error: "Netlify returned " + r.status + "." }));
-        if (r.ok && j.partial) return j;
-        lastErr = j.error || "Netlify returned " + r.status + ".";
-      } catch (e) { lastErr = String(e.message || e); }
-      kind = classify(lastErr);
-      if (attempt === RETRIES) break;
-      // A timeout will time out again at the same size. Retrying the identical
-      // request is the one thing guaranteed not to work, so the caller splits
-      // it instead. Rate limits do reset, so those are worth waiting out.
-      if (kind === "TIMEOUT") break;
-      const slow = kind === "RATE_LIMIT" || kind === "OVERLOADED";
-      await new Promise((r) => setTimeout(r, slow ? 22000 : 1500 * (attempt + 1)));
-    }
-    return { error: lastErr, kind };
-  };
-
-  // A timed-out batch says nothing about its individual pages. Split it and read
-  // them one at a time: a single page is a fraction of the work and clears the
-  // ceiling that killed the batch. This is a deliberate recovery action, taken
-  // only after a timeout, never as the first attempt.
-  const splitAndRead = async (s) => {
-    const src = await PDFDocument.load(s.rawDoc, { ignoreEncryption: true });
-    const out = [];
-    for (let p = s.start; p < s.end; p++) {
-      const one = await PDFDocument.create();
-      const [pg] = await one.copyPages(src, [p]);
-      one.addPage(pg);
-      const res = await readSlice({ pdf: b64(await one.save()), offset: p + 1, total: s.docPages });
-      if (res.partial) out.push(res);
-      await new Promise((r) => setTimeout(r, 400));
-    }
-    return out;
-  };
-
-  const dispatch = useCallback(async (built, seedPartials) => {
-    const partials = seedPartials || new Array(built.length).fill(null);
-    const costs = []; const failures = [];
-    let cursor = 0; let modelSeen = null;
-    // Live ceiling. A worker that finds itself above it waits rather than firing,
-    // so pressure is relieved within a second instead of at the next batch.
-    let ceiling = CONCURRENCY_MAX;
-    let inFlight = 0;
-    let cleanRun = 0;
-
-    const worker = async () => {
-      while (cursor < built.length) {
-        while (inFlight >= ceiling) await new Promise((r) => setTimeout(r, 250));
-        const i = cursor++;
-        if (partials[i]) continue;
-        const s = built[i];
-        setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy" } : x)));
-        inFlight++;
-        let res = await readSlice({ pdf: s.pdf, offset: s.from, total: s.docPages });
-        inFlight--;
-        if (res.kind === "RATE_LIMIT" || res.kind === "OVERLOADED") {
-          ceiling = Math.max(CONCURRENCY_MIN, ceiling - 1);
-          cleanRun = 0;
-        } else if (res.partial && ++cleanRun >= 4 && ceiling < CONCURRENCY_MAX) {
-          ceiling++; cleanRun = 0;
-        }
-
-        // Recovery: a timed-out batch gets read one page at a time rather than
-        // resent whole. Anything recovered is merged as if it had arrived first.
-        if (!res.partial && res.kind === "TIMEOUT" && (s.end - s.start) > 1) {
-          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy", why: "splitting after timeout" } : x)));
-          const pages = await splitAndRead(s);
-          if (pages.length) {
-            const combined = merge(pages.map((p) => p.partial));
-            pages.forEach((p) => { if (p.meta) { costs.push(p.meta); modelSeen = modelSeen || p.meta.model; } });
-            res = { partial: combined, recovered: pages.length, ofPages: s.end - s.start };
-          }
-        }
-
-        if (res.partial) {
-          partials[i] = stampDoc(res.partial, s.docName);
-          if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
-          setSlices((prev) => prev.map((x) => (x.idx === i
-            ? { ...x, status: "done", why: res.recovered ? "recovered " + res.recovered + "/" + res.ofPages + " pages after timeout" : undefined }
-            : x)));
-          setData(merge(partials.filter(Boolean)));
-        } else {
-          failures.push(res.error);
-          setSlices((prev) => prev.map((x) => (x.idx === i
-            ? { ...x, status: "miss", why: res.error, kind: res.kind || "ERROR" } : x)));
-        }
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY_MAX, built.length) }, worker));
-    return { partials, costs, failures, modelSeen };
-  }, []);
-
-  const runEvaluation = async (reading, ratioList, m) => {
-    setEvalState("working"); setEvalErr(""); setEvaluation(null);
-    try {
-      const ok = (ratioList || []).filter((r) => r.status === "ok")
-        .map((r) => "- " + r.name + " (" + r.family + "): " + r.shown + " [" + r.note + "]");
-      const bad = (ratioList || []).filter((r) => r.status !== "ok")
-        .map((r) => "- " + r.name + ": " + (r.reason ? r.reason.headline : "not computed"));
-      const figs = (reading.figures || []).map((f) => "- " + f.label + ": " + f.value + " (" + f.ref + ")");
-      const finds = (reading.findings || []).map((f) => "- [" + (f.severity || "") + "] " + f.title + ": " + (f.detail || ""));
-      const cov = coverageOf(reading).map((c) => "- " + c.label + ": " + c.pct + "% (" + c.proven + ")");
-      const covLine = m && m.failed > 0
-        ? "COVERAGE WARNING: only " + m.read + " of " + m.slices + " slices were read. Treat every conclusion as provisional and say so."
-        : "COVERAGE: complete.";
-      const summary = [covLine,
-        "ENTITY: " + (reading.entity?.name || "unknown") + " | " + (reading.classification?.basis || "") + " | " + (reading.entity?.period || ""),
-        "", "READING COVERAGE:", cov.join("\n"),
-        "", "COMPUTED RATIOS:", ok.join("\n") || "(none)",
-        "", "RATIOS NOT COMPUTED:", bad.join("\n") || "(all computed)",
-        "", "KEY FIGURES:", figs.join("\n") || "(none)",
-        "", "FINDINGS:", finds.join("\n") || "(none)"].join("\n");
-      const r = await fetch("/.netlify/functions/evaluate", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ summary })
+  // Ratios (computed prominent, unavailable collapsed)
+  const rz=$(`<section class="block"></section>`);
+  const nc=model.measures.filter(m=>m.state==="computed").length, rep=model.measures.filter(m=>m.state==="reported").length;
+  rz.appendChild($(`<div class="sechead"><span class="n">02</span><h2>Financial ratios</h2>
+     <span class="meta cap">${nc} computed \u00b7 ${rep} reported \u00b7 ${model.measures.filter(m=>m.state==="pending").length} pending \u00b7 ${model.measures.filter(m=>m.state==="market").length} market</span></div>`));
+  FAMILY_ORDER.forEach(fam=>{
+    const list=model.byFam[fam];
+    const shown=list.filter(m=>m.state==="computed"||m.state==="reported");
+    const hidden=list.filter(m=>m.state==="pending"||m.state==="market"||m.state==="na");
+    const open= shown.length>0;
+    const grp=$(`<details class="fam-group" ${open?"open":""}></details>`);
+    grp.appendChild($(`<summary><span class="lbl">${FAMILY_LABEL[fam]}</span>
+       <span class="cnt">${shown.length} shown \u00b7 ${hidden.length} unavailable</span></summary>`));
+    shown.forEach(m=>grp.appendChild(ratioRow(m)));
+    if(hidden.length){
+      const box=$(`<div style="padding:4px 8px 8px"></div>`);
+      hidden.forEach(m=>{
+        const why = m.state==="market"?"market data required": m.state==="na"? (m.caveat||"not applicable") : ("missing: "+(m.missing||[]).join(", "));
+        box.appendChild($(`<div class="unavail" style="color:var(--faint);font-size:11.5px;padding:2px 0">${esc(m.name)} <span style="color:var(--faint)">\u2014 ${esc(why)}</span></div>`));
       });
-      const j = await r.json();
-      if (!r.ok || !j.evaluation) throw new Error(j.error || "The evaluation could not be produced.");
-      setEvaluation(j.evaluation); setEvalState("done");
-    } catch (e) {
-      setEvalErr(e.message || "Evaluation failed."); setEvalState("error");
+      grp.appendChild(box);
     }
-  };
-
-  const finish = (docList, hash, pageCount, built, partials, costs, modelSeen, began) => {
-    const got = partials.filter(Boolean);
-    const reading = merge(got);
-    const m = {
-      hash, name: docList.length === 1 ? docList[0].name : docList.length + " documents",
-      docs: docList, size: docList.reduce((a, d) => a + (d.size || 0), 0), pages: pageCount,
-      slices: built.length, read: got.length, failed: built.length - got.length, model: modelSeen,
-      input_tokens: costs.reduce((a, c) => a + (c.input_tokens || 0), 0),
-      output_tokens: costs.reduce((a, c) => a + (c.output_tokens || 0), 0),
-      cost_usd: Number(costs.reduce((a, c) => a + (c.cost_usd || 0), 0).toFixed(4)),
-      seconds: Math.round((Date.now() - began) / 1000), at: new Date().toISOString()
-    };
-    setData(reading); setMeta(m); setDocs(docList); setState("done");
-    cacheRef.current[hash] = { reading, meta: m, partials, costs, modelSeen, pageCount, built, docs: docList };
-    runEvaluation(reading, computeRatios(reading.lineItems, reading.lineItemDoc), m);
-  };
-
-  const run = useCallback(async (fileList) => {
-    const chosen = Array.from(fileList || []).filter(Boolean);
-    if (!chosen.length) return;
-    setState("working"); setErr(""); setNotice(""); setData(null); setMeta(null);
-    setSlices([]); setOwners({}); setEvaluation(null); setEvalState("idle");
-    const began = Date.now();
-    try {
-      const loaded = [];
-      for (const f of chosen) {
-        const buf = await f.arrayBuffer();
-        loaded.push({ file: f, buf, hash: await sha256(buf) });
-      }
-      const hash = loaded.length === 1 ? loaded[0].hash
-        : await sha256(new TextEncoder().encode(loaded.map((d) => d.hash).join("|")).buffer);
-
-      const hit = cacheRef.current[hash];
-      if (hit) {
-        builtRef.current = hit.built;
-        setSlices(hit.built.map((b, i) => ({ ...b, status: hit.partials && hit.partials[i] ? "done" : "miss" })));
-        setDocs(hit.docs || []); setData(hit.reading); setMeta(hit.meta); setState("done");
-        setNotice("This exact set was already read this session. Showing the cached reading.");
-        return;
-      }
-
-      const plan = []; const docList = [];
-      for (let d = 0; d < loaded.length; d++) {
-        const { file: f, buf, hash: dhash } = loaded[d];
-        const src = await PDFDocument.load(buf, { ignoreEncryption: true });
-        const pageCount = src.getPageCount();
-        docList.push({ doc: d, name: f.name, size: f.size, pages: pageCount, hash: dhash });
-        const STEP = Math.max(1, PAGES_PER_SLICE - (pageCount > PAGES_PER_SLICE ? 1 : 0));
-        for (let start = 0; start < pageCount; start += STEP) {
-          const end = Math.min(start + PAGES_PER_SLICE, pageCount);
-          plan.push({ idx: plan.length, doc: d, docName: f.name, docPages: pageCount, start, end, from: start + 1, to: end, src, raw: buf });
-          if (end >= pageCount) break;
-        }
-      }
-      setDocs(docList);
-      setSlices(plan.map((p) => ({ ...p, src: undefined, status: "queued" })));
-
-      const built = [];
-      for (const p of plan) {
-        const out = await PDFDocument.create();
-        const pages = await out.copyPages(p.src, Array.from({ length: p.end - p.start }, (_, i) => p.start + i));
-        pages.forEach((pg) => out.addPage(pg));
-        built.push({ ...p, src: undefined, raw: undefined, rawDoc: p.raw, pdf: b64(await out.save()) });
-      }
-      builtRef.current = built;
-
-      const totalPages = docList.reduce((a, d) => a + d.pages, 0);
-      const { partials, costs, failures, modelSeen } = await dispatch(built);
-      if (!partials.filter(Boolean).length) {
-        throw new Error("No part of these documents could be read. First failure: " + (failures[0] || "unknown."));
-      }
-      finish(docList, hash, totalPages, built, partials, costs, modelSeen, began);
-    } catch (e) {
-      setErr(e.message || "Something went wrong reading these documents.");
-      setState("error");
-    }
-  }, [dispatch]);
-
-  const retryFailed = useCallback(async () => {
-    const built = builtRef.current;
-    if (!built.length || !meta) return;
-    const cached = cacheRef.current[meta.hash];
-    const partials = cached ? cached.partials.slice() : new Array(built.length).fill(null);
-    setSlices((prev) => prev.map((x) => (x.status === "miss" ? { ...x, status: "queued" } : x)));
-    setState("working"); setErr("");
-    const began = Date.now() - (meta.seconds * 1000);
-    try {
-      const { partials: filled, costs, modelSeen } = await dispatch(built, partials);
-      finish(meta.docs, meta.hash, meta.pages, built, filled, (cached ? cached.costs : []).concat(costs), modelSeen || meta.model, began);
-    } catch (e) {
-      setErr(e.message || "Retry failed."); setState("error");
-    }
-  }, [dispatch, meta]);
-
-  const onPick = (e) => {
-    const picked = Array.from(e.target.files || []);
-    if (!picked.length) return;
-    setStaged((prev) => {
-      const seen = new Set(prev.map((f) => f.name + "|" + f.size));
-      return [...prev, ...picked.filter((f) => !seen.has(f.name + "|" + f.size))];
-    });
-    e.target.value = "";
-  };
-  const removeStaged = (i) => setStaged((prev) => prev.filter((_, ix) => ix !== i));
-  const analyzeStaged = () => { if (!staged.length) return; const f = staged; setStaged([]); run(f); };
-  const clearAll = () => {
-    setData(null); setMeta(null); setSlices([]); setDocs([]); setStaged([]);
-    setState("idle"); setNotice(""); setErr(""); setOwners({});
-    setEvaluation(null); setEvalState("idle");
-  };
-
-  const bal = data ? checkBalance(data.balance) : null;
-  const ratios = data ? computeRatios(data.lineItems, data.lineItemDoc) : null;
-  const ratiosOk = (ratios || []).filter((r) => r.status === "ok");
-  const blocked = (ratios || []).filter((r) => r.status === "blocked");
-  const coverage = data ? coverageOf(data) : null;
-  const doneCount = slices.filter((s) => s.status === "done").length;
-  const missCount = slices.filter((s) => s.status === "miss").length;
-  const pagesRead = slices.filter((s) => s.status === "done").reduce((a, s) => a + (s.to - s.from + 1), 0);
-
-  const failedRanges = () => slices.filter((s) => s.status === "miss")
-    .map((s) => ({ from: s.from, to: s.to, doc: s.docName, kind: s.kind || "ERROR" }));
-  const refTouchesUnread = (ref) => {
-    if (!ref) return false;
-    const ranges = failedRanges();
-    if (!ranges.length) return false;
-    const mm = String(ref).match(/p(?:age|p)?\.?\s*(\d+)/i);
-    if (!mm) return false;
-    const pg = parseInt(mm[1], 10);
-    return ranges.some((r) => pg >= r.from && pg <= r.to);
-  };
-
-  const scoreBand = (s) => s == null ? { label: "No data", tone: "none" }
-    : s >= 85 ? { label: "Strong", tone: "good" }
-    : s >= 55 ? { label: "Adequate", tone: "warn" } : { label: "Weak", tone: "bad" };
-
-  const scorecard = !ratios ? null : FAMILIES.map((fam) => {
-    const inFam = ratios.filter((r) => r.family === fam);
-    const scored = inFam.filter((r) => r.status === "ok" && r.score != null);
-    const score = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null;
-    return { family: fam, score, ...scoreBand(score),
-      computed: inFam.filter((r) => r.status === "ok").length, total: inFam.length };
+    rz.appendChild(grp);
   });
+  app.appendChild(rz);
 
-  // A score built from a minority of the families is not a health verdict. Say
-  // that plainly rather than printing a confident grade over empty families.
-  const overall = (() => {
-    if (!scorecard) return null;
-    const got = scorecard.filter((s) => s.score != null);
-    if (!got.length) return null;
-    const score = Math.round(got.reduce((a, s) => a + s.score, 0) / got.length);
-    const thin = got.length < 4 || (ratiosOk.length / (ratios || []).length) < 0.5;
-    const band = scoreBand(score);
-    return { score, families: got.length, of: FAMILIES.length, partial: thin,
-      label: thin ? "Available metrics only" : band.label, tone: thin ? "warn" : band.tone };
-  })();
+  // Key matters + findings
+  const fz=$(`<section class="block"></section>`);
+  fz.appendChild($(`<div class="sechead"><span class="n">03</span><h2>Key matters</h2>
+     <span class="meta cap">${model.findings.filter(f=>f.tier==="key_matter").length} matters \u00b7 ${model.findings.filter(f=>f.tier==="observation").length} observations</span></div>`));
+  // cluster first
+  const c=model.clusters[0];
+  const cl=$(`<div class="cluster"></div>`);
+  cl.appendChild($(`<div class="ftop"><span class="fsev" style="background:var(--bad)">HIGH</span>
+     <h3 style="margin-left:2px">${esc(c.title)}</h3></div>`));
+  cl.appendChild($(`<div class="csum">${esc(c.summary)}</div>`));
+  model.findings.filter(f=>f.cluster===c.id).forEach(f=>cl.appendChild(findingEl(f,true)));
+  fz.appendChild(cl);
+  // other key matters
+  model.findings.filter(f=>f.tier==="key_matter"&&!f.cluster).forEach(f=>fz.appendChild(findingEl(f)));
+  // observations collapsed
+  const others=model.findings.filter(f=>f.tier==="observation"&&!f.cluster);
+  if(others.length){
+    const d=$(`<details class="obs"></details>`);
+    d.appendChild($(`<summary>${others.length} more observations \u25be</summary>`));
+    others.forEach(f=>d.appendChild(findingEl(f)));
+    fz.appendChild(d);
+  }
+  app.appendChild(fz);
 
-  const evidence = () => {
-    if (!data || !meta) return null;
-    const counts = { verified: 0, review: 0, escalate: 0 };
-    (data.findings || []).forEach((f) => { if (counts[f.state] !== undefined) counts[f.state]++; });
-    return {
-      generated_at: meta.at, operator: operator || "UNRECORDED",
-      documents: (meta.docs || []).map((d) => ({ file_name: d.name, pages: d.pages, sha256: d.hash })),
-      coverage: { slices_total: meta.slices, slices_read: meta.read, slices_failed: meta.failed, complete: meta.failed === 0 },
-      unread_pages: failedRanges(),
-      system: { tool: "Mizan", version: VERSION, model: meta.model, elapsed_seconds: meta.seconds },
-      cost_of_reading: { input_tokens: meta.input_tokens, output_tokens: meta.output_tokens, usd: meta.cost_usd },
-      classification: data.classification,
-      deterministic_checks: [bal && { check: "assets = liabilities + net assets", computed_by: "client arithmetic",
-        result: bal.ok ? "pass" : "fail", difference: bal.delta }].filter(Boolean),
-      ratios: (ratios || []).map((r) => ({ name: r.name, family: r.family, status: r.status,
-        value: r.status === "ok" ? r.shown : null,
-        not_computed_because: r.status === "ok" ? null : (r.reason ? r.reason.headline : null) })),
-      scorecard, overall, determinations: counts,
-      escalations: (data.escalations || []).map((e, i) => ({ item: e.title, decision_needed: e.decisionNeeded,
-        source: e.ref, state: refTouchesUnread(e.ref) ? "NOT_READ" : "NOT_PRESENT",
-        accountable_owner: owners[i] || "UNASSIGNED", decision: "PENDING" })),
-      failure_states: slices.filter((s) => s.status === "miss")
-        .map((s) => ({ pages: s.from + "-" + s.to, doc: s.docName, state: s.kind || "ERROR",
-          means: KIND_TEXT[s.kind] || KIND_TEXT.ERROR })),
-      note: "Figures are read from the source document. This record is not an opinion on the accounts. " +
-            "A batch that timed out is recorded as interrupted, never as an unreadable or undisclosed page."
-    };
-  };
+  // Verification
+  const vz=$(`<section class="block"></section>`);
+  vz.appendChild($(`<div class="sechead"><span class="n">04</span><h2>Verification queue</h2>
+     <span class="meta cap">${model.verification.items.length} items need attention</span></div>`));
+  const vq=$(`<div class="vq"></div>`);
+  vq.appendChild($(`<div class="vqcell"><div class="vn tone-bad">${model.verification.evidenceGaps}</div><div class="vl">Evidence gaps</div></div>`));
+  vq.appendChild($(`<div class="vqcell"><div class="vn tone-warn">${model.verification.confirmations}</div><div class="vl">Management confirmations</div></div>`));
+  vq.appendChild($(`<div class="vqcell"><div class="vn">${model.verification.judgments}</div><div class="vl">Judgment</div></div>`));
+  vz.appendChild(vq);
+  const dl=$(`<details class="obs" style="margin-top:8px"></details>`);
+  dl.appendChild($(`<summary>Open queue \u25be</summary>`));
+  model.verification.items.forEach(it=>dl.appendChild($(`<div class="rrow" style="grid-template-columns:auto 1fr auto">
+     <span class="dot ${it.k==='evidence'?'bg-bad':it.k==='confirm'?'bg-warn':'bg-none'}"></span>
+     <span class="rname">${esc(it.t)}</span><span class="rstate">${esc(srcStr(it.src))}</span></div>`)));
+  vz.appendChild(dl);
+  app.appendChild(vz);
 
-  const downloadEvidence = () => {
-    const rec = evidence(); if (!rec) return;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(rec, null, 2)], { type: "application/json" }));
-    a.download = "mizan-evidence-" + (meta?.hash || "").slice(0, 12) + ".json";
-    a.click(); URL.revokeObjectURL(a.href);
-  };
-
-  const working = state === "working";
-
-  return (
-    <div className="mz">
-      <style>{CSS}</style>
-      <div className="mz-wrap">
-
-        <header className="mz-head">
-          <div>
-            <div className="mz-mark">Mizan<span>&#1605;&#1610;&#1586;&#1575;&#1606;</span></div>
-            <div className="mz-sub">Financial statement analysis that shows its work</div>
-          </div>
-          <p className="mz-thesis">Autonomous when it is certain. Accountable when it is not.</p>
-        </header>
-
-        <div className="mz-intake">
-          <input ref={inputRef} type="file" accept="application/pdf" multiple onChange={onPick} style={{ display: "none" }} />
-          <button className="mz-btn" disabled={working} onClick={() => inputRef.current?.click()}>
-            {working ? "Reading" : staged.length ? "Add more files" : "Choose statements PDFs"}
-          </button>
-          {staged.length > 0 && !working && (
-            <button className="mz-btn go" onClick={analyzeStaged}>
-              Analyze {staged.length} {staged.length === 1 ? "document" : "documents"}
-            </button>
-          )}
-          {state === "done" && (
-            <>
-              <button className="mz-btn ghost" onClick={() => window.print()}>Print</button>
-              <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence JSON</button>
-              <button className="mz-btn ghost" onClick={clearAll}>New reading</button>
-            </>
-          )}
-        </div>
-
-        {staged.length > 0 && !working && (
-          <div className="mz-tray">
-            <div className="mz-tray-h">Ready to analyze &middot; nothing runs until you say so</div>
-            {staged.map((f, i) => (
-              <div key={i} className="mz-tray-row">
-                <span className="mz-tray-name">{f.name}</span>
-                <span className="mz-tray-name" style={{ flex: "none", color: "var(--soft)", fontSize: ".62rem" }}>
-                  {(f.size / 1024).toFixed(0)} KB
-                </span>
-                <button className="mz-tray-x" onClick={() => removeStaged(i)}>remove</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {state === "idle" && staged.length === 0 && (
-          <div className="mz-empty">
-            <p className="mz-empty-t">Nothing read yet.</p>
-            <p className="mz-empty-s">
-              Load one set of financial statements, or several at once. Long documents are cut
-              into overlapping slices and read in parallel, and every figure keeps the page it
-              came from.
-            </p>
-          </div>
-        )}
-
-        {working && (
-          <div className="mz-stages">
-            <div className="mz-stages-h">Analysing your financials</div>
-            {(() => {
-              const li = data?.lineItems || {};
-              const anyRead = doneCount > 0;
-              const st = [
-                { l: "Reading the statements", done: doneCount >= slices.length && slices.length > 0,
-                  now: doneCount < slices.length,
-                  sub: doneCount + " of " + slices.length + " batches" },
-                { l: "Normalising figures", done: Object.keys(li).length > 3,
-                  now: anyRead && Object.keys(li).length <= 3,
-                  sub: Object.keys(li).length + " line items captured" },
-                { l: "Computing ratios", done: false, now: doneCount >= slices.length && slices.length > 0,
-                  sub: "arithmetic in this browser" },
-                { l: "Checking consistency", done: false, now: false,
-                  sub: (data?.tieOut || []).length + " tie-out checks" },
-                { l: "Building evidence-backed findings", done: false, now: false,
-                  sub: (data?.findings || []).length + " findings so far" }
-              ];
-              return st.map((s, i) => (
-                <div key={i} className={"mz-stage " + (s.done ? "done" : s.now ? "now" : "")}>
-                  <span className="mz-stage-dot">{s.done ? "\u2713" : s.now ? "\u25c9" : "\u25cb"}</span>
-                  <span className="mz-stage-l">{s.l}</span>
-                  <span className="mz-stage-s">{s.sub}</span>
-                </div>
-              ));
-            })()}
-            {/* Figures land here as they are read, so the wait shows real work. */}
-            {(() => {
-              const li = data?.lineItems || {};
-              const live = [["Revenue", "revenue"], ["Net profit", "netProfit"], ["EBITDA", "ebitda"],
-                ["Operating cash flow", "operatingCashFlow"], ["Total equity", "totalEquity"], ["Net debt", "netDebt"]]
-                .filter(([, k]) => typeof li[k] === "number");
-              if (!live.length) return null;
-              const big = (n) => Math.abs(n) >= 1e9 ? (n / 1e9).toFixed(2) + "B"
-                : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + "M" : (n / 1e3).toFixed(1) + "K";
-              return (
-                <div className="mz-live">
-                  {live.map(([l, k], i) => (
-                    <div key={i} className="mz-live-c">
-                      <div className="mz-live-l">{l}</div>
-                      <div className="mz-live-v">{big(li[k])}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {slices.length > 0 && (
-          <div className="mz-panel">
-            <div className="mz-strip">
-              <span>{working ? "Reading in parallel" : "Coverage"}</span>
-              <span>{PAGES_PER_SLICE} pages per slice &middot; up to {CONCURRENCY_MAX} at once</span>
-            </div>
-            <div className="mz-dials">
-              <div className="mz-dial">
-                <div className="mz-dial-l">Slices read</div>
-                <div className="mz-dial-v">{doneCount}/{slices.length}</div>
-              </div>
-              <div className="mz-dial">
-                <div className="mz-dial-l">Pages covered</div>
-                <div className="mz-dial-v">{pagesRead}</div>
-              </div>
-              <div className="mz-dial">
-                <div className="mz-dial-l">Findings</div>
-                <div className="mz-dial-v">{data?.findings?.length || 0}</div>
-              </div>
-              <div className="mz-dial">
-                <div className="mz-dial-l">Unread</div>
-                <div className="mz-dial-v" style={{ color: missCount ? "var(--esc)" : "var(--ink)" }}>{missCount}</div>
-              </div>
-            </div>
-            <div className="mz-grid">
-              {slices.map((s, i) => (
-                <div key={s.idx ?? i} className={"mz-cell " + s.status}
-                  title={(s.docName ? s.docName + " \u00b7 " : "") + "pages " + s.from + " to " + s.to + (s.why ? " \u00b7 " + s.why : "")}>
-                  {s.from}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {notice && <div className="mz-note">{notice}</div>}
-
-        {state === "done" && meta && meta.failed > 0 && (
-          <div className="mz-retry">
-            <span>
-              <b>INCOMPLETE SOURCE READ.</b> {meta.read} of {meta.slices} batches completed.
-              {" " + meta.failed + " require recovery: "}
-              {failedRanges().map((r) => (r.doc ? r.doc.replace(/\.pdf$/i, "") + " " : "") + "p." + r.from + "-" + r.to).join(", ")}
-              {". "}
-              {(() => {
-                const kinds = [...new Set(slices.filter((s) => s.status === "miss").map((s) => s.kind || "ERROR"))];
-                const interrupted = kinds.some((k) => k === "TIMEOUT" || k === "RATE_LIMIT" || k === "OVERLOADED");
-                return kinds.map((k) => KIND_TEXT[k] || KIND_TEXT.ERROR).join("; ") +
-                  (interrupted
-                    ? ". These pages are NOT classified as unreadable, and nothing here should be read as a missing disclosure."
-                    : ".");
-              })()}
-            </span>
-            <button className="mz-btn ghost" onClick={retryFailed}>Retry failed slices</button>
-          </div>
-        )}
-
-        {state === "error" && (
-          <div className="mz-err">
-            <p className="mz-err-t">Reading stopped</p>
-            <p className="mz-detail" style={{ marginTop: ".4rem" }}>{err}</p>
-          </div>
-        )}
-
-        {data && state === "done" && (
-          <>
-            <div className="mz-cover">
-              <div className="mz-cover-rule" />
-              <div className="mz-cover-mark">Mizan<span>&#1605;&#1610;&#1586;&#1575;&#1606;</span></div>
-              <div className="mz-cover-kind">Financial statement analysis · working paper</div>
-
-              <div className="mz-cover-co">{data.entity?.name || "Financial statements"}</div>
-              <div className="mz-cover-meta">
-                {data.entity?.period && <>{data.entity.period}<br /></>}
-                {data.classification?.basis && <>{data.classification.basis}<br /></>}
-                {(meta?.docs || []).length} source document{(meta?.docs || []).length === 1 ? "" : "s"} · {meta?.pages} pages<br />
-                Prepared {new Date(meta?.at || Date.now()).toLocaleDateString("en-GB",
-                  { day: "numeric", month: "long", year: "numeric" })}<br />
-                Operator {operator || "unrecorded"}
-              </div>
-
-              <div className="mz-cover-note">
-                Every figure in this paper carries the page it was read from. Arithmetic
-                was computed independently of the reading, and any measure whose inputs
-                could not be traced is reported as outstanding rather than estimated.
-                {meta?.failed > 0 && " This reading is incomplete: " + meta.failed +
-                  " of " + meta.slices + " batches did not process, and conclusions touching those pages are not verified."}
-              </div>
-
-              <div className="mz-cover-foot">
-                <div>
-                  Mizan {VERSION}<br />
-                  SHA-256 {(meta?.hash || "").slice(0, 32)}
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  Nexus AI Assurance FZCO · Dubai<br />
-                  nexusai.ae
-                </div>
-              </div>
-            </div>
-
-            {(() => {
-              const li = data.lineItems || {};
-              const top = (data.findings || []).filter((f) => f.severity === "high").slice(0, 5);
-              const q = (data.escalations || []).length;
-              return (
-                <section className="mz-sec mz-snapshot">
-                  <div className="mz-sec-head">
-                    <h2 className="mz-sec-title">Executive snapshot</h2>
-                    <span className="mz-sec-note">what a reader needs in one page</span>
-                  </div>
-                  <div className="mz-snap">
-                    <div className="mz-snap-row">
-                      <span className="mz-snap-k">Entity</span>
-                      <span>{data.entity?.name || "not stated"} · {data.classification?.lens === "public_sector" ? "public sector" : "corporate"} · {data.classification?.basis || ""}</span>
-                    </div>
-                    <div className="mz-snap-row">
-                      <span className="mz-snap-k">Audit opinion</span>
-                      <span>{data.entity?.auditOpinion || "not stated in the pages read"}</span>
-                    </div>
-                    <div className="mz-snap-row">
-                      <span className="mz-snap-k">Balance check</span>
-                      <span>{bal ? (bal.ok ? "Assets equal liabilities plus equity. Difference nil."
-                        : "Does not balance. Off by " + fmt(Math.abs(bal.delta)) + ".") : "Balance sheet totals not read."}</span>
-                    </div>
-                    <div className="mz-snap-row">
-                      <span className="mz-snap-k">Ratios</span>
-                      <span>{ratiosOk.length} of {(ratios || []).length} computed{blocked.length ? ", " + blocked.length + " blocked on scale" : ""}. {overall ? (overall.partial ? "Overall health not available on this coverage." : overall.label + " on the families with data.") : ""}</span>
-                    </div>
-                    <div className="mz-snap-row">
-                      <span className="mz-snap-k">Coverage</span>
-                      <span>{meta?.read} of {meta?.slices} batches read{meta?.failed ? ". Incomplete." : ". Complete."}</span>
-                    </div>
-                    <div className="mz-snap-row">
-                      <span className="mz-snap-k">Outstanding</span>
-                      <span>{q} item{q === 1 ? "" : "s"} awaiting source evidence or a management decision.</span>
-                    </div>
-                  </div>
-                  {top.length > 0 && (
-                    <div className="mz-snap-top">
-                      <div className="mz-snap-top-h">Matters ranked highest by the reading</div>
-                      <ol>
-                        {top.map((f, i) => (
-                          <li key={i}><b>{f.title}</b> {f.detail} <em>{f.ref}</em></li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                </section>
-              );
-            })()}
-
-            {(() => {
-              const li = data.lineItems || {};
-              const nLine = Object.keys(li).length;
-              if (!nLine) return null;
-              const steps = [
-                { l: "Source documents", v: (meta?.docs || []).length + " file" + ((meta?.docs || []).length === 1 ? "" : "s"),
-                  s: (meta?.pages || 0) + " pages, " + meta?.read + "/" + meta?.slices + " batches read" },
-                { l: "Extracted figures", v: (data.figures || []).length,
-                  s: "each carrying its page" },
-                { l: "Normalised line items", v: nLine,
-                  s: "the only values arithmetic is allowed to use" },
-                { l: "Computed ratios", v: ratiosOk.length + " of " + (ratios || []).length,
-                  s: blocked.length ? blocked.length + " blocked on scale" : "none blocked" },
-                { l: "Findings", v: (data.findings || []).length,
-                  s: (data.escalations || []).length + " held for a person" }
-              ];
-              return (
-                <section className="mz-sec">
-                  <div className="mz-sec-head">
-                    <h2 className="mz-sec-title">Evidence trail</h2>
-                    <span className="mz-sec-note">source to conclusion</span>
-                  </div>
-                  <div className="mz-trail">
-                    {steps.map((s, i) => (
-                      <div key={i} className="mz-trail-s">
-                        <div className="mz-trail-v">{s.v}</div>
-                        <div className="mz-trail-l">{s.l}</div>
-                        <div className="mz-trail-sub">{s.s}</div>
-                        {i < steps.length - 1 && <div className="mz-trail-arrow">\u2192</div>}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mz-legend">
-                    <span>Nothing moves right without the step before it. A figure with no page never becomes a ratio.</span>
-                  </div>
-                </section>
-              );
-            })()}
-
-            {(() => {
-              const li = data.lineItems || {};
-              const kpi = [
-                { l: "Revenue", k: "revenue", g: li.priorRevenue ? (li.revenue - li.priorRevenue) / li.priorRevenue : null },
-                { l: "Net profit", k: "netProfit", g: li.priorNetProfit ? (li.netProfit - li.priorNetProfit) / li.priorNetProfit : null },
-                { l: "EBITDA", k: "ebitda" },
-                { l: "Operating cash flow", k: "operatingCashFlow" },
-                { l: "Total assets", k: "totalAssets" },
-                { l: "Total equity", k: "totalEquity" }
-              ].filter((c) => typeof li[c.k] === "number" && isFinite(li[c.k]));
-              if (!kpi.length) return null;
-              const big = (n) => Math.abs(n) >= 1e9 ? (n / 1e9).toFixed(2) + "B"
-                : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + "M"
-                : Math.abs(n) >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(n);
-              return (
-                <section className="mz-sec">
-                  <div className="mz-sec-head">
-                    <h2 className="mz-sec-title">The numbers that matter</h2>
-                    <span className="mz-sec-note">read from the statements</span>
-                  </div>
-                  <div className="mz-kpi">
-                    {kpi.map((c, i) => (
-                      <div key={i} className="mz-kpi-cell">
-                        <div className="mz-kpi-l">{c.l}</div>
-                        <div className="mz-kpi-v">{big(li[c.k])}</div>
-                        {c.g != null && isFinite(c.g) && Math.abs(c.g) < 10 && (
-                          <div className={"mz-kpi-g " + (c.g >= 0 ? "up" : "dn")}>
-                            {(c.g >= 0 ? "+" : "") + (c.g * 100).toFixed(1)}% YoY
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })()}
-
-            <section className="mz-sec">
-              <div className="mz-sec-head">
-                <h2 className="mz-sec-title">Lens applied</h2>
-                <span className="mz-sec-note">settled</span>
-              </div>
-              <div className="mz-class">
-                <div>
-                  <div className="mz-class-meta">Classified as</div>
-                  <div className="mz-class-lens">
-                    {data.classification?.lens === "public_sector" ? "Public sector entity" : "Corporate entity"}
-                  </div>
-                  <div className="mz-class-meta" style={{ marginTop: ".4rem", marginBottom: 0 }}>
-                    {[data.classification?.basis, data.entity?.name, data.entity?.period].filter(Boolean).join(" \u00b7 ")}
-                  </div>
-                </div>
-                <p className="mz-class-why">{data.classification?.why}</p>
-              </div>
-            </section>
-
-            {overall && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">{overall.partial ? "Available-metric score" : "Overall financial health"}</h2>
-                  <span className="mz-sec-note">{overall.families} of {overall.of} families scored</span>
-                </div>
-                <div className="mz-score">
-                  <div className="mz-score-top">
-                    <div>
-                      <div className={"mz-score-big " + overall.tone}>{overall.score}</div>
-                      <div className="mz-score-lab">out of 100</div>
-                    </div>
-                    <div>
-                      <div className="mz-score-verdict">{overall.label}</div>
-                      <div className="mz-score-lab">
-                        {overall.partial
-                          ? "Overall financial health: not available. " + overall.families +
-                            " of " + overall.of + " families have enough data, so this score covers only what was computed."
-                          : "averaged across the families with enough data"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mz-bars">
-                    {scorecard.map((s, i) => (
-                      <div key={i} className={"mz-bar" + (s.score == null ? " empty" : "")}>
-                        <div className="mz-bar-top">
-                          <span className="mz-bar-n">{s.family}</span>
-                          <span className={"mz-bar-t " + s.tone}>{s.label}</span>
-                        </div>
-                        <div className="mz-bar-track">
-                          {s.score != null
-                            ? <div className={"mz-bar-fill " + s.tone} style={{ width: s.score + "%" }} />
-                            : <div className="mz-bar-none" />}
-                        </div>
-                        <div className="mz-bar-sub">{s.computed} of {s.total} ratios computed</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mz-legend">
-                  <span>Scored only from ratios that computed cleanly.</span>
-                  <span>A family with no computable ratio is reported as no data, never as neutral.</span>
-                </div>
-              </section>
-            )}
-
-            {coverage && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Reading coverage</h2>
-                  <span className="mz-sec-note">{meta.read}/{meta.slices} slices processed</span>
-                </div>
-                <div className="mz-cov">
-                  {coverage.map((c, i) => {
-                    const cls = c.pct === 0 ? "zero" : c.pct >= 100 ? "" : "part";
-                    return (
-                      <div key={i} className="mz-cov-row">
-                        <div>
-                          <div className="mz-cov-n">{c.label}</div>
-                          <div className="mz-cov-sub">{c.pages ? "pp. " + c.pages : c.proven}</div>
-                        </div>
-                        <div className="mz-cov-track">
-                          <div className={"mz-cov-fill " + cls} style={{ width: c.pct + "%" }} />
-                        </div>
-                        <div className="mz-cov-p">{c.pct}%</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {bal && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Does it balance</h2>
-                  <span className="mz-sec-note">arithmetic, not a model</span>
-                </div>
-                <div className="mz-arith">
-                  <div className="mz-strip">
-                    <span>Computed in this browser</span>
-                    <span>{data.entity?.currency} {data.entity?.scale}</span>
-                  </div>
-                  <div className="mz-eq">
-                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total assets</span><span className="mz-eq-val">{fmt(data.balance.totalAssets)}</span></div>
-                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total liabilities</span><span className="mz-eq-val">{fmt(data.balance.totalLiabilities)}</span></div>
-                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total equity</span><span className="mz-eq-val">{fmt(data.balance.totalNetAssets)}</span></div>
-                    <div className="mz-eq-rule" />
-                    <div className="mz-eq-line">
-                      <span className="mz-eq-lbl">Difference</span>
-                      <span className="mz-eq-val" style={{ color: bal.ok ? "var(--tick)" : "var(--esc)" }}>{fmt(bal.delta)}</span>
-                    </div>
-                  </div>
-                  <div className={"mz-verdict " + (bal.ok ? "pass" : "fail")}>
-                    {bal.ok ? MARK.verified + "  Assets equal liabilities plus equity. Nothing here rests on judgement."
-                      : MARK.escalate + "  Off by " + fmt(Math.abs(bal.delta)) + ". Reported as-is. No figure here should be relied on until a person finds the cause."}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {data.tieOut?.length > 0 && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Tie-out</h2>
-                  <span className="mz-sec-note">{data.tieOut.length} checks</span>
-                </div>
-                {data.tieOut.map((t, i) => {
-                  const st = t.result === "pass" ? "verified" : t.result === "fail" ? "escalate" : "review";
-                  return (
-                    <div key={i} className="mz-row">
-                      <div className={"mz-tick " + st}>{MARK[st]}</div>
-                      <div className="mz-body"><p className="mz-title">{t.check}</p><p className="mz-detail">{t.detail}</p></div>
-                      <div className="mz-ref">{t.ref}</div>
-                    </div>
-                  );
-                })}
-              </section>
-            )}
-
-            {data.figures?.length > 0 && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Figures</h2>
-                  <span className="mz-sec-note">every one carries its page</span>
-                </div>
-                <div className="mz-figs">
-                  {data.figures.map((f, i) => {
-                    const cf = typeof f.confidence === "number" ? f.confidence : null;
-                    const band = cf == null ? "" : cf >= 95 ? "hi" : cf >= 80 ? "mid" : "lo";
-                    return (
-                      <div key={i} className={"mz-fig " + (f.state || "review")}>
-                        <div className="mz-fig-lbl" title={f.label}>{f.label}</div>
-                        <div className="mz-fig-val">{f.value}</div>
-                        {cf != null && (
-                          <span className={"mz-conf " + band}><span className="mz-conf-dot" />{cf}% confidence</span>
-                        )}
-                        <div className="mz-fig-ref">{f.ref}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {ratios && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Financial ratios</h2>
-                  <span className="mz-sec-note">
-                    {ratiosOk.length} computed &middot; {ratios.filter((r) => r.status === "missing").length} not computable
-                    {blocked.length ? " \u00b7 " + blocked.length + " blocked" : ""}
-                    {ratios.filter((r) => r.status === "market").length ? " \u00b7 " + ratios.filter((r) => r.status === "market").length + " need market data" : ""}
-                  </span>
-                </div>
-                {FAMILIES.map((fam) => {
-                  const group = ratios.filter((r) => r.family === fam);
-                  if (!group.length) return null;
-                  const done = group.filter((r) => r.status === "ok").length;
-                  return (
-                    <div key={fam} className="mz-rfam">
-                      <div className="mz-rfam-h">{fam} &middot; {done}/{group.length}</div>
-                      {group.map((r) => (
-                        <div key={r.name} className={"mz-ratio " + r.status + (r.status === "ok" ? " tap" : "") + (traceOf === r.name ? " tracing" : "")}
-                          onClick={() => r.status === "ok" && setTraceOf(traceOf === r.name ? null : r.name)}>
-                          <div className="mz-ratio-main">
-                            <div className="mz-ratio-name">{r.name}</div>
-                            <div className="mz-ratio-formula">{r.formula}</div>
-                            {r.status === "ok" && (
-                              <>
-                                <div className="mz-chain">
-                                  {(r.inputs || []).map((x, j) => (
-                                    <span key={j} className="mz-chain-i">
-                                      <b>{x.label}</b> {fmt(x.value)}
-                                    </span>
-                                  ))}
-                                  <span className="mz-chain-eq">= {r.shown}</span>
-                                </div>
-                                <div className="mz-ratio-note">{r.note}</div>
-                                {r.typical && <div className="mz-ratio-typ">Typical range &middot; {r.typical}</div>}
-                              </>
-                            )}
-                            {r.status === "market" && (
-                              <div className="mz-ratio-miss">
-                                <b>{r.reason.headline}</b> {r.reason.detail}
-                              </div>
-                            )}
-                            {r.status === "missing" && (
-                              <div className="mz-ratio-miss">
-                                <span className="mz-pill await">not yet computable</span>
-                                <div className="mz-ratio-need">
-                                  <b>Required</b> {(r.needs || []).map((k) => NEED_LABEL[k] || k).join(" \u00b7 ")}
-                                </div>
-                                <div className="mz-ratio-need">
-                                  <b>Source</b> {r.reason.headline.replace(" not yet read.", "")}
-                                </div>
-                              </div>
-                            )}
-                            {r.status === "blocked" && (
-                              <div className="mz-ratio-blocked">
-                                <b>{r.reason.headline}</b> {r.reason.detail}
-                              </div>
-                            )}
-                          </div>
-                          <div className="mz-ratio-right">
-                            <div className="mz-ratio-right">
-                            <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "\u2014"}</div>
-                            {r.status === "ok" && <div className="mz-tap-hint">{traceOf === r.name ? "hide trace" : "trace"}</div>}
-                            {r.status === "ok" && r.bands && r.dir && !r.raw && (() => {
-                              // Place the value on a scale running from clearly weak to
-                              // clearly strong, so the reader sees position, not just a number.
-                              const [weak, strong] = r.bands;
-                              const lo = Math.min(weak, strong), hi = Math.max(weak, strong);
-                              const span = (hi - lo) || 1;
-                              const pos = Math.max(0, Math.min(1, (r.value - (lo - span)) / (span * 3)));
-                              const band = r.score >= 100 ? "good" : r.score >= 62 ? "warn" : "bad";
-                              return (
-                                <div className="mz-band">
-                                  <div className="mz-band-track">
-                                    <div className="mz-band-zone" style={{
-                                      left: (r.dir === "high" ? 33 : 0) + "%", width: "34%" }} />
-                                    <div className={"mz-band-pin " + band} style={{ left: (pos * 100) + "%" }} />
-                                  </div>
-                                  <div className="mz-band-lab">{r.dir === "high" ? "higher is better" : "lower is better"}</div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                            <div className={"mz-state " + r.status}>{r.stateLabel || "NOT COMPUTABLE"}</div>
-                          </div>
-                          {traceOf === r.name && r.status === "ok" && (
-                            <div className="mz-trace">
-                              <div className="mz-trace-h">How this number was produced</div>
-                              <div className="mz-trace-chain">
-                                {(r.needs || []).map((k, j) => {
-                                  const val = (data.lineItems || {})[k];
-                                  const src = (data.lineItemDoc || {})[k] || "";
-                                  const fig = (data.figures || []).find((f) =>
-                                    new RegExp("^" + (NEED_LABEL[k] || k).split(" ")[0], "i").test(f.label || ""));
-                                  return (
-                                    <div key={j} className="mz-node input">
-                                      <div className="mz-node-k">{NEED_LABEL[k] || k}</div>
-                                      <div className="mz-node-v">{fmt(val)}</div>
-                                      <div className="mz-node-s">{fig?.ref || src || "read from the statements"}</div>
-                                    </div>
-                                  );
-                                })}
-                                <div className="mz-node-arrow">\u2193</div>
-                                <div className="mz-node calc">
-                                  <div className="mz-node-k">Computed in this browser</div>
-                                  <div className="mz-node-v mono">{r.formula}</div>
-                                  <div className="mz-node-s">no model performed this arithmetic</div>
-                                </div>
-                                <div className="mz-node-arrow">\u2193</div>
-                                <div className="mz-node out">
-                                  <div className="mz-node-k">{r.name}</div>
-                                  <div className="mz-node-v big">{r.shown}</div>
-                                  <div className="mz-node-s">{r.note}</div>
-                                </div>
-                              </div>
-                              <div className="mz-trace-f">
-                                Source {(meta?.docs || []).map((d) => d.name).join(", ")} \u00b7 SHA-256 {(meta?.hash || "").slice(0, 16)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-                <div className="mz-legend">
-                  <span>Tap any computed ratio to trace it back to the pages it came from.</span>
-                  <span>Every computed ratio uses figures read from the statements.</span>
-                  <span>A ratio is never estimated, and never printed when its inputs disagree on scale.</span>
-                </div>
-              </section>
-            )}
-
-            {evalState !== "idle" && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Performance evaluation</h2>
-                  <span className="mz-sec-note">
-                    {evalState === "working" ? "writing" : evalState === "error" ? "unavailable"
-                      : (meta && meta.failed > 0 ? "PARTIAL COVERAGE \u00b7 not final" : "AI analysis \u00b7 not arithmetic")}
-                  </span>
-                </div>
-                {evalState === "working" && (
-                  <div className="mz-note">Interpreting the ratios and figures.</div>
-                )}
-                {evalState === "error" && (
-                  <div className="mz-note">The written evaluation could not be produced: {evalErr} The ratios and findings are unaffected.</div>
-                )}
-                {evalState === "done" && evaluation && (
-                  <div className="mz-eval">
-                    <div className="mz-eval-banner">
-                      Written analysis by the model, interpreting the figures above. It is judgment, not audited fact.
-                    </div>
-                    {evaluation.headline && <p className="mz-eval-head">{evaluation.headline}</p>}
-                    {evaluation.overall && <p className="mz-eval-over">{evaluation.overall}</p>}
-                    {(evaluation.assessment || []).length > 0 && (
-                      <div className="mz-eval-grid">
-                        {evaluation.assessment.map((a, i) => (
-                          <div key={i} className={"mz-eval-area read-" + (a.read || "mixed")}>
-                            <div className="mz-eval-area-h">
-                              <span>{a.area}</span>
-                              <span className={"mz-eval-tag read-" + (a.read || "mixed")}>{a.read}</span>
-                            </div>
-                            <p className="mz-eval-area-t">{a.text}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {((evaluation.strengths || []).length > 0 || (evaluation.concerns || []).length > 0) && (
-                      <div className="mz-eval-sc">
-                        <div className="mz-eval-col">
-                          <div className="mz-eval-col-h pos">Strengths</div>
-                          <ul>{(evaluation.strengths || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
-                        </div>
-                        <div className="mz-eval-col">
-                          <div className="mz-eval-col-h neg">Concerns</div>
-                          <ul>{(evaluation.concerns || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
-                        </div>
-                      </div>
-                    )}
-                    {(evaluation.considerations || []).length > 0 && (
-                      <div className="mz-eval-rec">
-                        <div className="mz-eval-rec-h">Considerations for management</div>
-                        <div className="mz-eval-rec-note">Options to weigh, grounded in the figures. Not directives.</div>
-                        {evaluation.considerations.map((c, i) => (
-                          <div key={i} className="mz-eval-rec-item">
-                            <div className="mz-eval-rec-for">{c.for}</div>
-                            <p>{c.text}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
-
-            {data.findings?.length > 0 && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Findings</h2>
-                  <span className="mz-sec-note">read the tick column first</span>
-                </div>
-                {data.findings.map((f, i) => (
-                  <div key={i} className="mz-row">
-                    <div className={"mz-tick " + (f.state || "review")}>{MARK[f.state] || "?"}</div>
-                    <div className="mz-body">
-                      <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
-                      <p className="mz-detail">{f.detail}</p>
-                      {f.metric && <p className="mz-metric">{f.metric}</p>}
-                      {(f.evidence || []).length > 0 && (
-                        <ul className="mz-f-ev">
-                          {f.evidence.slice(0, 4).map((x, j) => (
-                            <li key={j}>{x.text}{x.ref ? " \u00b7 " + x.ref : ""}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <div className="mz-ref">{f.ref}</div>
-                  </div>
-                ))}
-                <div className="mz-legend">
-                  <span>{MARK.verified} read from the document</span>
-                  <span>{MARK.review} derived, confirm it</span>
-                  <span>{MARK.escalate} a person decides</span>
-                </div>
-              </section>
-            )}
-
-            {data.escalations?.length > 0 && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Verification queue</h2>
-                  <span className="mz-sec-note">{data.escalations.length} items need evidence or a decision</span>
-                </div>
-                <div className="mz-qhead">
-                  <div><b>Primary owner</b> {operator || "unassigned"}</div>
-                  <div><b>Status</b> awaiting source or management confirmation</div>
-                  <div className="mz-qnote">Ownership is set once, at the top. Individual items inherit it.</div>
-                </div>
-                <div className="mz-queue">
-                  {data.escalations.map((e, i) => {
-                    const unread = refTouchesUnread(e.ref);
-                    const open = openEsc === i;
-                    return (
-                      <div key={i} className={"mz-q" + (open ? " open" : "")}>
-                        <div className="mz-q-row" onClick={() => setOpenEsc(open ? null : i)}>
-                          <span className={"mz-pill " + (unread ? "notread" : "notpresent")}>
-                            {unread ? "not read" : "not in pages"}
-                          </span>
-                          <span className="mz-q-t">{e.title}</span>
-                          <span className="mz-q-ref">{e.ref}</span>
-                          <span className="mz-q-x">{open ? "\u2212" : "+"}</span>
-                        </div>
-                        {open && (
-                          <div className="mz-q-body">
-                            <p className="mz-q-why">
-                              {unread
-                                ? "This points at a page that failed to read, not a figure the company omitted."
-                                : e.why}
-                            </p>
-                            {(e.evidence || []).length > 0 && (
-                              <ul className="mz-q-ev">
-                                {e.evidence.map((x, j) => (
-                                  <li key={j}>{x.text}{x.ref ? " \u00b7 " + x.ref : ""}</li>
-                                ))}
-                              </ul>
-                            )}
-                            <div className="mz-q-next"><b>Next action</b> {e.decisionNeeded}</div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {meta && (
-              <section className="mz-sec">
-                <div className="mz-sec-head">
-                  <h2 className="mz-sec-title">Evidence record</h2>
-                  <span className="mz-sec-note">emitted for every reading</span>
-                </div>
-                <div className="mz-ev">
-                  <div><b>Document</b> {meta.name} &middot; {meta.pages} pages</div>
-                  {(meta.docs || []).length > 1 && meta.docs.map((d, i) => (
-                    <div key={i} style={{ paddingLeft: "1.2rem" }}>{i + 1} {d.name} &middot; {d.pages} pages</div>
-                  ))}
-                  <div><b>SHA-256</b> {meta.hash}</div>
-                  <div><b>Read at</b> {meta.at} &middot; took {meta.seconds}s</div>
-                  <div><b>System</b> Mizan {VERSION} &middot; {meta.model}</div>
-                  <div>
-                    <b>Coverage</b> {meta.read}/{meta.slices} slices
-                    {meta.failed > 0 && <span style={{ color: "var(--esc)" }}> &middot; {meta.failed} unread, not complete</span>}
-                  </div>
-                  <div><b>Cost of this reading</b> ${meta.cost_usd?.toFixed(4)} &middot;{" "}
-                    {(meta.input_tokens || 0).toLocaleString()} in / {(meta.output_tokens || 0).toLocaleString()} out</div>
-                  <div className="mz-sign">
-                    <b>Prepared by</b>
-                    <input className="mz-sign-in" placeholder="sign this reading"
-                      value={operator} onChange={(e) => setOperator(e.target.value)} />
-                  </div>
-                </div>
-              </section>
-            )}
-
-            <footer className="mz-foot">
-              <div>
-                <b>Mizan</b> {VERSION} &middot; reading of {meta?.name || "document"}<br />
-                Figures are read from the document. Nothing here is an opinion on the accounts.
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <b>Jonathan Z</b><br />
-                Nexus AI Assurance FZCO &middot; Dubai<br />
-                nexusai.ae
-              </div>
-            </footer>
-          </>
-        )}
-      </div>
-    </div>
-  );
+  app.appendChild($(`<div class="foot">
+    <span>Mizan ${model.mizanVersion}</span><span>SHA-256 ${model.sha256}</span>
+    <span>Prepared by ${esc(model.preparedBy)}</span><span>${model.preparedAt}</span>
+    <span>Figures read from source. Not an opinion on the accounts.</span></div>`));
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+function ratioRow(m){
+  const row=$(`<div class="rrow ${m.state}"></div>`);
+  row.appendChild($(`<span class="rname">${esc(m.name)}${m.lowSignal?' <span class="tone-warn" title="low-signal">\u26a0</span>':""}</span>`));
+  row.appendChild($(`<span class="rval">${esc(m.display||"\u2014")}</span>`));
+  const tag=m.state==="reported"?"reported":m.lowSignal?"low-signal":"computed";
+  row.appendChild($(`<span class="rstate">${tag}</span>`));
+  if(m.caveat) row.appendChild($(`<div class="caveat">${esc(m.caveat)}</div>`));
+  // trace on demand
+  const tr=$(`<div class="trace" style="display:none"></div>`);
+  tr.textContent=m.formula+"   \u2022   "+(m.trace?m.trace.map(srcStr).join("  |  "):"");
+  const link=$(`<span class="linkish" style="grid-column:1/-1;padding:0 8px 4px">Trace \u25be</span>`);
+  link.onclick=()=>{tr.style.display=tr.style.display==="none"?"block":"none";};
+  row.appendChild(link); row.appendChild(tr);
+  return row;
+}
+function findingEl(f,inCluster){
+  const el=$(`<div class="finding ${f.severity}"></div>`);
+  el.appendChild($(`<div class="ftop"><span class="fsev">${f.severity}</span>
+     <span class="fdec">${f.decision.replace(/_/g," ")}</span></div>`));
+  el.appendChild($(`<div class="fobs">${esc(f.obs)}</div>`));
+  if(f.calc) el.appendChild($(`<div class="fcalc">${esc(f.calc)}</div>`));
+  el.appendChild($(`<div class="fbody">${esc(f.interpretation)}${f.decisionNeeded?` <b>Decision:</b> ${esc(f.decisionNeeded)}`:""}</div>`));
+  el.appendChild($(`<div class="fsrc">${f.evidence.map(srcStr).join("  |  ")}</div>`));
+  return el;
+}
+
+/* ====================== 3. PDF DOCUMENT RENDERER ======================
+   A separate renderer that lays out for paper. Scope selects sections.
+   Sections: 1 Executive, 2 Financial Profile, 3 Key Findings,
+             4 Financial Statements, 5 Evidence, 6 Verification, Appendix     */
+const SCOPE_SECTIONS={
+  executive:["cover","exec","profile","findings"],
+  full:["cover","exec","profile","findings","statements","evidence","verification","appendix"],
+  appendix:["cover","evidence","verification","appendix"],
+};
+function runhead(model){return `<div class="runhead"><span>${esc(model.entity)} \u00b7 ${model.period}</span><span>Mizan ${model.mizanVersion} \u00b7 Financial Statement Analysis</span></div>`;}
+function runfoot(model){return `<div class="runfoot"><span>Prepared by ${esc(model.preparedBy)} \u00b7 SHA-256 ${model.sha256}</span><span>Confidential \u00b7 figures read from source</span></div>`;}
+function page(model,inner,cover){return `<div class="page">${cover?"":runhead(model)}${inner}${cover?"":runfoot(model)}</div>`;}
+
+function renderPrint(model,scope){
+  const secs=SCOPE_SECTIONS[scope]||SCOPE_SECTIONS.full;
+  let html="";
+  for(const s of secs) html+=SECTION[s](model);
+  const r=document.getElementById("report"); r.innerHTML=html;
+}
+const SECTION={
+  cover:(m)=>page(m,`<div class="cover">
+     <div class="cbrand">Mizan<small>Nexus AI Assurance FZCO \u00b7 Dubai</small></div>
+     <div class="ctitle">Financial Statement Analysis</div>
+     <div class="centity">${esc(m.entity)}</div>
+     <div class="cmeta">Year ended 31 December 2025<br>Prepared ${m.preparedAt} \u00b7 Mizan ${m.mizanVersion}<br>${esc(m.integrity.classificationBasis)}</div>
+     <div class="cscore">
+       <div><div class="cap">Available-metric score</div><div class="big num">${m.overall??"\u2014"}<span style="font-size:16pt;color:#777">/100</span></div>
+         <div class="cap">${m.families.filter(f=>f.score!=null).length} of 7 families \u00b7 rubric v0</div></div>
+       <div class="integ"><div class="cap">Source coverage: ${m.integrity.coverageRead} / ${m.integrity.coverageTotal} slices \u00b7 incomplete</div>
+         <ul><li>Balance sheet not read (liquidity and asset ratios pending)</li>
+             <li>Cash flow partial (cash-conversion pending)</li>
+             <li>${m.integrity.itemsHeldForPerson} items held for a person</li>
+             <li>2 batches timed out; an interrupted batch is never evidence a page is blank</li></ul></div>
+     </div>
+     <div class="tag">Autonomous when certain. Accountable when not.</div>
+   </div>`,true),
+
+  exec:(m)=>page(m,`<div class="doc-secnum">SECTION 1</div><h2 class="doc-h2">Executive Summary</h2>
+     <table class="doc"><tr><th>Measure</th><th style="text-align:right">Value</th><th>Basis</th></tr>
+       <tr><td>Revenue</td><td class="n">AED 3.10bn</td><td>+35.1% YoY</td></tr>
+       <tr><td>Net profit</td><td class="n">AED 1.55bn</td><td>+33.4% YoY</td></tr>
+       <tr><td>Total equity</td><td class="n">AED 1.22bn</td><td>31 Dec 2025</td></tr>
+       <tr><td>EPS</td><td class="n">AED 0.21</td><td>computed 0.2071, matches reported</td></tr>
+       <tr><td>Available-metric score</td><td class="n">${m.overall}/100</td><td>4 of 7 families, rubric v0</td></tr></table>
+     <h4 style="font-family:var(--serif);margin:4mm 0 1mm">Matters ranked highest</h4>
+     ${m.findings.filter(f=>f.tier==="key_matter").slice(0,5).map((f,i)=>`
+        <div class="keymatter ${f.severity}"><div class="km-cap">${String(i+1).padStart(2,"0")} \u00b7 ${f.severity} \u00b7 ${f.decision.replace(/_/g," ")}</div>
+          <div class="km-obs">${esc(f.obs)}</div>${f.calc?`<div class="km-body">${esc(f.calc)}</div>`:""}
+          <div class="km-src">${f.evidence.map(srcStr).join("  |  ")}</div></div>`).join("")}`),
+
+  profile:(m)=>page(m,`<div class="doc-secnum">SECTION 2</div><h2 class="doc-h2">Financial Profile</h2>
+     <p class="doc-lead">Ratios computed from unit-normalized figures. Reported ratios are labelled. Ratios whose inputs are absent are listed compactly rather than expanded.</p>
+     ${FAMILY_ORDER.map(fam=>{
+        const list=m.byFam[fam]; const shown=list.filter(x=>x.state==="computed"||x.state==="reported");
+        const hidden=list.filter(x=>x.state==="pending"||x.state==="market"||x.state==="na");
+        const fsc=m.families.find(f=>f.family===fam);
+        return `<div class="doc-ratiofam"><h4>${FAMILY_LABEL[fam]} <span>${fsc.score!=null?fsc.score+"/100 "+fsc.label:"no data"}</span></h4>
+          ${shown.length?`<table class="doc"><tr><th>Ratio</th><th style="text-align:right">Value</th><th>Formula</th></tr>
+            ${shown.map(x=>`<tr><td>${esc(x.name)}${x.lowSignal?" (low-signal)":""}${x.state==="reported"?" (reported)":""}</td>
+               <td class="n">${esc(x.display)}</td><td>${esc(x.formula)}</td></tr>`).join("")}</table>`:""}
+          ${hidden.length?`<div class="unavail">Unavailable: ${hidden.map(x=>esc(x.name)+" ("+(x.state==="market"?"market data":x.state==="na"?"n/a":"pending")+")").join(" \u00b7 ")}</div>`:""}
+        </div>`;
+     }).join("")}
+     <div class="doc-note">Scoring uses documented default rubric v0 (thresholds inspectable in source). Reported and low-signal ratios are excluded from scoring.</div>`),
+
+  findings:(m)=>page(m,`<div class="doc-secnum">SECTION 3</div><h2 class="doc-h2">Key Findings</h2>
+     <div class="keymatter high"><div class="km-cap">cluster \u00b7 high</div>
+       <div class="km-obs">${esc(m.clusters[0].title)}</div><div class="km-body">${esc(m.clusters[0].summary)}</div></div>
+     ${m.findings.map(f=>`<div class="keymatter ${f.severity}">
+        <div class="km-cap">${f.tier==="key_matter"?"key matter":"observation"} \u00b7 ${f.severity} \u00b7 ${f.decision.replace(/_/g," ")}</div>
+        <div class="km-obs">${esc(f.obs)}</div>
+        ${f.calc?`<div class="km-body">${esc(f.calc)}</div>`:""}
+        <div class="km-body">${esc(f.interpretation)}${f.decisionNeeded?" Decision: "+esc(f.decisionNeeded):""}</div>
+        <div class="km-src">${f.evidence.map(srcStr).join("  |  ")}</div></div>`).join("")}`),
+
+  statements:(m)=>page(m,`<div class="doc-secnum">SECTION 4</div><h2 class="doc-h2">Financial Statements (extract)</h2>
+     <p class="doc-lead">All figures AED thousands unless marked. Read from source; balance sheet not read on this coverage.</p>
+     <table class="doc"><tr><th>Income statement</th><th style="text-align:right">2025</th><th style="text-align:right">2024</th></tr>
+       <tr><td>Revenue</td><td class="n">3,096,913</td><td class="n">2,291,907</td></tr>
+       <tr><td>Total finance costs</td><td class="n">(313,146)</td><td class="n">(256,824)</td></tr>
+       <tr><td>Depreciation and amortisation</td><td class="n">(144,769)</td><td class="n">(89,863)</td></tr>
+       <tr><td>Profit before tax</td><td class="n">1,706,954</td><td class="n">1,279,686</td></tr>
+       <tr><td>Net profit</td><td class="n">1,553,362</td><td class="n">1,164,548</td></tr>
+       <tr><td>EPS (AED)</td><td class="n">0.21</td><td class="n">0.16</td></tr></table>
+     <table class="doc"><tr><th>Selected balances</th><th style="text-align:right">2025</th></tr>
+       <tr><td>Total equity</td><td class="n">1,218,666</td></tr>
+       <tr><td>Total financial liabilities</td><td class="n">6,068,266</td></tr>
+       <tr><td>Due to a related party</td><td class="n">1,985,477</td></tr>
+       <tr><td>Net borrowings</td><td class="n">3,995,191</td></tr>
+       <tr><td>Trade receivables (net)</td><td class="n">169,010</td></tr></table>`),
+
+  evidence:(m)=>page(m,`<div class="doc-secnum">SECTION 5</div><h2 class="doc-h2">Evidence and Traceability</h2>
+     <p class="doc-lead">Every figure carries the page it was read from. Arithmetic is computed only from normalized values.</p>
+     <table class="doc"><tr><th>Figure</th><th style="text-align:right">AED thousands</th><th>Source</th><th style="text-align:right">Conf.</th></tr>
+       ${m.figures.filter(f=>f.currency==="AED"&&!f.derived).map(f=>`<tr><td>${esc(f.label)} ${f.period}</td>
+          <td class="n">${th(f.raw)}</td><td>${srcStr(f.source)}</td><td class="n">${Math.round(f.confidence*100)}%</td></tr>`).join("")}</table>
+     <h4 style="font-family:var(--serif);margin:3mm 0 1mm">Tie-outs</h4>
+     <table class="doc"><tr><th>Check</th><th>Result</th><th>Source</th></tr>
+       ${m.tieOuts.map(t=>`<tr><td>${esc(t.statement)}</td><td>${t.ok?"reconciles":"review"}</td><td>${srcStr(t.source)}</td></tr>`).join("")}</table>`),
+
+  verification:(m)=>page(m,`<div class="doc-secnum">SECTION 6</div><h2 class="doc-h2">Verification Queue</h2>
+     <p class="doc-lead">${m.verification.evidenceGaps} evidence gaps \u00b7 ${m.verification.confirmations} management confirmations \u00b7 ${m.verification.judgments} judgment. Primary owner unassigned.</p>
+     <table class="doc"><tr><th>Item</th><th>Type</th><th>Source</th></tr>
+       ${m.verification.items.map(it=>`<tr><td>${esc(it.t)}</td><td>${it.k}</td><td>${srcStr(it.src)}</td></tr>`).join("")}</table>`),
+
+  appendix:(m)=>page(m,`<div class="doc-secnum">APPENDIX</div><h2 class="doc-h2">Full Ratio Catalogue</h2>
+     <table class="doc"><tr><th>Ratio</th><th>Family</th><th style="text-align:right">Value</th><th>State</th></tr>
+       ${m.measures.map(x=>`<tr><td>${esc(x.name)}</td><td>${FAMILY_LABEL[x.family]}</td>
+          <td class="n">${esc(x.display||"\u2014")}</td><td>${x.state}${x.lowSignal?", low-signal":""}</td></tr>`).join("")}</table>
+     <div class="doc-note">States: computed (Mizan calculated from canonical inputs) \u00b7 reported (entity disclosed, not rebuilt) \u00b7 pending (input absent) \u00b7 market (needs market data) \u00b7 n/a (not applicable to this entity).</div>`),
+};
+
+/* ---------- wire up ---------- */
+const MODEL=buildModel();
+renderWeb(MODEL);
+const report=document.getElementById("report");
+const btnExport=document.getElementById("tb-export"), btnClose=document.getElementById("tb-close");
+btnExport.onclick=()=>{
+  const scope=document.getElementById("tb-scope").value;
+  renderPrint(MODEL,scope);
+  report.classList.add("show");
+  btnClose.style.display="";
+  // give layout a tick, then open the browser's Save-as-PDF on the DOCUMENT render
+  setTimeout(()=>window.print(),120);
+};
+btnClose.onclick=()=>{report.classList.remove("show");btnClose.style.display="none";};
+window.onafterprint=()=>{/* keep preview open so the user can review the document render */};
 </script>
 </body>
 </html>
