@@ -78,6 +78,16 @@ const json = (obj, status = 200) =>
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
   });
 
+const LENS_FRAME = {
+  investor: "AUDIENCE: an equity investor. Emphasise return on equity, growth runway, margin trend, dividend safety, and valuation-relevant signals. Frame considerations around hold / buy / sell.",
+  bank: "AUDIENCE: a lending bank or credit committee. Emphasise debt-service capacity, coverage, leverage, liquidity, covenant headroom, and downside resilience. Frame around lending risk.",
+  audit: "AUDIENCE: an external auditor. Emphasise misstatement risk, estimate-heavy and judgemental balances, what to test, and any figure the reading could not verify. Frame around audit risk, not investment merit.",
+  cfo: "AUDIENCE: the company CFO. Emphasise operational levers, working capital, cash conversion, and what management can act on next quarter.",
+  board: "AUDIENCE: the board of directors. Emphasise strategy, oversight, the decisions in front of the board, and material risks. Keep it high-level.",
+  credit: "AUDIENCE: a credit-rating analyst. Give an indicative rating band and the factors that would move it up or down.",
+  student: "AUDIENCE: a finance student. Briefly explain what each measure means in plain language before interpreting it."
+};
+
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
 
@@ -103,10 +113,10 @@ export default async (req) => {
       body: JSON.stringify({
         // Override without a code change: set MIZAN_EVAL_MODEL in Netlify env.
         model: process.env.MIZAN_EVAL_MODEL || "claude-sonnet-5",
-        max_tokens: 3000,
+        max_tokens: 1500,
         messages: [{
           role: "user",
-          content: PROMPT + "\n\nHERE IS THE ANALYSIS TO EVALUATE:\n\n" + payload.summary
+          content: PROMPT + "\n\n" + (LENS_FRAME[payload.lens] || "AUDIENCE: a general, balanced analyst reader with no particular stakeholder bias.") + "\n\nHERE IS THE ANALYSIS TO EVALUATE:\n\n" + payload.summary
         }]
       })
     });
