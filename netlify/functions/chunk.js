@@ -1,7 +1,9 @@
-// netlify/functions/chunk.js
+// netlify/functions/chunk-text.js
 //
-// Reads ONE slice of a document and returns evidence, not analysis.
-// The browser splits the PDF and calls this many times in parallel.
+// Text-mode fallback reader. Identical rules and output shape as chunk.js, but
+// it receives an already-extracted TEXT layer instead of a PDF slice. The
+// browser only calls this AFTER an image read of a slice has timed out. Text is
+// tiny, so it clears the function time limit that killed the image read.
 // The API key lives here. It never reaches the browser.
 
 const RATE_IN = 2.0;   // USD per Mtok. Sonnet 5 intro pricing to 31 Aug 2026.
@@ -155,16 +157,16 @@ export default async (req) => {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return json({ error: "ANTHROPIC_API_KEY is not set on the server." }, 500);
 
-  let pdf, offset, total;
+  let text, offset, total;
   try {
     const body = await req.json();
-    pdf = body.pdf;
+    text = body.text;
     offset = Number(body.offset) || 1;
     total = Number(body.total) || 0;
   } catch {
     return json({ error: "The request body could not be read." }, 400);
   }
-  if (!pdf) return json({ error: "No document slice was received." }, 400);
+  if (!text) return json({ error: "No text was received." }, 400);
 
   const prompt =
     RULES.replace("{OFFSET}", String(offset)) +
@@ -186,8 +188,7 @@ export default async (req) => {
         messages: [{
           role: "user",
           content: [
-            { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf } },
-            { type: "text", text: prompt }
+            { type: "text", text: "EXTRACTED TEXT LAYER FROM THE DOCUMENT PAGES (no page images available for this slice):\n\n" + text + "\n\n" + prompt }
           ]
         }]
       })
