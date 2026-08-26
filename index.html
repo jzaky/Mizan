@@ -8,6 +8,11 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
   <style>
 /* MIZAN compact-ratios patch - delete this whole block to revert */
 .mz-ratio.missing .mz-ratio-formula,
@@ -640,6 +645,38 @@ const computeRatios = (lineItems, lineItemDoc) => {
   });
 };
 
+// --- FAILED-PAGE SAFETY NET (text fallback). Additive: only runs after a normal
+// --- PDF read of a slice has already timed out, and via a SEPARATE function
+// --- (chunk-text), so the normal reading path is never touched. If pdf.js fails
+// --- to load, extractPagesText returns null and behaviour is exactly as before.
+const extractPagesText = async (rawDoc, startIdx, endIdx) => {
+  const lib = window.pdfjsLib;
+  if (!lib) return null;
+  try {
+    const doc = await lib.getDocument({ data: rawDoc.slice(0) }).promise;
+    let out = "";
+    for (let p = startIdx; p < endIdx && p < doc.numPages; p++) {
+      const page = await doc.getPage(p + 1);
+      const content = await page.getTextContent();
+      const line = content.items.map((it) => (it.str || "")).join(" ").replace(/\s+/g, " ").trim();
+      if (line) out += "\n\n=== PAGE " + (p + 1) + " ===\n" + line;
+    }
+    return out.trim() || null;
+  } catch (e) { return null; }
+};
+const readSliceViaText = async (s) => {
+  const text = await extractPagesText(s.rawDoc, s.start, s.end);
+  if (!text) return null;
+  try {
+    const r = await fetch("/.netlify/functions/chunk-text", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, offset: s.from, total: s.docPages })
+    });
+    const j = await r.json().catch(() => null);
+    return (r.ok && j && j.partial) ? j : null;
+  } catch (e) { return null; }
+};
+
 function App() {
   const [state, setState] = useState("idle");
   const [data, setData] = useState(null);
@@ -995,15 +1032,28 @@ function App() {
           ceiling++; cleanRun = 0;
         }
 
-        // Recovery: a timed-out batch gets read one page at a time rather than
-        // resent whole. Anything recovered is merged as if it had arrived first.
-        if (!res.partial && res.kind === "TIMEOUT" && (s.end - s.start) > 1) {
-          setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy", why: "splitting after timeout" } : x)));
-          const pages = await splitAndRead(s);
-          if (pages.length) {
-            const combined = merge(pages.map((p) => p.partial));
-            pages.forEach((p) => { if (p.meta) { costs.push(p.meta); modelSeen = modelSeen || p.meta.model; } });
-            res = { partial: combined, recovered: pages.length, ofPages: s.end - s.start };
+        // Recovery on timeout, two nets. First re-read page by page as PDF (helps a
+        // multi-page slice). If anything is still missing, extract the text layer in
+        // the browser and send THAT to a separate text-mode reader: text is tiny and
+        // clears the time limit that killed the image read. This runs only after a
+        // timeout and through a separate function, so normal reads are untouched.
+        if (!res.partial && (res.kind === "TIMEOUT" || res.kind === "EXTRACTION_FAILED")) {
+          if ((s.end - s.start) > 1) {
+            setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy", why: "splitting after timeout" } : x)));
+            const pages = await splitAndRead(s);
+            if (pages.length) {
+              const combined = merge(pages.map((p) => p.partial));
+              pages.forEach((p) => { if (p.meta) { costs.push(p.meta); modelSeen = modelSeen || p.meta.model; } });
+              res = { partial: combined, recovered: pages.length, ofPages: s.end - s.start };
+            }
+          }
+          if (!res.partial) {
+            setSlices((prev) => prev.map((x) => (x.idx === i ? { ...x, status: "busy", why: "reading text layer" } : x)));
+            const t = await readSliceViaText(s);
+            if (t && t.partial) {
+              if (t.meta) { costs.push(t.meta); modelSeen = modelSeen || t.meta.model; }
+              res = { partial: t.partial, recoveredText: true };
+            }
           }
         }
 
@@ -1011,7 +1061,7 @@ function App() {
           partials[i] = stampDoc(res.partial, s.docName);
           if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
           setSlices((prev) => prev.map((x) => (x.idx === i
-            ? { ...x, status: "done", why: res.recovered ? "recovered " + res.recovered + "/" + res.ofPages + " pages after timeout" : undefined }
+            ? { ...x, status: "done", why: res.recoveredText ? "recovered via text layer after timeout" : res.recovered ? "recovered " + res.recovered + "/" + res.ofPages + " pages after timeout" : undefined }
             : x)));
           setData(merge(partials.filter(Boolean)));
         } else {
