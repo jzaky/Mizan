@@ -3,766 +3,696 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mizan 2.1 - Salik Company P.J.S.C. FY2025</title>
-<style>
-  :root{
-    --ink:#15181d; --ink-2:#3c424c; --muted:#7c8492; --faint:#aeb4be;
-    --paper:#f6f4ef; --card:#fffefb; --line:#e2ddd3; --line-2:#cfc9bd;
-    --accent:#0f5f57; --good:#1f7a4d; --warn:#b9791b; --bad:#b23b2e; --none:#9aa0aa;
-    --serif:Georgia,"Times New Roman",serif;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"SF Mono","Menlo","Consolas",monospace;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
-  .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
-  a{color:inherit}
-  .tone-good{color:var(--good)} .tone-warn{color:var(--warn)} .tone-bad{color:var(--bad)} .tone-none{color:var(--none)}
-  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle}
-  .bg-good{background:var(--good)} .bg-warn{background:var(--warn)} .bg-bad{background:var(--bad)} .bg-none{background:var(--none)}
-
-  /* ---------- top bar ---------- */
-  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;
-    padding:10px 20px;background:var(--ink);color:#f3efe6;border-bottom:2px solid #000}
-  .brand{font-family:var(--serif);font-size:19px;letter-spacing:.02em;font-weight:600}
-  .brand small{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:#b9c2b0;display:block;margin-top:1px}
-  .topbar .entity{font-size:12.5px;color:#d8d2c4}
-  .topbar .spacer{flex:1}
-  .chip{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-    border:1px solid #4a4f57;border-radius:2px;padding:3px 7px;color:#e7e2d6}
-  .chip.warn{border-color:#7a5a1e;color:#e6c98d}
-  .btn{font-family:var(--sans);font-size:12.5px;border:1px solid #4a4f57;background:#22262c;color:#f3efe6;
-    padding:6px 11px;border-radius:3px;cursor:pointer}
-  .btn.primary{background:#0f5f57;border-color:#0b463f}
-  select.scope{font-family:var(--mono);font-size:11px;background:#22262c;color:#f3efe6;border:1px solid #4a4f57;border-radius:3px;padding:5px 6px}
-
-  /* ---------- workspace ---------- */
-  .wrap{max-width:1080px;margin:0 auto;padding:22px 20px 80px}
-  .rule{height:1px;background:var(--line);margin:22px 0}
-  .rule.strong{background:var(--ink);height:2px}
-  section.block{margin-top:26px}
-  .sechead{display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:5px;margin-bottom:12px}
-  .sechead .n{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700}
-  .sechead h2{font-size:17px}
-  .sechead .meta{margin-left:auto}
-
-  /* executive strip */
-  .exec{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:stretch}
-  .score-card{border:1px solid var(--line-2);background:var(--card);border-radius:4px;padding:14px 16px}
-  .score-num{font-family:var(--serif);font-size:52px;line-height:1;letter-spacing:-.02em}
-  .score-num span{font-size:20px;color:var(--muted)}
-  .score-sub{margin-top:6px}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line-2);border-radius:4px;background:var(--card);overflow:hidden}
-  .kpi{padding:12px 14px;border-right:1px solid var(--line)}
-  .kpi:last-child{border-right:0}
-  .kpi .v{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums;margin-top:3px}
-  .kpi .d{font-family:var(--mono);font-size:11px;margin-top:2px}
-  .integrity-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
-  .ipill{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line-2);border-radius:2px;padding:3px 7px;background:var(--card)}
-
-  /* scorecard */
-  .families{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-  .fam{border:1px solid var(--line-2);border-top:3px solid var(--none);border-radius:3px;background:var(--card);padding:9px 10px;min-height:74px}
-  .fam.good{border-top-color:var(--good)} .fam.warn{border-top-color:var(--warn)} .fam.bad{border-top-color:var(--bad)} .fam.none{border-top-color:var(--none)}
-  .fam .fn{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-  .fam .fs{font-family:var(--serif);font-size:26px;line-height:1.1;margin-top:4px}
-  .fam .fs small{font-size:12px;color:var(--muted)}
-  .fam .fl{font-size:11px;margin-top:1px}
-  .fam .fc{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:4px}
-
-  /* ratios */
-  .fam-group{margin-bottom:4px;border-bottom:1px solid var(--line)}
-  .fam-group summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 2px}
-  .fam-group summary::-webkit-details-marker{display:none}
-  .fam-group summary .lbl{font-family:var(--serif);font-size:15px}
-  .fam-group summary .cnt{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-left:auto}
-  .rrow{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:6px 8px;border-top:1px dotted var(--line)}
-  .rrow .rname{font-size:13px}
-  .rrow .rval{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;text-align:right}
-  .rrow .rstate{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line-2);border-radius:2px;padding:2px 5px;color:var(--muted);white-space:nowrap}
-  .rrow.pending .rval,.rrow.market .rval{color:var(--faint)}
-  .rrow .caveat{grid-column:1/-1;font-size:11.5px;color:var(--warn);padding:0 8px 3px}
-  .trace{grid-column:1/-1;font-family:var(--mono);font-size:11px;color:var(--ink-2);background:#f1eee7;border-left:2px solid var(--accent);padding:7px 9px;margin:2px 8px 6px;border-radius:0 3px 3px 0}
-  .linkish{color:var(--accent);cursor:pointer;font-size:11px;font-family:var(--mono)}
-
-  /* findings */
-  .finding{border-left:3px solid var(--line-2);padding:8px 0 8px 12px;margin:10px 0}
-  .finding.high{border-left-color:var(--bad)} .finding.medium{border-left-color:var(--warn)} .finding.low{border-left-color:var(--none)}
-  .finding .ftop{display:flex;align-items:center;gap:8px}
-  .finding .fsev{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:2px;color:#fff}
-  .finding.high .fsev{background:var(--bad)} .finding.medium .fsev{background:var(--warn)} .finding.low .fsev{background:var(--none)}
-  .finding .fdec{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-left:auto}
-  .finding .fobs{font-weight:600;margin-top:3px}
-  .finding .fbody{font-size:13px;color:var(--ink-2);margin-top:2px}
-  .finding .fcalc{font-family:var(--mono);font-size:12px;background:#f1eee7;padding:2px 6px;border-radius:2px;display:inline-block;margin-top:4px}
-  .finding .fsrc{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:4px}
-  .cluster{border:1px solid var(--line-2);border-left:3px solid var(--bad);border-radius:3px;background:#fdfbf7;padding:12px 14px;margin:12px 0}
-  .cluster h3{font-size:15px}
-  .cluster .csum{font-size:13px;color:var(--ink-2);margin:4px 0 6px}
-
-  /* verification */
-  .vq{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .vqcell{border:1px solid var(--line-2);border-radius:3px;background:var(--card);padding:11px 13px}
-  .vqcell .vn{font-family:var(--serif);font-size:24px}
-  .vqcell .vl{font-size:12px;color:var(--ink-2)}
-
-  .foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px}
-
-  /* collapsed observations */
-  details.obs summary{cursor:pointer;font-family:var(--mono);font-size:11.5px;color:var(--accent);padding:6px 0}
-  details.obs summary::-webkit-details-marker{display:none}
-
-  /* ============ PRINT DOCUMENT (separate renderer) ============ */
-  #report{display:none}
-  @media screen{ #report.show{display:block;position:fixed;inset:0;overflow:auto;background:#5c5c5c;padding:24px 0;z-index:50} }
-  .page{background:#fff;color:#000;width:210mm;min-height:297mm;margin:0 auto 18px;padding:20mm 18mm 24mm;position:relative;
-    box-shadow:0 2px 14px rgba(0,0,0,.35);font-family:var(--sans);font-size:10.5pt;line-height:1.45}
-  .page .runhead{position:absolute;top:8mm;left:18mm;right:18mm;display:flex;justify-content:space-between;
-    font-family:var(--mono);font-size:8pt;letter-spacing:.06em;color:#555;border-bottom:.5pt solid #bbb;padding-bottom:2mm}
-  .page .runfoot{position:absolute;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;
-    font-family:var(--mono);font-size:7.5pt;color:#666;border-top:.5pt solid #bbb;padding-top:2mm}
-  .doc-h1{font-family:var(--serif);font-size:19pt;margin:0 0 2mm}
-  .doc-secnum{font-family:var(--mono);font-size:9pt;color:var(--accent);letter-spacing:.1em}
-  .doc-h2{font-family:var(--serif);font-size:14pt;border-bottom:1.5pt solid #000;padding-bottom:1.5mm;margin:0 0 3mm}
-  .doc-lead{color:#333;margin:0 0 4mm}
-  table.doc{width:100%;border-collapse:collapse;font-size:9.5pt;margin:2mm 0 4mm}
-  table.doc th{font-family:var(--mono);font-size:7.5pt;letter-spacing:.06em;text-transform:uppercase;color:#555;
-    text-align:left;border-bottom:1pt solid #000;padding:2mm 2mm 1.5mm}
-  table.doc td{padding:1.6mm 2mm;border-bottom:.5pt solid #ddd;vertical-align:top}
-  table.doc td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-  table.doc tr{break-inside:avoid}
-  .doc-note{font-size:8.5pt;color:#666;font-style:italic;margin:1mm 0 4mm}
-  .cover{display:flex;flex-direction:column;min-height:257mm}
-  .cover .cbrand{font-family:var(--serif);font-size:30pt;letter-spacing:.02em}
-  .cover .cbrand small{display:block;font-family:var(--mono);font-size:9pt;letter-spacing:.28em;color:#0f5f57;margin-top:2mm}
-  .cover .ctitle{font-family:var(--mono);font-size:11pt;letter-spacing:.18em;text-transform:uppercase;color:#333;margin-top:26mm}
-  .cover .centity{font-family:var(--serif);font-size:22pt;margin-top:3mm}
-  .cover .cmeta{font-family:var(--mono);font-size:9.5pt;color:#444;margin-top:2mm;line-height:1.9}
-  .cover .cscore{margin-top:auto;display:flex;gap:16mm;align-items:flex-end}
-  .cover .cscore .big{font-family:var(--serif);font-size:44pt;line-height:1}
-  .cover .integ{border:1pt solid #000;padding:5mm 6mm;margin-top:8mm}
-  .cover .integ .cap{color:#333}
-  .cover .integ ul{margin:2mm 0 0;padding-left:5mm;font-family:var(--mono);font-size:8.5pt;color:#333;line-height:1.8}
-  .cover .tag{font-family:var(--serif);font-style:italic;font-size:12pt;margin-top:6mm;color:#0f5f57}
-  .keymatter{break-inside:avoid;border-left:2.5pt solid #b23b2e;padding:1mm 0 1mm 4mm;margin:3mm 0}
-  .keymatter.medium{border-left-color:#b9791b} .keymatter.low{border-left-color:#999}
-  .keymatter .km-obs{font-weight:700;font-size:10.5pt}
-  .keymatter .km-cap{font-family:var(--mono);font-size:7.5pt;letter-spacing:.06em;text-transform:uppercase;color:#666}
-  .keymatter .km-body{font-size:9.5pt;color:#333;margin-top:.5mm}
-  .keymatter .km-src{font-family:var(--mono);font-size:8pt;color:#666;margin-top:.5mm}
-  .doc-ratiofam{break-inside:avoid;margin:0 0 3mm}
-  .doc-ratiofam h4{font-family:var(--serif);font-size:11pt;margin:0 0 1mm;display:flex;justify-content:space-between}
-  .doc-ratiofam h4 span{font-family:var(--mono);font-size:8pt;color:#666;font-weight:400}
-  .unavail{font-family:var(--mono);font-size:8.5pt;color:#777;margin-top:1mm}
-
-  @media print{
-    html,body{background:#fff}
-    .topbar,.wrap,.no-print{display:none !important}
-    #report{display:block !important}
-    #report.show{position:static;background:#fff;padding:0;overflow:visible}
-    .page{width:auto;min-height:auto;margin:0;padding:0;box-shadow:none;break-after:page}
-    .page:last-child{break-after:auto}
-    .page .runhead{position:fixed;top:6mm} .page .runfoot{position:fixed;bottom:6mm}
-    @page{size:A4;margin:20mm 18mm 22mm}
-  }
-</style>
+<title>Mizan · financial statement analysis that shows its work</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
 </head>
-<body>
+<body style="margin:0;background:#F2F4EF">
+<div id="root"></div>
 
-<div class="topbar no-print">
-  <div class="brand">Mizan<small>2.1</small></div>
-  <div class="entity" id="tb-entity"></div>
-  <div class="spacer"></div>
-  <span class="chip warn" id="tb-integrity"></span>
-  <select class="scope" id="tb-scope" title="Report scope">
-    <option value="full">Full report</option>
-    <option value="executive">Executive</option>
-    <option value="appendix">Evidence appendix</option>
-  </select>
-  <button class="btn primary" id="tb-export">Export Report &rarr; PDF</button>
-  <button class="btn" id="tb-close" style="display:none">Close preview</button>
-</div>
+<script type="text/babel">
+const { useState, useRef, useCallback } = React;
+const { PDFDocument } = PDFLib;
 
-<div class="wrap" id="app"></div>
-<div id="report"></div>
 
-<script>
-/* =====================================================================
-   MIZAN 2.1  -  one evidence model, two renderers (web + print document)
-   All three fixes in one file:
-     (1) evidence/ratio engine  (2) compact web renderer  (3) PDF document
-   ===================================================================== */
+const VERSION = "2.0.0";
+const PAGES_PER_SLICE = 6;   // small enough that one call clears 10s comfortably
+const CONCURRENCY = 4;       // slices in flight at once
+const RETRIES = 2;
 
-/* ---------- 1a. ENGINE: normalization, hardened ---------- */
-const SCALE = { units:1, thousands:1e3, millions:1e6, billions:1e9 };
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+.mz *{box-sizing:border-box;margin:0;padding:0}
+.mz{--paper:#F2F4EF;--bar:#E2EAE1;--ink:#17281F;--ink-soft:#55665C;--rule:#C3CFC4;--tick:#146B3A;--query:#A85D00;--esc:#A8202B;--forest:#1B4D3E;
+background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh;padding:0 0 4rem;line-height:1.5}
+.mz-wrap{max-width:940px;margin:0 auto;padding:0 1.1rem}
+.mz-head{border-bottom:2px solid var(--ink);padding:2.2rem 0 1rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.mz-mark{font-family:'Instrument Serif',Georgia,serif;font-size:clamp(2.6rem,8vw,3.9rem);line-height:.9;letter-spacing:-.015em}
+.mz-mark span{font-size:.42em;color:var(--ink-soft);margin-left:.5rem}
+.mz-sub{font-family:'IBM Plex Mono',monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-top:.55rem}
+.mz-thesis{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-size:1rem;color:var(--forest);text-align:right;max-width:15rem;line-height:1.35}
+.mz-intake{border:1px solid var(--rule);border-top:none;background:#fff;padding:1.4rem 1.2rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.mz-btn{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:500;padding:.68rem 1.05rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;transition:background .12s}
+.mz-btn:hover:not(:disabled){background:var(--forest);border-color:var(--forest)}
+.mz-btn:disabled{opacity:.4;cursor:default}
+.mz-btn.ghost{background:transparent;color:var(--ink)}
+.mz-btn.ghost:hover:not(:disabled){background:var(--bar)}
+.mz-btn:focus-visible,.mz-in:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
+.mz-in{font-family:'IBM Plex Mono',monospace;font-size:.72rem;padding:.62rem .7rem;border:1px solid var(--rule);background:#fff;color:var(--ink);min-width:12rem}
+.mz-hint{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--ink-soft);margin-left:auto}
+.mz-sec{margin-top:2.2rem}
+.mz-sec-head{display:flex;align-items:baseline;gap:.7rem;border-bottom:1px solid var(--ink);padding-bottom:.35rem}
+.mz-sec-title{font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.mz-sec-note{font-size:.72rem;color:var(--ink-soft);margin-left:auto;font-family:'IBM Plex Mono',monospace}
 
-// The ONLY producer of canonicalMinor. Callers cannot hand-set it, so a wrong
-// scale cannot slip past. This closes the "makeFigure loophole" note.
-function makeFigure(o){
-  if(!(o.sourceScale in SCALE)) throw new Error("bad scale "+o.sourceScale);
-  const scaleFactor = SCALE[o.sourceScale];
-  return Object.freeze({
-    id:o.id, label:o.label, period:o.period, entity:o.entity,
-    raw:o.raw, sourceScale:o.sourceScale, currency:o.currency||"AED",
-    confidence:o.confidence??0.95, source:o.source, derived:!!o.derived,
-    canonicalMinor:o.raw*scaleFactor, scaleFactor
-  });
+/* ---- instrument panel ---- */
+.mz-panel{border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-panel-strip{background:var(--ink);color:var(--paper);padding:.55rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.11em;text-transform:uppercase;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.mz-dials{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));border-bottom:1px solid var(--rule)}
+.mz-dial{padding:.8rem .9rem;border-right:1px solid var(--rule)}
+.mz-dial-l{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-dial-v{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;margin-top:.2rem;font-variant-numeric:tabular-nums}
+.mz-grid{display:flex;flex-wrap:wrap;gap:3px;padding:.9rem}
+.mz-cell{width:1.55rem;height:1.55rem;border:1px solid var(--rule);background:var(--bar);font-family:'IBM Plex Mono',monospace;font-size:.55rem;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);transition:background .2s,color .2s,border-color .2s}
+.mz-cell.busy{border-color:var(--forest);color:var(--forest);animation:mzPulse 1s ease-in-out infinite}
+.mz-cell.done{background:var(--forest);border-color:var(--forest);color:var(--paper)}
+.mz-cell.miss{background:#fff;border-color:var(--esc);color:var(--esc)}
+@keyframes mzPulse{0%,100%{background:var(--bar)}50%{background:#cfe0d2}}
+.mz-track{height:3px;background:var(--rule);position:relative;overflow:hidden}
+.mz-track-fill{height:100%;background:var(--forest);transition:width .3s ease-out}
+
+.mz-row{display:grid;grid-template-columns:2.4rem 1fr 7.5rem;border-bottom:1px solid var(--rule);background:#fff;align-items:start}
+.mz-row:nth-child(even){background:var(--bar)}
+.mz-row.landed{animation:mzLand .34s ease-out both}
+@keyframes mzLand{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.mz-tick{border-right:1px solid var(--rule);padding:.72rem 0;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600;align-self:stretch}
+.mz-tick.verified{color:var(--tick)}.mz-tick.review{color:var(--query)}.mz-tick.escalate{color:var(--esc)}
+.mz-body{padding:.7rem .9rem;min-width:0}
+.mz-title{font-size:.9rem;font-weight:600;line-height:1.35}
+.mz-detail{font-size:.8rem;color:var(--ink-soft);margin-top:.22rem;line-height:1.45}
+.mz-metric{font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;color:var(--forest);margin-top:.3rem;font-variant-numeric:tabular-nums}
+.mz-ref{padding:.75rem .9rem .75rem .4rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);text-align:right;line-height:1.4;border-left:1px dashed var(--rule);align-self:stretch;word-break:break-word}
+.mz-sev{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;padding:.1rem .35rem;border:1px solid currentColor;margin-left:.45rem;vertical-align:.12em}
+.mz-sev.high{color:var(--esc)}.mz-sev.medium{color:var(--query)}.mz-sev.low{color:var(--ink-soft)}
+.mz-class{background:var(--forest);color:var(--paper);padding:1rem 1.15rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center}
+.mz-class-lens{font-family:'Instrument Serif',Georgia,serif;font-size:1.5rem;line-height:1.1}
+.mz-class-why{font-size:.78rem;opacity:.82;max-width:34rem;line-height:1.45}
+.mz-class-meta{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:.2rem}
+.mz-arith{border:1px solid var(--ink);border-top:none;background:#fff}
+.mz-arith-strip{background:var(--ink);color:var(--paper);padding:.5rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.11em;text-transform:uppercase;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.mz-eq{padding:1.1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-variant-numeric:tabular-nums;line-height:2;overflow-x:auto}
+.mz-eq-line{display:flex;gap:.55rem;align-items:baseline;white-space:nowrap}
+.mz-eq-lbl{color:var(--ink-soft);min-width:11.5rem}
+.mz-eq-val{font-weight:600;margin-left:auto}
+.mz-eq-rule{border-top:1px solid var(--ink);margin:.45rem 0}
+.mz-verdict{padding:.85rem .9rem;border-top:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;font-size:.74rem;line-height:1.5}
+.mz-verdict.pass{color:var(--tick);background:rgba(20,107,58,.05)}
+.mz-verdict.fail{color:var(--esc);background:rgba(168,32,43,.05)}
+.mz-var-row{display:grid;grid-template-columns:1fr 4.6rem;gap:.8rem;align-items:center;padding:.6rem .9rem;border-bottom:1px solid var(--rule);background:#fff}
+.mz-var-row:nth-child(even){background:var(--bar)}
+.mz-var-lbl{font-size:.8rem}
+.mz-var-track{height:5px;background:var(--rule);margin-top:.35rem}
+.mz-var-fill{height:100%;background:var(--forest)}
+.mz-var-fill.under{background:var(--query)}
+.mz-var-pct{font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.mz-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
+.mz-fig{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:#fff;padding:.85rem .9rem;border-left:3px solid transparent}
+.mz-fig.verified{border-left-color:var(--tick)}.mz-fig.review{border-left-color:var(--query)}.mz-fig.escalate{border-left-color:var(--esc)}
+.mz-fig-lbl{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-fig-val{font-family:'IBM Plex Mono',monospace;font-size:1.15rem;font-weight:600;margin-top:.28rem;font-variant-numeric:tabular-nums}
+.mz-fig-ref{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--ink-soft);margin-top:.3rem;line-height:1.35}
+.mz-esc-card{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:.7rem}
+.mz-esc-t{font-size:.9rem;font-weight:600;color:var(--esc)}
+.mz-esc-w{font-size:.8rem;color:var(--ink-soft);margin-top:.35rem;line-height:1.5}
+.mz-esc-d{font-size:.82rem;margin-top:.6rem;padding-top:.6rem;border-top:1px dashed var(--rule);line-height:1.5}
+.mz-esc-d b{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;color:var(--esc);display:block;margin-bottom:.2rem}
+.mz-owner{margin-top:.7rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.mz-owner label{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
+.mz-legend{display:flex;gap:1.4rem;flex-wrap:wrap;padding:.75rem .9rem;border:1px solid var(--rule);border-top:none;background:var(--bar);font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:var(--ink-soft)}
+.mz-legend b{font-size:.85rem;margin-right:.3rem}
+.mz-ev{border:1px solid var(--rule);border-top:none;background:#fff;padding:1rem .9rem;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);line-height:1.9;word-break:break-all}
+.mz-ev b{color:var(--ink)}
+.mz-err{border:1px solid var(--esc);border-left-width:3px;background:#fff;padding:1rem 1.05rem;margin-top:1rem}
+.mz-err-t{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--esc)}
+.mz-err-b{font-size:.83rem;margin-top:.4rem;line-height:1.5}
+.mz-empty{padding:3.4rem 1rem;text-align:center;border:1px solid var(--rule);border-top:none;background:#fff}
+.mz-empty-t{font-family:'Instrument Serif',Georgia,serif;font-size:1.35rem;color:var(--ink-soft);font-style:italic}
+.mz-empty-s{font-size:.83rem;color:var(--ink-soft);margin-top:.5rem}
+.mz-foot{margin-top:3rem;border-top:2px solid var(--ink);padding-top:1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:var(--ink-soft);line-height:1.7}
+.mz-foot b{color:var(--ink)}
+@media(max-width:620px){
+.mz-row{grid-template-columns:2.1rem 1fr}
+.mz-ref{grid-column:2;border-left:none;text-align:left;padding:.5rem .9rem .7rem;border-top:1px dashed var(--rule)}
+.mz-thesis{text-align:left;max-width:none}.mz-eq-lbl{min-width:8.5rem}.mz-hint{margin-left:0;width:100%}}
+@media(prefers-reduced-motion:reduce){.mz-row.landed{animation:none}.mz-cell.busy{animation:none}}
+@media print{
+.mz{background:#fff;padding:0}
+.mz-intake,.mz-btn,.mz-thesis,.mz-panel{display:none!important}
+.mz-row,.mz-fig,.mz-esc-card,.mz-arith{break-inside:avoid;page-break-inside:avoid}
+.mz-sec{margin-top:1.2rem}
+.mz-class{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.mz-arith-strip{background:#fff;color:var(--ink);border-bottom:1px solid var(--ink)}
+.mz-foot{page-break-inside:avoid}
 }
-// Narrowed view handed to compute(): ONLY canonical value is reachable, so a
-// ratio function literally cannot read .raw. This closes the compute loophole.
-function canon(fig){ return { id:fig.id, period:fig.period, entity:fig.entity, currency:fig.currency, v:fig.canonicalMinor }; }
+`;
 
-// Unit-integrity gate: currency + entity always; period only for single-period
-// measures (growth/turnover are cross-period by design and opt out).
-function assertIntegrity(inputs, singlePeriod, crossCurrency){
-  const xs = Object.values(inputs);
-  const a = xs[0];
-  for(const x of xs){
-    if(!crossCurrency && x.currency!==a.currency) throw new Error("integrity: currency "+x.currency+" vs "+a.currency);
-    if(x.entity!==a.entity)     throw new Error("integrity: entity mismatch "+x.id);
-    if(!Number.isFinite(x.v))   throw new Error("integrity: "+x.id+" not normalized");
-    if(singlePeriod && x.period!==a.period) throw new Error("integrity: period "+x.period+" vs "+a.period+" ("+x.id+")");
-  }
-}
+const MARK = { verified: "\u2713", review: "?", escalate: "\u2717" };
+const SEV_RANK = { high: 0, medium: 1, low: 2 };
 
-/* ---------- 1b. FORMATTERS ---------- */
-const fmt = {
-  pct:v=>(v*100).toFixed(1)+"%",
-  x:v=> v>=100 ? Math.round(v)+"x" : v.toFixed(2)+"x",
-  days:v=>v.toFixed(1)+" days",
-  aed:v=>"AED "+abbr(v),
-  aed2:v=>"AED "+v.toFixed(4),
-};
-function abbr(v){ const a=Math.abs(v);
-  if(a>=1e9) return (v/1e9).toFixed(2)+"bn";
-  if(a>=1e6) return (v/1e6).toFixed(1)+"m";
-  if(a>=1e3) return (v/1e3).toFixed(0)+"k";
-  return String(v);
-}
-function th(v){ return v.toLocaleString("en-US"); } // full number with thousands separators
+function App() {
+  const [state, setState] = useState("idle");
+  const [data, setData] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [slices, setSlices] = useState([]);
+  const [err, setErr] = useState("");
+  const [file, setFile] = useState(null);
+  const [owners, setOwners] = useState({});
+  const [operator, setOperator] = useState("");
+  const inputRef = useRef(null);
 
-/* ---------- 1c. SOURCE FIGURES (Salik FY2025, canonical via factory) ---------- */
-const E="Salik Company P.J.S.C.", D="EN Salik FS Dec 25 S.pdf";
-const S=(p,note)=>({document:D,page:p,note});
-const F={};
-const add=o=>{F[o.id]=makeFigure(o);};
-add({id:"revenue.2025",label:"Revenue",period:"2025",entity:E,raw:3096913,sourceScale:"thousands",source:S(30)});
-add({id:"revenue.2024",label:"Revenue",period:"2024",entity:E,raw:2291907,sourceScale:"thousands",source:S(30)});
-add({id:"netProfit.2025",label:"Net profit",period:"2025",entity:E,raw:1553362,sourceScale:"thousands",source:S(44)});
-add({id:"netProfit.2024",label:"Net profit",period:"2024",entity:E,raw:1164548,sourceScale:"thousands",source:S(44)});
-add({id:"pbt.2025",label:"Profit before tax",period:"2025",entity:E,raw:1706954,sourceScale:"thousands",source:S(42)});
-add({id:"financeCosts.2025",label:"Total finance costs",period:"2025",entity:E,raw:313146,sourceScale:"thousands",source:S(31)});
-add({id:"dna.2025",label:"Depreciation and amortisation",period:"2025",entity:E,raw:144769,sourceScale:"thousands",source:S(31)});
-add({id:"equity.2025",label:"Total equity",period:"2025",entity:E,raw:1218666,sourceScale:"thousands",source:S(14)});
-add({id:"finLiab.2025",label:"Total financial liabilities",period:"2025",entity:E,raw:6068266,sourceScale:"thousands",source:S(45)});
-add({id:"tradeRecvNet.2025",label:"Trade receivables (net)",period:"2025",entity:E,raw:169010,sourceScale:"thousands",source:S(36)});
-add({id:"tradeRecvGross.2025",label:"Trade receivables (gross)",period:"2025",entity:E,raw:326847,sourceScale:"thousands",source:S(36)});
-add({id:"ppeNet.2025",label:"Property and equipment (net)",period:"2025",entity:E,raw:5610,sourceScale:"thousands",source:S(35,"Note 18")});
-add({id:"shares.2025",label:"Weighted-average shares",period:"2025",entity:E,raw:7500000,sourceScale:"thousands",currency:"shares",source:S(44)});
-add({id:"dividendsPaid.2025",label:"Dividends declared and paid",period:"2025",entity:E,raw:1390694,sourceScale:"thousands",source:S(43)});
-// reconstructed figures (derived, still canonical via factory on their computed base)
-const operatingProfit = F["pbt.2025"].canonicalMinor + F["financeCosts.2025"].canonicalMinor; // 2,020,100k
-const ebitda = operatingProfit + F["dna.2025"].canonicalMinor; // 2,164,869k
-F["operatingProfit.2025"]=makeFigure({id:"operatingProfit.2025",label:"Operating profit (reconstructed)",period:"2025",entity:E,raw:operatingProfit/1000,sourceScale:"thousands",confidence:0.9,derived:true,source:S(42)});
-F["ebitda.2025"]=makeFigure({id:"ebitda.2025",label:"EBITDA (reconstructed)",period:"2025",entity:E,raw:ebitda/1000,sourceScale:"thousands",confidence:0.9,derived:true,source:S(31)});
+  const fmt = (n) => (typeof n === "number" && isFinite(n) ? n.toLocaleString("en-US") : String(n ?? ""));
 
-// values the entity reported (not independently rebuilt)
-const REPORTED = {
-  netDebtEbitda:{ value:2.24, display:"2.24x", source:S(40,"Note 30") }
-};
-
-/* ---------- 1d. MEASURE SPECS (compute reads canonical .v only) ---------- */
-const M = [
-  // Profitability
-  {id:"grossMargin",name:"Gross profit margin",family:"profitability",formula:"Gross profit / Revenue",dir:"higher_better",na:"No discrete cost-of-revenue line disclosed."},
-  {id:"opMargin",name:"Operating profit margin",family:"profitability",formula:"Operating profit / Revenue",dir:"higher_better",single:true,
-    req:{op:"operatingProfit.2025",rev:"revenue.2025"},f:i=>i.op.v/i.rev.v,fmt:"pct",caveatAlways:"Operating profit reconstructed as PBT + finance costs; excludes finance income."},
-  {id:"netMargin",name:"Net profit margin",family:"profitability",formula:"Net profit / Revenue",dir:"higher_better",single:true,
-    req:{np:"netProfit.2025",rev:"revenue.2025"},f:i=>i.np.v/i.rev.v,fmt:"pct"},
-  {id:"ebitdaMargin",name:"EBITDA margin",family:"profitability",formula:"EBITDA / Revenue",dir:"higher_better",single:true,
-    req:{e:"ebitda.2025",rev:"revenue.2025"},f:i=>i.e.v/i.rev.v,fmt:"pct"},
-  {id:"roa",name:"Return on assets",family:"profitability",formula:"Net profit / Total assets",dir:"higher_better",req:{np:"netProfit.2025",ta:"totalAssets.2025"},f:i=>i.np.v/i.ta.v,fmt:"pct"},
-  {id:"roe",name:"Return on equity",family:"profitability",formula:"Net profit / Total equity",dir:"higher_better",single:true,
-    req:{np:"netProfit.2025",eq:"equity.2025"},f:i=>i.np.v/i.eq.v,fmt:"pct",note:"High on thin equity with ~90% payout, not operating outperformance."},
-  // Solvency
-  {id:"interestCoverage",name:"Interest coverage",family:"solvency",formula:"Operating profit / Finance costs",dir:"higher_better",single:true,
-    req:{op:"operatingProfit.2025",fc:"financeCosts.2025"},f:i=>i.op.v/i.fc.v,fmt:"x"},
-  {id:"netDebtEbitda",name:"Net debt / EBITDA",family:"solvency",formula:"Net debt / EBITDA",dir:"lower_better",reported:"netDebtEbitda",
-    note:"Reconciles only if the related-party payable is counted as debt."},
-  {id:"finLiabEquity",name:"Financial-liabilities / equity",family:"solvency",formula:"Total financial liabilities / Total equity",dir:"lower_better",single:true,
-    req:{fl:"finLiab.2025",eq:"equity.2025"},f:i=>i.fl.v/i.eq.v,fmt:"x",note:"NOT total liabilities; true debt-to-equity is higher (>= 5.46x) once the balance sheet is read."},
-  {id:"debtRatio",name:"Debt ratio",family:"solvency",formula:"Total liabilities / Total assets",dir:"lower_better",req:{tl:"totalLiab.2025",ta:"totalAssets.2025"},f:i=>i.tl.v/i.ta.v,fmt:"x"},
-  {id:"equityRatio",name:"Equity ratio",family:"solvency",formula:"Total equity / Total assets",dir:"higher_better",req:{eq:"equity.2025",ta:"totalAssets.2025"},f:i=>i.eq.v/i.ta.v,fmt:"x"},
-  // Efficiency
-  {id:"assetTurnover",name:"Asset turnover",family:"efficiency",formula:"Revenue / Total assets",dir:"higher_better",req:{rev:"revenue.2025",ta:"totalAssets.2025"},f:i=>i.rev.v/i.ta.v,fmt:"x"},
-  {id:"fixedAssetTurnover",name:"Fixed-asset turnover",family:"efficiency",formula:"Revenue / Fixed assets",dir:"higher_better",
-    req:{rev:"revenue.2025",fa:"ppeNet.2025"},f:i=>i.rev.v/i.fa.v,fmt:"x",
-    lowSignal:"PP&E-only denominator; the real asset base is the multi-billion concession intangible, so this figure is not a usable efficiency measure."},
-  {id:"receivableTurnover",name:"Receivable turnover",family:"efficiency",formula:"Revenue / Trade receivables",dir:"higher_better",single:true,
-    req:{rev:"revenue.2025",tr:"tradeRecvNet.2025"},f:i=>i.rev.v/i.tr.v,fmt:"x",
-    caveatAlways:"Core toll revenue is prepaid; receivables are mostly fines. On gross receivables this is 9.5x."},
-  {id:"dso",name:"Days sales outstanding",family:"efficiency",formula:"(Trade receivables / Revenue) x 365",dir:"lower_better",single:true,
-    req:{tr:"tradeRecvNet.2025",rev:"revenue.2025"},f:i=>i.tr.v/i.rev.v*365,fmt:"days",
-    caveatAlways:"Net basis; on gross receivables ~38.5 days, and the fines book carries a ~48% ECL allowance."},
-  // Growth (cross-period, opt out of period check)
-  {id:"revenueGrowth",name:"Revenue growth",family:"growth",formula:"(Revenue - Prior) / Prior",dir:"higher_better",
-    req:{a:"revenue.2025",b:"revenue.2024"},f:i=>(i.a.v-i.b.v)/i.b.v,fmt:"pct"},
-  {id:"netProfitGrowth",name:"Net profit growth",family:"growth",formula:"(Net profit - Prior) / Prior",dir:"higher_better",
-    req:{a:"netProfit.2025",b:"netProfit.2024"},f:i=>(i.a.v-i.b.v)/i.b.v,fmt:"pct"},
-  {id:"assetGrowth",name:"Asset growth",family:"growth",formula:"(Total assets - Prior) / Prior",dir:"higher_better",req:{a:"totalAssets.2025",b:"totalAssets.2024"},f:i=>(i.a.v-i.b.v)/i.b.v,fmt:"pct"},
-  // Liquidity + cash conversion (all pending: balance sheet / cash flow not read)
-  {id:"currentRatio",name:"Current ratio",family:"liquidity",formula:"Current assets / Current liabilities",dir:"higher_better",req:{a:"currentAssets.2025",l:"currentLiab.2025"},f:i=>i.a.v/i.l.v,fmt:"x"},
-  {id:"quickRatio",name:"Quick ratio",family:"liquidity",formula:"(Current assets - Inventory) / Current liabilities",dir:"higher_better",req:{a:"currentAssets.2025",inv:"inventory.2025",l:"currentLiab.2025"},f:i=>(i.a.v-i.inv.v)/i.l.v,fmt:"x"},
-  {id:"cashRatio",name:"Cash ratio",family:"liquidity",formula:"Cash / Current liabilities",dir:"higher_better",req:{c:"cash.2025",l:"currentLiab.2025"},f:i=>i.c.v/i.l.v,fmt:"x"},
-  {id:"workingCapital",name:"Working capital",family:"liquidity",formula:"Current assets - Current liabilities",dir:"higher_better",req:{a:"currentAssets.2025",l:"currentLiab.2025"},f:i=>i.a.v-i.l.v,fmt:"aed"},
-  {id:"ocfMargin",name:"Operating cash-flow margin",family:"cash_conversion",formula:"Operating cash flow / Revenue",dir:"higher_better",req:{o:"ocf.2025",rev:"revenue.2025"},f:i=>i.o.v/i.rev.v,fmt:"pct"},
-  {id:"cashConversion",name:"Cash conversion ratio",family:"cash_conversion",formula:"Operating cash flow / Net profit",dir:"higher_better",req:{o:"ocf.2025",np:"netProfit.2025"},f:i=>i.o.v/i.np.v,fmt:"x"},
-  {id:"fcf",name:"Free cash flow",family:"cash_conversion",formula:"Operating cash flow - Capex",dir:"higher_better",req:{o:"ocf.2025",cx:"capex.2025"},f:i=>i.o.v-i.cx.v,fmt:"aed"},
-  {id:"fcfMargin",name:"Free cash flow margin",family:"cash_conversion",formula:"(OCF - Capex) / Revenue",dir:"higher_better",req:{o:"ocf.2025",cx:"capex.2025",rev:"revenue.2025"},f:i=>(i.o.v-i.cx.v)/i.rev.v,fmt:"pct"},
-  // Market value
-  {id:"eps",name:"Earnings per share",family:"market_value",formula:"Net profit / Weighted-avg shares",dir:"higher_better",single:false,crossCurrency:true,
-    req:{np:"netProfit.2025",sh:"shares.2025"},f:i=>i.np.v/i.sh.v,fmt:"aed2",note:"Computes to 0.2071; matches reported EPS of AED 0.21."},
-  {id:"payout",name:"Dividend payout",family:"market_value",formula:"Dividends paid / Net profit",dir:"neutral",single:true,
-    req:{d:"dividendsPaid.2025",np:"netProfit.2025"},f:i=>i.d.v/i.np.v,fmt:"pct",scoreExclude:true,
-    caveatAlways:"Cash basis; 2025 payments include the FY2024 final plus the H1 2025 interim."},
-  {id:"pe",name:"Price-to-earnings",family:"market_value",formula:"Price / EPS",dir:"neutral",market:true},
-  {id:"divYield",name:"Dividend yield",family:"market_value",formula:"DPS / Price",dir:"neutral",market:true},
-];
-
-/* ---------- 1e. COMPUTE (single path, four states) ---------- */
-function computeMeasure(spec){
-  const base={id:spec.id,name:spec.name,family:spec.family,formula:spec.formula,dir:spec.dir,
-    note:spec.note,lowSignal:false,caveat:spec.caveatAlways||null};
-  if(spec.na) return {...base,state:"na",display:"n/a",caveat:spec.na};
-  if(spec.market) return {...base,state:"market"};
-  // reported-only measures have no compute function: surface the disclosed value, never call spec.f
-  if(!spec.f){
-    if(spec.reported && REPORTED[spec.reported]){
-      const r=REPORTED[spec.reported];
-      return {...base,state:"reported",provenance:"reported",value:r.value,display:r.display,trace:[r.source],
-        caveat:(base.caveat?base.caveat+" ":"")+"Disclosed by the entity; not independently reconstructed."};
-    }
-    return {...base,state:"pending",missing:["not computed"]};
-  }
-  // resolve inputs
-  const inputs={}; const missing=[];
-  if(spec.req){ for(const [role,fid] of Object.entries(spec.req)){
-    if(F[fid]) inputs[role]=canon(F[fid]); else missing.push(prettyMissing(fid));
-  }}
-  if(missing.length){
-    if(spec.reported && REPORTED[spec.reported]){
-      const r=REPORTED[spec.reported];
-      return {...base,state:"reported",provenance:"reported",value:r.value,display:r.display,trace:[r.source],
-        caveat:(base.caveat?base.caveat+" ":"")+"Disclosed by the entity; not independently reconstructed."};
-    }
-    return {...base,state:"pending",missing};
-  }
-  assertIntegrity(inputs, !!spec.single, !!spec.crossCurrency); // throws -> ingestion bug, never a silent number
-  const value=spec.f(inputs);
-  const trace=Object.values(inputs).map(x=>F[x.id].source);
-  const low=!!spec.lowSignal;
-  return {...base,state:"computed",provenance:"computed",value,display:fmt[spec.fmt](value),
-    trace, lowSignal:low, caveat: low?spec.lowSignal:(base.caveat),
-    scoreExclude: low || !!spec.scoreExclude};
-}
-function prettyMissing(fid){
-  const map={ "totalAssets.2025":"total assets (balance sheet)","totalAssets.2024":"prior total assets (balance sheet)",
-    "totalLiab.2025":"total liabilities (balance sheet)","currentAssets.2025":"current assets (balance sheet)",
-    "currentLiab.2025":"current liabilities (balance sheet)","cash.2025":"cash (balance sheet)","inventory.2025":"inventory (balance sheet)",
-    "ocf.2025":"operating cash flow (cash flow statement)","capex.2025":"capex (cash flow statement)"};
-  return map[fid]||fid;
-}
-
-/* ---------- 1f. SCORING (transparent, documented default rubric v0) ----------
-   Every threshold is visible here and easy to replace. The overall is labelled
-   "available metrics only". Reported and low-signal ratios never score.        */
-function scoreRatio(m){
-  if(m.state!=="computed"||m.scoreExclude) return null;
-  const v=m.value, up=m.dir==="higher_better", down=m.dir==="lower_better";
-  if(!up&&!down) return null; // neutral ratios are informational, not scored
-  const bands = {
-    netMargin:[[0.20,95],[0.10,80],[0.05,60],[0,40]],
-    opMargin:[[0.20,95],[0.10,80],[0.05,60],[0,40]],
-    ebitdaMargin:[[0.25,95],[0.12,80],[0.05,60],[0,40]],
-    roe:[[0.15,100],[0.08,80],[0.03,55],[0,35]],
-    interestCoverage:[[6,90],[4,80],[2,55],[0,30]],
-    finLiabEquity:[[1,90],[2,65],[3,45],[5,30],[9e9,20]], // lower better: ascending thresholds, v<=band -> score
-    receivableTurnover:[[12,95],[6,80],[3,55],[0,35]],
-    dso:[[30,90],[45,70],[60,50],[9e9,30]],          // lower better on days
-    revenueGrowth:[[0.10,100],[0.04,80],[0,55],[-9,30]],
-    netProfitGrowth:[[0.10,100],[0.04,80],[0,55],[-9,30]],
+  const sha256 = async (buf) => {
+    const h = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
   };
-  const b=bands[m.id]; if(!b) return null;
-  for(const [th,sc] of b){ if(down){ if(v<=th) return sc; } else { if(v>=th) return sc; } }
-  return b[b.length-1][1];
-}
-const FAMILY_ORDER=["profitability","liquidity","solvency","efficiency","cash_conversion","growth","market_value"];
-const FAMILY_LABEL={profitability:"Profitability",liquidity:"Liquidity",solvency:"Solvency",efficiency:"Efficiency",cash_conversion:"Cash conversion",growth:"Growth",market_value:"Market value"};
-function toneFor(s){ if(s==null) return "none"; if(s>=75) return "good"; if(s>=50) return "warn"; return "bad"; }
-function labelFor(s){ if(s==null) return "No data"; if(s>=80) return "Strong"; if(s>=60) return "Adequate"; return "Weak"; }
 
-/* ---------- 1g. BUILD THE REPORT MODEL ---------- */
-function buildModel(){
-  const measures=M.map(computeMeasure);
-  const byFam={}; FAMILY_ORDER.forEach(f=>byFam[f]=[]);
-  measures.forEach(m=>byFam[m.family].push(m));
-  const families=FAMILY_ORDER.map(fam=>{
-    const list=byFam[fam];
-    const scores=list.map(scoreRatio).filter(s=>s!=null);
-    const total=list.length;
-    const computed=list.filter(m=>m.state==="computed").length;
-    const excludedLowSignal=list.filter(m=>m.state==="computed"&&m.scoreExclude).length;
-    const score=scores.length? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
-    return {family:fam,score,label:labelFor(score),tone:toneFor(score),
-      scored:scores.length,computed,total,excludedLowSignal};
-  });
-  const scoredFams=families.filter(f=>f.score!=null);
-  const overall=scoredFams.length? Math.round(scoredFams.reduce((a,b)=>a+b.score,0)/scoredFams.length):null;
-  return {
-    entity:E, period:"FY2025", preparedAt:"2026-08-26", mizanVersion:"2.1.0",
-    sha256:"5ef096ae85951ee6f4abb41d414f011f", preparedBy:"Jonathan Z",
-    integrity:{ coverageRead:17, coverageTotal:19, complete:false, balanceSheetRead:false, cashFlowRead:false,
-      itemsHeldForPerson:7, classificationBasis:"IFRS (assumed from entity type; not confirmed)",
-      timedOut:[{document:D,from:46,to:48},{document:"Salik_Reclassified_Income_Statement_2025.pdf",from:1,to:1}] },
-    headline:[
-      {label:"Revenue",v:fmt.aed(F["revenue.2025"].canonicalMinor),d:"+35.1% YoY",tone:"good"},
-      {label:"Net profit",v:fmt.aed(F["netProfit.2025"].canonicalMinor),d:"+33.4% YoY",tone:"good"},
-      {label:"Total equity",v:fmt.aed(F["equity.2025"].canonicalMinor),d:"31 Dec 2025",tone:"none"},
-      {label:"EPS",v:"AED 0.21",d:"matches reported",tone:"none"},
-    ],
-    overall, families, measures, byFam,
-    clusters:[CLUSTER], findings:FINDINGS, tieOuts:TIEOUTS, figures:Object.values(F),
-    verification:{ evidenceGaps:2, confirmations:4, judgments:1, items:VITEMS }
+  const b64 = (bytes) => {
+    let s = "";
+    for (let i = 0; i < bytes.length; i += 8192) {
+      s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+    }
+    return btoa(s);
   };
-}
 
-/* ---------- 1h. FINDINGS (structured; cluster + tiers) ---------- */
-const CLUSTER={ id:"related-party-financing", severity:"high",
-  title:"Related-party financing is the dominant financial event of the year",
-  summary:"A ~AED 1,985m payable to a related party, a finance cost on it that surged 828%, a AED 355.7m fair-value contribution routed through equity, and the AED 32m tax effect of that contribution are one thread, not four separate items. Management's 2.24x net debt/EBITDA only reconciles if this payable is counted as debt.",
-  members:["rp-balance","rp-finance","rp-equity","rp-tax"] };
-const FINDINGS=[
-  {id:"rp-finance",tier:"key_matter",severity:"high",decision:"requires_confirmation",cluster:"related-party-financing",
-   obs:"Finance cost on the related-party balance surged.",calc:"11,530 -> 106,972 = +827.9% YoY",
-   evidence:[S(31)],interpretation:"A material step-up in financing-cost exposure to a related party.",decisionNeeded:"Confirm purpose and terms."},
-  {id:"rp-equity",tier:"key_matter",severity:"high",decision:"derived",cluster:"related-party-financing",
-   obs:"Related-party financing fair-value contribution recognised in equity (not a finance expense).",calc:"2,734.3m intangible - 2,378.6m liability = 355.7m to equity",
-   evidence:[S(14),S(39)],interpretation:"Corrects the earlier report, which mislabelled this equity contribution as a finance-cost surge.",decisionNeeded:"Confirm calculation basis in the notes."},
-  {id:"rp-balance",tier:"observation",severity:"medium",decision:"confirmed",cluster:"related-party-financing",
-   obs:"Amount due to a related party dominates the liability profile.",calc:"1,985,477 of 6,068,266 total financial liabilities",
-   evidence:[S(45)],interpretation:"The single largest financing item on the balance sheet."},
-  {id:"rp-tax",tier:"observation",severity:"medium",decision:"derived",cluster:"related-party-financing",
-   obs:"Tax adjustment charged directly to retained earnings.",calc:"32,011 taken to equity, being the tax effect of the fair-value contribution",
-   evidence:[S(43)],interpretation:"Reduces 2025 retained earnings; tied to the related-party item above."},
-  {id:"km-facility",tier:"key_matter",severity:"medium",decision:"confirmed",
-   obs:"Borrowing facility is near fully drawn.",calc:"4,000,000 of 4,050,000 utilised; 50,000 headroom",
-   evidence:[S(41)],interpretation:"Minimal borrowing headroom; refinancing and covenant compliance worth confirming.",decisionNeeded:"Confirm covenant compliance and refinancing plans."},
-  {id:"km-ifrs18",tier:"key_matter",severity:"medium",decision:"requires_confirmation",
-   obs:"IFRS 18 presentation impact not yet quantified.",
-   evidence:[S(16)],interpretation:"Company expects a pervasive presentation impact; no figures yet.",decisionNeeded:"Confirm quantification once the assessment completes."},
-  {id:"km-ecl",tier:"key_matter",severity:"medium",decision:"confirmed",
-   obs:"Change in the ECL model treated as an estimate change.",calc:"cut the fines loss allowance by ~AED 20.1m in 2024",
-   evidence:[S(28)],interpretation:"Applied prospectively under IAS 8; flatters prior-year receivables."},
-  {id:"obs-leverage",tier:"observation",severity:"low",decision:"confirmed",
-   obs:"Leverage improved year on year.",calc:"Net debt/EBITDA 3.29x -> 2.24x",evidence:[S(40)],interpretation:"Deleveraging trend, on management's reported basis."},
-  {id:"obs-opinion",tier:"observation",severity:"low",decision:"confirmed",
-   obs:"Unmodified audit opinion (PwC).",evidence:[S(5)],interpretation:"Statements present fairly under IFRS; auditor independence confirmed."},
-  {id:"obs-owner",tier:"observation",severity:"low",decision:"confirmed",
-   obs:"Government-controlled majority shareholder.",calc:"Dubai Investment Fund 75.1%",evidence:[S(15)],interpretation:"Ultimately controlled by the Government of Dubai; related-party context."},
-  {id:"obs-div",tier:"observation",severity:"low",decision:"requires_confirmation",
-   obs:"Proposed second-half dividend awaits approval.",calc:"AED 890,341k proposed",evidence:[S(3)],interpretation:"Pending General Assembly approval in April 2026.",decisionNeeded:"Confirm at AGM."},
-];
-const TIEOUTS=[
-  {statement:"Equity rollforward 2025",ok:true,source:S(14)},
-  {statement:"Revenue components sum to total",ok:true,source:S(30)},
-  {statement:"Finance costs sum",ok:true,source:S(31)},
-  {statement:"Income tax reconciliation (9% over threshold)",ok:true,source:S(42)},
-  {statement:"Net borrowings 2025 (4,000,000 less 4,809 unamortised)",ok:true,source:S(40)},
-  {statement:"Liquidity maturity table sums to total",ok:true,source:S(45)},
-];
-const VITEMS=[
-  {t:"Retained earnings adjustment for finance costs",k:"evidence",src:S(3)},
-  {t:"Related party transactions referenced, not quantified",k:"evidence",src:S(9)},
-  {t:"Social contributions amount not quantified",k:"confirm",src:S(10)},
-  {t:"Tax adjustment basis unclear",k:"confirm",src:S(14)},
-  {t:"IFRS 18 impact not quantified",k:"confirm",src:S(16)},
-  {t:"RTA voluntary termination judgement",k:"confirm",src:S(29)},
-  {t:"Borrowing headroom minimal at 50,000",k:"judgment",src:S(41)},
-];
+  // Arithmetic. Runs here, in the browser. Never a model output.
+  const checkBalance = (b) => {
+    if (!b || !b.totalAssets) return null;
+    const rhs = (b.totalLiabilities || 0) + (b.totalNetAssets || 0);
+    const delta = b.totalAssets - rhs;
+    return { rhs, delta, ok: Math.abs(delta) < 0.5 };
+  };
 
-/* ============================ 2. WEB RENDERER ============================ */
-const $=(h)=>{const t=document.createElement("template");t.innerHTML=h.trim();return t.content.firstChild;};
-function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
-function srcStr(s){return s.document.replace(/\.pdf$/,"")+" p."+s.page+(s.note?" "+s.note:"");}
+  // Deterministic merge. No second model call, so nothing can drift here.
+  const merge = (partials) => {
+    const out = {
+      entity: {}, classification: {}, balance: null,
+      tieOut: [], figures: [], variance: [], findings: [], escalations: []
+    };
+    const seen = new Set();
+    const votes = {};
 
-function renderWeb(model){
-  const app=document.getElementById("app"); app.innerHTML="";
-  document.getElementById("tb-entity").textContent=model.entity+" \u00b7 "+model.period;
-  document.getElementById("tb-integrity").textContent="Coverage "+model.integrity.coverageRead+"/"+model.integrity.coverageTotal+" \u00b7 review";
+    for (const p of partials) {
+      if (!p) continue;
 
-  // Executive
-  const exec=$(`<section class="block"></section>`);
-  exec.appendChild($(`<div class="sechead"><span class="n">00</span><h2>Executive snapshot</h2>
-    <span class="meta cap">Available metrics only \u00b7 ${model.families.filter(f=>f.score!=null).length} of 7 families</span></div>`));
-  const grid=$(`<div class="exec"></div>`);
-  grid.appendChild($(`<div class="score-card">
-      <div class="cap">Available-metric score</div>
-      <div class="score-num num">${model.overall??"--"}<span>/100</span></div>
-      <div class="score-sub cap tone-warn">Partial \u00b7 rubric v0</div>
-      <div class="integrity-row">
-        <span class="ipill">Coverage ${model.integrity.coverageRead}/${model.integrity.coverageTotal}</span>
-        <span class="ipill">Balance sheet not read</span>
-        <span class="ipill">${model.integrity.itemsHeldForPerson} held for a person</span>
-      </div></div>`));
-  const kp=$(`<div class="kpis"></div>`);
-  model.headline.forEach(h=>kp.appendChild($(`<div class="kpi"><div class="cap">${esc(h.label)}</div>
-     <div class="v">${esc(h.v)}</div><div class="d tone-${h.tone}">${esc(h.d)}</div></div>`)));
-  grid.appendChild(kp); exec.appendChild(grid); app.appendChild(exec);
+      if (p.entity) {
+        for (const k of ["name", "period", "currency", "scale", "auditOpinion"]) {
+          if (!out.entity[k] && p.entity[k]) out.entity[k] = p.entity[k];
+        }
+      }
+      if (p.classification?.lens) {
+        votes[p.classification.lens] = (votes[p.classification.lens] || 0) + 1;
+        if (!out.classification.basis && p.classification.basis) {
+          out.classification.basis = p.classification.basis;
+          out.classification.why = p.classification.why;
+        }
+      }
+      if (!out.balance && p.balance?.totalAssets) out.balance = p.balance;
 
-  // Scorecard
-  const sc=$(`<section class="block"></section>`);
-  sc.appendChild($(`<div class="sechead"><span class="n">01</span><h2>Scorecard</h2>
-     <span class="meta cap">scored from clean ratios only</span></div>`));
-  const fams=$(`<div class="families"></div>`);
-  model.families.forEach(f=>{
-    fams.appendChild($(`<div class="fam ${f.tone}">
-      <div class="fn">${FAMILY_LABEL[f.family]}</div>
-      <div class="fs num">${f.score??"\u2014"}${f.score!=null?"<small>/100</small>":""}</div>
-      <div class="fl tone-${f.tone}">${f.label}</div>
-      <div class="fc">${f.computed}/${f.total} computed${f.excludedLowSignal?` \u00b7 ${f.excludedLowSignal} low-signal`:""}</div>
-    </div>`));
-  });
-  sc.appendChild(fams); app.appendChild(sc);
+      for (const key of ["tieOut", "figures", "variance", "findings", "escalations"]) {
+        for (const item of p[key] || []) {
+          const id = key + "|" + (item.title || item.label || item.check || JSON.stringify(item)).toLowerCase().slice(0, 60);
+          if (seen.has(id)) continue;
+          seen.add(id);
+          out[key].push(item);
+        }
+      }
+    }
 
-  // Ratios (computed prominent, unavailable collapsed)
-  const rz=$(`<section class="block"></section>`);
-  const nc=model.measures.filter(m=>m.state==="computed").length, rep=model.measures.filter(m=>m.state==="reported").length;
-  rz.appendChild($(`<div class="sechead"><span class="n">02</span><h2>Financial ratios</h2>
-     <span class="meta cap">${nc} computed \u00b7 ${rep} reported \u00b7 ${model.measures.filter(m=>m.state==="pending").length} pending \u00b7 ${model.measures.filter(m=>m.state==="market").length} market</span></div>`));
-  FAMILY_ORDER.forEach(fam=>{
-    const list=model.byFam[fam];
-    const shown=list.filter(m=>m.state==="computed"||m.state==="reported");
-    const hidden=list.filter(m=>m.state==="pending"||m.state==="market"||m.state==="na");
-    const open= shown.length>0;
-    const grp=$(`<details class="fam-group" ${open?"open":""}></details>`);
-    grp.appendChild($(`<summary><span class="lbl">${FAMILY_LABEL[fam]}</span>
-       <span class="cnt">${shown.length} shown \u00b7 ${hidden.length} unavailable</span></summary>`));
-    shown.forEach(m=>grp.appendChild(ratioRow(m)));
-    if(hidden.length){
-      const box=$(`<div style="padding:4px 8px 8px"></div>`);
-      hidden.forEach(m=>{
-        const why = m.state==="market"?"market data required": m.state==="na"? (m.caveat||"not applicable") : ("missing: "+(m.missing||[]).join(", "));
-        box.appendChild($(`<div class="unavail" style="color:var(--faint);font-size:11.5px;padding:2px 0">${esc(m.name)} <span style="color:var(--faint)">\u2014 ${esc(why)}</span></div>`));
+    out.classification.lens =
+      (votes.public_sector || 0) >= (votes.corporate || 0) && votes.public_sector
+        ? "public_sector"
+        : votes.corporate ? "corporate" : "corporate";
+
+    out.findings.sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
+    return out;
+  };
+
+  const readSlice = async (payload) => {
+    for (let attempt = 0; attempt <= RETRIES; attempt++) {
+      try {
+        const r = await fetch("/.netlify/functions/chunk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const j = await r.json().catch(() => ({ error: "Netlify returned " + r.status + "." }));
+        if (r.ok && j.partial) return j;
+        if (attempt === RETRIES) return { error: j.error || "Netlify returned " + r.status + "." };
+      } catch (e) {
+        if (attempt === RETRIES) return { error: String(e.message || e) };
+      }
+      await new Promise((r) => setTimeout(r, 900 * (attempt + 1)));
+    }
+    return { error: "Unreachable." };
+  };
+
+  const run = useCallback(async (f) => {
+    setState("working"); setErr(""); setData(null); setMeta(null); setSlices([]);
+    const began = Date.now();
+
+    try {
+      const buf = await f.arrayBuffer();
+      const hash = await sha256(buf);
+
+      const src = await PDFDocument.load(buf, { ignoreEncryption: true });
+      const pageCount = src.getPageCount();
+
+      // Cut the document into slices the free tier can actually swallow.
+      const plan = [];
+      for (let start = 0; start < pageCount; start += PAGES_PER_SLICE) {
+        const end = Math.min(start + PAGES_PER_SLICE, pageCount);
+        plan.push({ start, end, from: start + 1, to: end });
+      }
+      setSlices(plan.map((p) => ({ ...p, status: "queued" })));
+
+      const built = [];
+      for (const p of plan) {
+        const doc = await PDFDocument.create();
+        const pages = await doc.copyPages(src, Array.from({ length: p.end - p.start }, (_, i) => p.start + i));
+        pages.forEach((pg) => doc.addPage(pg));
+        built.push({ ...p, pdf: b64(await doc.save()) });
+      }
+
+      const partials = new Array(built.length).fill(null);
+      const costs = [];
+      const failures = [];
+      let cursor = 0;
+      let modelSeen = null;
+
+      const worker = async () => {
+        while (cursor < built.length) {
+          const i = cursor++;
+          const s = built[i];
+          setSlices((prev) => prev.map((x, ix) => (ix === i ? { ...x, status: "busy" } : x)));
+
+          const res = await readSlice({ pdf: s.pdf, offset: s.from, total: pageCount });
+
+          if (res.partial) {
+            partials[i] = res.partial;
+            if (res.meta) { costs.push(res.meta); modelSeen = modelSeen || res.meta.model; }
+            setSlices((prev) => prev.map((x, ix) => (ix === i ? { ...x, status: "done" } : x)));
+            setData(merge(partials.filter(Boolean)));
+          } else {
+            failures.push(res.error);
+            setSlices((prev) => prev.map((x, ix) => (ix === i ? { ...x, status: "miss", why: res.error } : x)));
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, built.length) }, worker));
+
+      const got = partials.filter(Boolean);
+      if (!got.length) {
+        throw new Error("No part of this document could be read. First failure: " +
+          (failures[0] || "unknown."));
+      }
+
+      setData(merge(got));
+      setMeta({
+        hash, name: f.name, size: f.size, pages: pageCount,
+        slices: built.length, read: got.length, failed: built.length - got.length,
+        model: modelSeen,
+        input_tokens: costs.reduce((a, c) => a + (c.input_tokens || 0), 0),
+        output_tokens: costs.reduce((a, c) => a + (c.output_tokens || 0), 0),
+        cost_usd: Number(costs.reduce((a, c) => a + (c.cost_usd || 0), 0).toFixed(4)),
+        seconds: Math.round((Date.now() - began) / 1000),
+        at: new Date().toISOString()
       });
-      grp.appendChild(box);
+      setOwners({});
+      setState("done");
+    } catch (e) {
+      setErr(e.message || "Something went wrong reading this document.");
+      setState("error");
     }
-    rz.appendChild(grp);
-  });
-  app.appendChild(rz);
+  }, []);
 
-  // Key matters + findings
-  const fz=$(`<section class="block"></section>`);
-  fz.appendChild($(`<div class="sechead"><span class="n">03</span><h2>Key matters</h2>
-     <span class="meta cap">${model.findings.filter(f=>f.tier==="key_matter").length} matters \u00b7 ${model.findings.filter(f=>f.tier==="observation").length} observations</span></div>`));
-  // cluster first
-  const c=model.clusters[0];
-  const cl=$(`<div class="cluster"></div>`);
-  cl.appendChild($(`<div class="ftop"><span class="fsev" style="background:var(--bad)">HIGH</span>
-     <h3 style="margin-left:2px">${esc(c.title)}</h3></div>`));
-  cl.appendChild($(`<div class="csum">${esc(c.summary)}</div>`));
-  model.findings.filter(f=>f.cluster===c.id).forEach(f=>cl.appendChild(findingEl(f,true)));
-  fz.appendChild(cl);
-  // other key matters
-  model.findings.filter(f=>f.tier==="key_matter"&&!f.cluster).forEach(f=>fz.appendChild(findingEl(f)));
-  // observations collapsed
-  const others=model.findings.filter(f=>f.tier==="observation"&&!f.cluster);
-  if(others.length){
-    const d=$(`<details class="obs"></details>`);
-    d.appendChild($(`<summary>${others.length} more observations \u25be</summary>`));
-    others.forEach(f=>d.appendChild(findingEl(f)));
-    fz.appendChild(d);
-  }
-  app.appendChild(fz);
+  const onPick = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f); run(f); e.target.value = "";
+  };
 
-  // Verification
-  const vz=$(`<section class="block"></section>`);
-  vz.appendChild($(`<div class="sechead"><span class="n">04</span><h2>Verification queue</h2>
-     <span class="meta cap">${model.verification.items.length} items need attention</span></div>`));
-  const vq=$(`<div class="vq"></div>`);
-  vq.appendChild($(`<div class="vqcell"><div class="vn tone-bad">${model.verification.evidenceGaps}</div><div class="vl">Evidence gaps</div></div>`));
-  vq.appendChild($(`<div class="vqcell"><div class="vn tone-warn">${model.verification.confirmations}</div><div class="vl">Management confirmations</div></div>`));
-  vq.appendChild($(`<div class="vqcell"><div class="vn">${model.verification.judgments}</div><div class="vl">Judgment</div></div>`));
-  vz.appendChild(vq);
-  const dl=$(`<details class="obs" style="margin-top:8px"></details>`);
-  dl.appendChild($(`<summary>Open queue \u25be</summary>`));
-  model.verification.items.forEach(it=>dl.appendChild($(`<div class="rrow" style="grid-template-columns:auto 1fr auto">
-     <span class="dot ${it.k==='evidence'?'bg-bad':it.k==='confirm'?'bg-warn':'bg-none'}"></span>
-     <span class="rname">${esc(it.t)}</span><span class="rstate">${esc(srcStr(it.src))}</span></div>`)));
-  vz.appendChild(dl);
-  app.appendChild(vz);
+  const bal = data ? checkBalance(data.balance) : null;
+  const doneCount = slices.filter((s) => s.status === "done").length;
+  const missCount = slices.filter((s) => s.status === "miss").length;
+  const pagesRead = slices.filter((s) => s.status === "done").reduce((a, s) => a + (s.to - s.from + 1), 0);
 
-  app.appendChild($(`<div class="foot">
-    <span>Mizan ${model.mizanVersion}</span><span>SHA-256 ${model.sha256}</span>
-    <span>Prepared by ${esc(model.preparedBy)}</span><span>${model.preparedAt}</span>
-    <span>Figures read from source. Not an opinion on the accounts.</span></div>`));
+  const evidence = () => {
+    if (!data || !meta) return null;
+    const counts = { verified: 0, review: 0, escalate: 0 };
+    (data.findings || []).forEach((f) => { if (counts[f.state] !== undefined) counts[f.state]++; });
+    return {
+      record_id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      generated_at: meta.at,
+      operator: operator || "UNRECORDED",
+      document: { file_name: meta.name, bytes: meta.size, pages: meta.pages, sha256: meta.hash },
+      coverage: {
+        slices_total: meta.slices,
+        slices_read: meta.read,
+        slices_failed: meta.failed,
+        pages_per_slice: PAGES_PER_SLICE,
+        complete: meta.failed === 0
+      },
+      system: { tool: "Mizan", version: VERSION, model: meta.model, elapsed_seconds: meta.seconds },
+      cost_of_reading: { input_tokens: meta.input_tokens, output_tokens: meta.output_tokens, usd: meta.cost_usd },
+      classification: {
+        lens: data.classification?.lens,
+        basis: data.classification?.basis,
+        rationale: data.classification?.why
+      },
+      deterministic_checks: [
+        bal && {
+          check: "assets = liabilities + net assets",
+          computed_by: "client arithmetic",
+          result: bal.ok ? "pass" : "fail",
+          difference: bal.delta
+        }
+      ].filter(Boolean),
+      determinations: counts,
+      escalations: (data.escalations || []).map((e, i) => ({
+        item: e.title,
+        decision_needed: e.decisionNeeded,
+        source: e.ref,
+        accountable_owner: owners[i] || "UNASSIGNED",
+        decision: "PENDING"
+      })),
+      note: "Figures are read from the source document. This record is not an opinion on the accounts."
+    };
+  };
+
+  const downloadEvidence = () => {
+    const rec = evidence(); if (!rec) return;
+    const blob = new Blob([JSON.stringify(rec, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "mizan-evidence-" + (meta?.hash || "").slice(0, 12) + ".json";
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  const working = state === "working";
+
+  return (
+    <div className="mz">
+      <style>{CSS}</style>
+      <div className="mz-wrap">
+
+        <header className="mz-head">
+          <div>
+            <div className="mz-mark">Mizan<span>ميزان</span></div>
+            <div className="mz-sub">Financial statement analysis that shows its work</div>
+          </div>
+          <p className="mz-thesis">Autonomous when it is certain. Accountable when it is not.</p>
+        </header>
+
+        <div className="mz-intake">
+          <input ref={inputRef} type="file" accept="application/pdf" onChange={onPick} style={{ display: "none" }} />
+          <button className="mz-btn" disabled={working} onClick={() => inputRef.current?.click()}>
+            {working ? "Reading" : "Read a statements PDF"}
+          </button>
+          <input className="mz-in" placeholder="Your name, for the record"
+            value={operator} onChange={(e) => setOperator(e.target.value)} aria-label="Operator name" />
+          {state === "done" && (
+            <>
+              <button className="mz-btn ghost" onClick={() => window.print()}>Print working paper</button>
+              <button className="mz-btn ghost" onClick={downloadEvidence}>Evidence record</button>
+            </>
+          )}
+          {file && state === "done" && <span className="mz-hint">{file.name}</span>}
+        </div>
+
+        {state === "idle" && (
+          <div className="mz-empty">
+            <p className="mz-empty-t">No document read yet.</p>
+            <p className="mz-empty-s">
+              Load a set of financial statements as a PDF. Long documents are cut into slices and read in parallel.
+            </p>
+          </div>
+        )}
+
+        {slices.length > 0 && (
+          <div className="mz-panel">
+            <div className="mz-panel-strip">
+              <span>{working ? "Reading in parallel" : "Coverage"}</span>
+              <span>{PAGES_PER_SLICE} pages per slice · {CONCURRENCY} at once</span>
+            </div>
+            <div className="mz-track">
+              <div className="mz-track-fill" style={{ width: (((doneCount + missCount) / slices.length) * 100) + "%" }} />
+            </div>
+            <div className="mz-dials">
+              <div className="mz-dial">
+                <div className="mz-dial-l">Slices read</div>
+                <div className="mz-dial-v">{doneCount}/{slices.length}</div>
+              </div>
+              <div className="mz-dial">
+                <div className="mz-dial-l">Pages covered</div>
+                <div className="mz-dial-v">{pagesRead}</div>
+              </div>
+              <div className="mz-dial">
+                <div className="mz-dial-l">Findings so far</div>
+                <div className="mz-dial-v">{data?.findings?.length || 0}</div>
+              </div>
+              <div className="mz-dial">
+                <div className="mz-dial-l">Unread</div>
+                <div className="mz-dial-v" style={{ color: missCount ? "var(--esc)" : "var(--ink)" }}>{missCount}</div>
+              </div>
+            </div>
+            <div className="mz-grid">
+              {slices.map((s, i) => (
+                <div key={i} className={"mz-cell " + s.status}
+                  title={"pages " + s.from + " to " + s.to + (s.why ? " · " + s.why : "")}>
+                  {s.from}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {state === "error" && (
+          <div className="mz-err">
+            <p className="mz-err-t">Reading stopped</p>
+            <p className="mz-err-b">{err}</p>
+          </div>
+        )}
+
+        {data && (data.findings?.length > 0 || state === "done") && (
+          <>
+            <section className="mz-sec">
+              <div className="mz-sec-head">
+                <h2 className="mz-sec-title">Lens applied</h2>
+                <span className="mz-sec-note">{working ? "provisional" : "settled"}</span>
+              </div>
+              <div className="mz-class">
+                <div>
+                  <div className="mz-class-meta">Classified as</div>
+                  <div className="mz-class-lens">
+                    {data.classification?.lens === "public_sector" ? "Public sector entity" : "Corporate entity"}
+                  </div>
+                  <div className="mz-class-meta" style={{ marginTop: ".4rem", marginBottom: 0 }}>
+                    {[data.classification?.basis, data.entity?.name, data.entity?.period].filter(Boolean).join(" · ")}
+                  </div>
+                </div>
+                <p className="mz-class-why">{data.classification?.why}</p>
+              </div>
+            </section>
+
+            {data.entity?.auditOpinion && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Audit opinion</h2>
+                  <span className="mz-sec-note">as stated</span>
+                </div>
+                <div className="mz-row landed">
+                  <div className="mz-tick verified">{MARK.verified}</div>
+                  <div className="mz-body"><p className="mz-title">{data.entity.auditOpinion}</p></div>
+                  <div className="mz-ref">Auditor's report</div>
+                </div>
+              </section>
+            )}
+
+            {bal && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Does it balance</h2>
+                  <span className="mz-sec-note">arithmetic, not a model</span>
+                </div>
+                <div className="mz-arith">
+                  <div className="mz-arith-strip">
+                    <span>Computed in this browser</span>
+                    <span>{data.entity?.currency} {data.entity?.scale}</span>
+                  </div>
+                  <div className="mz-eq">
+                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total assets</span><span className="mz-eq-val">{fmt(data.balance.totalAssets)}</span></div>
+                    <div className="mz-eq-line"><span className="mz-eq-lbl">Total liabilities</span><span className="mz-eq-val">{fmt(data.balance.totalLiabilities)}</span></div>
+                    <div className="mz-eq-line">
+                      <span className="mz-eq-lbl">{data.classification?.lens === "public_sector" ? "Net assets" : "Total equity"}</span>
+                      <span className="mz-eq-val">{fmt(data.balance.totalNetAssets)}</span>
+                    </div>
+                    <div className="mz-eq-rule" />
+                    <div className="mz-eq-line">
+                      <span className="mz-eq-lbl">Difference</span>
+                      <span className="mz-eq-val" style={{ color: bal.ok ? "var(--tick)" : "var(--esc)" }}>{fmt(bal.delta)}</span>
+                    </div>
+                  </div>
+                  <div className={"mz-verdict " + (bal.ok ? "pass" : "fail")}>
+                    {bal.ok
+                      ? MARK.verified + "  Assets equal liabilities plus net assets. Nothing here rests on judgement."
+                      : MARK.escalate + "  Off by " + fmt(Math.abs(bal.delta)) + ". Reported as-is. No figure on this page should be relied on until a person finds the cause."}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {data.tieOut?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Tie-out</h2>
+                  <span className="mz-sec-note">{data.tieOut.length} checks</span>
+                </div>
+                {data.tieOut.map((t, i) => {
+                  const st = t.result === "pass" ? "verified" : t.result === "fail" ? "escalate" : "review";
+                  return (
+                    <div key={i} className="mz-row landed">
+                      <div className={"mz-tick " + st}>{MARK[st]}</div>
+                      <div className="mz-body"><p className="mz-title">{t.check}</p><p className="mz-detail">{t.detail}</p></div>
+                      <div className="mz-ref">{t.ref}</div>
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+
+            {data.figures?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Figures</h2>
+                  <span className="mz-sec-note">every one carries its page</span>
+                </div>
+                <div className="mz-figs">
+                  {data.figures.map((f, i) => (
+                    <div key={i} className={"mz-fig " + (f.state || "review")}>
+                      <div className="mz-fig-lbl">{f.label}</div>
+                      <div className="mz-fig-val">{f.value}</div>
+                      <div className="mz-fig-ref">{f.ref}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {data.variance?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Budget against actual</h2>
+                  <span className="mz-sec-note">bar shows spend against approved</span>
+                </div>
+                {data.variance.map((v, i) => {
+                  const pct = v.budget ? (v.actual / v.budget) * 100 : 0;
+                  const under = pct < 90;
+                  return (
+                    <div key={i} className="mz-var-row">
+                      <div>
+                        <div className="mz-var-lbl">{v.label}</div>
+                        <div className="mz-var-track">
+                          <div className={"mz-var-fill" + (under ? " under" : "")} style={{ width: Math.min(pct, 100) + "%" }} />
+                        </div>
+                      </div>
+                      <div className="mz-var-pct" style={{ color: under ? "var(--query)" : "var(--ink)" }}>{pct.toFixed(0)}%</div>
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+
+            {data.findings?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Findings</h2>
+                  <span className="mz-sec-note">read the tick column first</span>
+                </div>
+                {data.findings.map((f, i) => (
+                  <div key={i} className="mz-row landed">
+                    <div className={"mz-tick " + (f.state || "review")}>{MARK[f.state] || "?"}</div>
+                    <div className="mz-body">
+                      <p className="mz-title">{f.title}{f.severity && <span className={"mz-sev " + f.severity}>{f.severity}</span>}</p>
+                      <p className="mz-detail">{f.detail}</p>
+                      {f.metric && <p className="mz-metric">{f.metric}</p>}
+                    </div>
+                    <div className="mz-ref">{f.ref}</div>
+                  </div>
+                ))}
+                <div className="mz-legend">
+                  <span><b style={{ color: "var(--tick)" }}>{MARK.verified}</b> read from the document</span>
+                  <span><b style={{ color: "var(--query)" }}>{MARK.review}</b> derived, confirm it</span>
+                  <span><b style={{ color: "var(--esc)" }}>{MARK.escalate}</b> a person decides</span>
+                </div>
+              </section>
+            )}
+
+            {data.escalations?.length > 0 && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Held for a person</h2>
+                  <span className="mz-sec-note">not answered, on purpose</span>
+                </div>
+                {data.escalations.map((e, i) => (
+                  <div key={i} className="mz-esc-card">
+                    <p className="mz-esc-t">{e.title}</p>
+                    <p className="mz-esc-w">{e.why}</p>
+                    <div className="mz-esc-d">
+                      <b>Decision needed</b>
+                      {e.decisionNeeded}
+                      <div className="mz-owner">
+                        <label htmlFor={"own" + i}>Accountable owner</label>
+                        <input id={"own" + i} className="mz-in" placeholder="Name the person"
+                          value={owners[i] || ""} onChange={(ev) => setOwners({ ...owners, [i]: ev.target.value })} />
+                      </div>
+                      <span style={{ display: "block", marginTop: ".5rem", fontFamily: "'IBM Plex Mono',monospace", fontSize: ".63rem", color: "var(--ink-soft)" }}>{e.ref}</span>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {meta && (
+              <section className="mz-sec">
+                <div className="mz-sec-head">
+                  <h2 className="mz-sec-title">Evidence record</h2>
+                  <span className="mz-sec-note">emitted for every reading</span>
+                </div>
+                <div className="mz-ev">
+                  <div><b>Document</b> {meta.name} · {meta.pages} pages</div>
+                  <div><b>SHA-256</b> {meta.hash}</div>
+                  <div><b>Read at</b> {meta.at} · took {meta.seconds}s</div>
+                  <div><b>System</b> Mizan {VERSION} · {meta.model}</div>
+                  <div>
+                    <b>Coverage</b> {meta.read}/{meta.slices} slices
+                    {meta.failed > 0 && <span style={{ color: "var(--esc)" }}> · {meta.failed} unread, this reading is not complete</span>}
+                  </div>
+                  <div>
+                    <b>Cost of this reading</b> ${meta.cost_usd?.toFixed(4)} ·{" "}
+                    {(meta.input_tokens || 0).toLocaleString()} in / {(meta.output_tokens || 0).toLocaleString()} out
+                  </div>
+                  <div><b>Operator</b> {operator || "UNRECORDED"}</div>
+                  <div><b>Escalations open</b> {(data.escalations || []).length} · owners named {(data.escalations || []).filter((_, i) => owners[i]).length}</div>
+                </div>
+              </section>
+            )}
+
+            {state === "done" && (
+              <footer className="mz-foot">
+                <div>
+                  <b>Mizan</b> {VERSION} · reading of {file?.name || "document"}<br />
+                  Figures are read from the document. Nothing here is an opinion on the accounts.
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <b>Jonathan Z</b><br />
+                  Nexus AI Assurance FZCO · Dubai<br />
+                  [contact] · nexusai.ae
+                </div>
+              </footer>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
-function ratioRow(m){
-  const row=$(`<div class="rrow ${m.state}"></div>`);
-  row.appendChild($(`<span class="rname">${esc(m.name)}${m.lowSignal?' <span class="tone-warn" title="low-signal">\u26a0</span>':""}</span>`));
-  row.appendChild($(`<span class="rval">${esc(m.display||"\u2014")}</span>`));
-  const tag=m.state==="reported"?"reported":m.lowSignal?"low-signal":"computed";
-  row.appendChild($(`<span class="rstate">${tag}</span>`));
-  if(m.caveat) row.appendChild($(`<div class="caveat">${esc(m.caveat)}</div>`));
-  // trace on demand
-  const tr=$(`<div class="trace" style="display:none"></div>`);
-  tr.textContent=m.formula+"   \u2022   "+(m.trace?m.trace.map(srcStr).join("  |  "):"");
-  const link=$(`<span class="linkish" style="grid-column:1/-1;padding:0 8px 4px">Trace \u25be</span>`);
-  link.onclick=()=>{tr.style.display=tr.style.display==="none"?"block":"none";};
-  row.appendChild(link); row.appendChild(tr);
-  return row;
-}
-function findingEl(f,inCluster){
-  const el=$(`<div class="finding ${f.severity}"></div>`);
-  el.appendChild($(`<div class="ftop"><span class="fsev">${f.severity}</span>
-     <span class="fdec">${f.decision.replace(/_/g," ")}</span></div>`));
-  el.appendChild($(`<div class="fobs">${esc(f.obs)}</div>`));
-  if(f.calc) el.appendChild($(`<div class="fcalc">${esc(f.calc)}</div>`));
-  el.appendChild($(`<div class="fbody">${esc(f.interpretation)}${f.decisionNeeded?` <b>Decision:</b> ${esc(f.decisionNeeded)}`:""}</div>`));
-  el.appendChild($(`<div class="fsrc">${f.evidence.map(srcStr).join("  |  ")}</div>`));
-  return el;
-}
 
-/* ====================== 3. PDF DOCUMENT RENDERER ======================
-   A separate renderer that lays out for paper. Scope selects sections.
-   Sections: 1 Executive, 2 Financial Profile, 3 Key Findings,
-             4 Financial Statements, 5 Evidence, 6 Verification, Appendix     */
-const SCOPE_SECTIONS={
-  executive:["cover","exec","profile","findings"],
-  full:["cover","exec","profile","findings","statements","evidence","verification","appendix"],
-  appendix:["cover","evidence","verification","appendix"],
-};
-function runhead(model){return `<div class="runhead"><span>${esc(model.entity)} \u00b7 ${model.period}</span><span>Mizan ${model.mizanVersion} \u00b7 Financial Statement Analysis</span></div>`;}
-function runfoot(model){return `<div class="runfoot"><span>Prepared by ${esc(model.preparedBy)} \u00b7 SHA-256 ${model.sha256}</span><span>Confidential \u00b7 figures read from source</span></div>`;}
-function page(model,inner,cover){return `<div class="page">${cover?"":runhead(model)}${inner}${cover?"":runfoot(model)}</div>`;}
-
-function renderPrint(model,scope){
-  const secs=SCOPE_SECTIONS[scope]||SCOPE_SECTIONS.full;
-  let html="";
-  for(const s of secs) html+=SECTION[s](model);
-  const r=document.getElementById("report"); r.innerHTML=html;
-}
-const SECTION={
-  cover:(m)=>page(m,`<div class="cover">
-     <div class="cbrand">Mizan<small>Nexus AI Assurance FZCO \u00b7 Dubai</small></div>
-     <div class="ctitle">Financial Statement Analysis</div>
-     <div class="centity">${esc(m.entity)}</div>
-     <div class="cmeta">Year ended 31 December 2025<br>Prepared ${m.preparedAt} \u00b7 Mizan ${m.mizanVersion}<br>${esc(m.integrity.classificationBasis)}</div>
-     <div class="cscore">
-       <div><div class="cap">Available-metric score</div><div class="big num">${m.overall??"\u2014"}<span style="font-size:16pt;color:#777">/100</span></div>
-         <div class="cap">${m.families.filter(f=>f.score!=null).length} of 7 families \u00b7 rubric v0</div></div>
-       <div class="integ"><div class="cap">Source coverage: ${m.integrity.coverageRead} / ${m.integrity.coverageTotal} slices \u00b7 incomplete</div>
-         <ul><li>Balance sheet not read (liquidity and asset ratios pending)</li>
-             <li>Cash flow partial (cash-conversion pending)</li>
-             <li>${m.integrity.itemsHeldForPerson} items held for a person</li>
-             <li>2 batches timed out; an interrupted batch is never evidence a page is blank</li></ul></div>
-     </div>
-     <div class="tag">Autonomous when certain. Accountable when not.</div>
-   </div>`,true),
-
-  exec:(m)=>page(m,`<div class="doc-secnum">SECTION 1</div><h2 class="doc-h2">Executive Summary</h2>
-     <table class="doc"><tr><th>Measure</th><th style="text-align:right">Value</th><th>Basis</th></tr>
-       <tr><td>Revenue</td><td class="n">AED 3.10bn</td><td>+35.1% YoY</td></tr>
-       <tr><td>Net profit</td><td class="n">AED 1.55bn</td><td>+33.4% YoY</td></tr>
-       <tr><td>Total equity</td><td class="n">AED 1.22bn</td><td>31 Dec 2025</td></tr>
-       <tr><td>EPS</td><td class="n">AED 0.21</td><td>computed 0.2071, matches reported</td></tr>
-       <tr><td>Available-metric score</td><td class="n">${m.overall}/100</td><td>4 of 7 families, rubric v0</td></tr></table>
-     <h4 style="font-family:var(--serif);margin:4mm 0 1mm">Matters ranked highest</h4>
-     ${m.findings.filter(f=>f.tier==="key_matter").slice(0,5).map((f,i)=>`
-        <div class="keymatter ${f.severity}"><div class="km-cap">${String(i+1).padStart(2,"0")} \u00b7 ${f.severity} \u00b7 ${f.decision.replace(/_/g," ")}</div>
-          <div class="km-obs">${esc(f.obs)}</div>${f.calc?`<div class="km-body">${esc(f.calc)}</div>`:""}
-          <div class="km-src">${f.evidence.map(srcStr).join("  |  ")}</div></div>`).join("")}`),
-
-  profile:(m)=>page(m,`<div class="doc-secnum">SECTION 2</div><h2 class="doc-h2">Financial Profile</h2>
-     <p class="doc-lead">Ratios computed from unit-normalized figures. Reported ratios are labelled. Ratios whose inputs are absent are listed compactly rather than expanded.</p>
-     ${FAMILY_ORDER.map(fam=>{
-        const list=m.byFam[fam]; const shown=list.filter(x=>x.state==="computed"||x.state==="reported");
-        const hidden=list.filter(x=>x.state==="pending"||x.state==="market"||x.state==="na");
-        const fsc=m.families.find(f=>f.family===fam);
-        return `<div class="doc-ratiofam"><h4>${FAMILY_LABEL[fam]} <span>${fsc.score!=null?fsc.score+"/100 "+fsc.label:"no data"}</span></h4>
-          ${shown.length?`<table class="doc"><tr><th>Ratio</th><th style="text-align:right">Value</th><th>Formula</th></tr>
-            ${shown.map(x=>`<tr><td>${esc(x.name)}${x.lowSignal?" (low-signal)":""}${x.state==="reported"?" (reported)":""}</td>
-               <td class="n">${esc(x.display)}</td><td>${esc(x.formula)}</td></tr>`).join("")}</table>`:""}
-          ${hidden.length?`<div class="unavail">Unavailable: ${hidden.map(x=>esc(x.name)+" ("+(x.state==="market"?"market data":x.state==="na"?"n/a":"pending")+")").join(" \u00b7 ")}</div>`:""}
-        </div>`;
-     }).join("")}
-     <div class="doc-note">Scoring uses documented default rubric v0 (thresholds inspectable in source). Reported and low-signal ratios are excluded from scoring.</div>`),
-
-  findings:(m)=>page(m,`<div class="doc-secnum">SECTION 3</div><h2 class="doc-h2">Key Findings</h2>
-     <div class="keymatter high"><div class="km-cap">cluster \u00b7 high</div>
-       <div class="km-obs">${esc(m.clusters[0].title)}</div><div class="km-body">${esc(m.clusters[0].summary)}</div></div>
-     ${m.findings.map(f=>`<div class="keymatter ${f.severity}">
-        <div class="km-cap">${f.tier==="key_matter"?"key matter":"observation"} \u00b7 ${f.severity} \u00b7 ${f.decision.replace(/_/g," ")}</div>
-        <div class="km-obs">${esc(f.obs)}</div>
-        ${f.calc?`<div class="km-body">${esc(f.calc)}</div>`:""}
-        <div class="km-body">${esc(f.interpretation)}${f.decisionNeeded?" Decision: "+esc(f.decisionNeeded):""}</div>
-        <div class="km-src">${f.evidence.map(srcStr).join("  |  ")}</div></div>`).join("")}`),
-
-  statements:(m)=>page(m,`<div class="doc-secnum">SECTION 4</div><h2 class="doc-h2">Financial Statements (extract)</h2>
-     <p class="doc-lead">All figures AED thousands unless marked. Read from source; balance sheet not read on this coverage.</p>
-     <table class="doc"><tr><th>Income statement</th><th style="text-align:right">2025</th><th style="text-align:right">2024</th></tr>
-       <tr><td>Revenue</td><td class="n">3,096,913</td><td class="n">2,291,907</td></tr>
-       <tr><td>Total finance costs</td><td class="n">(313,146)</td><td class="n">(256,824)</td></tr>
-       <tr><td>Depreciation and amortisation</td><td class="n">(144,769)</td><td class="n">(89,863)</td></tr>
-       <tr><td>Profit before tax</td><td class="n">1,706,954</td><td class="n">1,279,686</td></tr>
-       <tr><td>Net profit</td><td class="n">1,553,362</td><td class="n">1,164,548</td></tr>
-       <tr><td>EPS (AED)</td><td class="n">0.21</td><td class="n">0.16</td></tr></table>
-     <table class="doc"><tr><th>Selected balances</th><th style="text-align:right">2025</th></tr>
-       <tr><td>Total equity</td><td class="n">1,218,666</td></tr>
-       <tr><td>Total financial liabilities</td><td class="n">6,068,266</td></tr>
-       <tr><td>Due to a related party</td><td class="n">1,985,477</td></tr>
-       <tr><td>Net borrowings</td><td class="n">3,995,191</td></tr>
-       <tr><td>Trade receivables (net)</td><td class="n">169,010</td></tr></table>`),
-
-  evidence:(m)=>page(m,`<div class="doc-secnum">SECTION 5</div><h2 class="doc-h2">Evidence and Traceability</h2>
-     <p class="doc-lead">Every figure carries the page it was read from. Arithmetic is computed only from normalized values.</p>
-     <table class="doc"><tr><th>Figure</th><th style="text-align:right">AED thousands</th><th>Source</th><th style="text-align:right">Conf.</th></tr>
-       ${m.figures.filter(f=>f.currency==="AED"&&!f.derived).map(f=>`<tr><td>${esc(f.label)} ${f.period}</td>
-          <td class="n">${th(f.raw)}</td><td>${srcStr(f.source)}</td><td class="n">${Math.round(f.confidence*100)}%</td></tr>`).join("")}</table>
-     <h4 style="font-family:var(--serif);margin:3mm 0 1mm">Tie-outs</h4>
-     <table class="doc"><tr><th>Check</th><th>Result</th><th>Source</th></tr>
-       ${m.tieOuts.map(t=>`<tr><td>${esc(t.statement)}</td><td>${t.ok?"reconciles":"review"}</td><td>${srcStr(t.source)}</td></tr>`).join("")}</table>`),
-
-  verification:(m)=>page(m,`<div class="doc-secnum">SECTION 6</div><h2 class="doc-h2">Verification Queue</h2>
-     <p class="doc-lead">${m.verification.evidenceGaps} evidence gaps \u00b7 ${m.verification.confirmations} management confirmations \u00b7 ${m.verification.judgments} judgment. Primary owner unassigned.</p>
-     <table class="doc"><tr><th>Item</th><th>Type</th><th>Source</th></tr>
-       ${m.verification.items.map(it=>`<tr><td>${esc(it.t)}</td><td>${it.k}</td><td>${srcStr(it.src)}</td></tr>`).join("")}</table>`),
-
-  appendix:(m)=>page(m,`<div class="doc-secnum">APPENDIX</div><h2 class="doc-h2">Full Ratio Catalogue</h2>
-     <table class="doc"><tr><th>Ratio</th><th>Family</th><th style="text-align:right">Value</th><th>State</th></tr>
-       ${m.measures.map(x=>`<tr><td>${esc(x.name)}</td><td>${FAMILY_LABEL[x.family]}</td>
-          <td class="n">${esc(x.display||"\u2014")}</td><td>${x.state}${x.lowSignal?", low-signal":""}</td></tr>`).join("")}</table>
-     <div class="doc-note">States: computed (Mizan calculated from canonical inputs) \u00b7 reported (entity disclosed, not rebuilt) \u00b7 pending (input absent) \u00b7 market (needs market data) \u00b7 n/a (not applicable to this entity).</div>`),
-};
-
-/* ---------- wire up ---------- */
-const MODEL=buildModel();
-renderWeb(MODEL);
-const report=document.getElementById("report");
-const btnExport=document.getElementById("tb-export"), btnClose=document.getElementById("tb-close");
-btnExport.onclick=()=>{
-  const scope=document.getElementById("tb-scope").value;
-  renderPrint(MODEL,scope);
-  report.classList.add("show");
-  btnClose.style.display="";
-  // give layout a tick, then open the browser's Save-as-PDF on the DOCUMENT render
-  setTimeout(()=>window.print(),120);
-};
-btnClose.onclick=()=>{report.classList.remove("show");btnClose.style.display="none";};
-window.onafterprint=()=>{/* keep preview open so the user can review the document render */};
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
