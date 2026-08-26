@@ -388,7 +388,7 @@ a[href]:after{content:""}
 }
 `;
 
-const MARK = { verified: "\u2713", review: "?", escalate: "\u2717" };
+const MARK = { verified: "✓", review: "?", escalate: "✗" };
 const SEV_RANK = { high: 0, medium: 1, low: 2 };
 
 const STATEMENTS = [
@@ -432,127 +432,127 @@ const NEED_LABEL = {
 const FAMILIES = ["Profitability", "Liquidity", "Solvency", "Efficiency", "Cash conversion", "Growth", "Market value"];
 
 const RATIO_DEFS = [
-  { family: "Liquidity", name: "Current ratio", formula: "Current assets \u00f7 Current liabilities",
+  { family: "Liquidity", name: "Current ratio", formula: "Current assets ÷ Current liabilities",
     needs: ["currentAssets", "currentLiabilities"], calc: (v) => v.currentAssets / v.currentLiabilities,
     unit: "x", dir: "high", bands: [1.0, 1.5], typical: "1.5-3.0x in most industries.",
     plain: (r) => r >= 1 ? "Covers short-term obligations " + r.toFixed(2) + " times over." : "Below 1.0: current liabilities exceed current assets." },
-  { family: "Liquidity", name: "Quick ratio", formula: "(Current assets \u2212 Inventory) \u00f7 Current liabilities",
+  { family: "Liquidity", name: "Quick ratio", formula: "(Current assets − Inventory) ÷ Current liabilities",
     needs: ["currentAssets", "currentLiabilities"], calc: (v) => (v.currentAssets - (v.inventory || 0)) / v.currentLiabilities,
     unit: "x", dir: "high", bands: [0.8, 1.2], typical: "Around 1.0x.",
     plain: (r) => "Excluding inventory, liquid assets cover current liabilities " + r.toFixed(2) + " times." },
-  { family: "Liquidity", name: "Cash ratio", formula: "(Cash + Deposits) \u00f7 Current liabilities",
+  { family: "Liquidity", name: "Cash ratio", formula: "(Cash + Deposits) ÷ Current liabilities",
     needs: ["cashAndEquivalents", "currentLiabilities"], calc: (v) => (v.cashAndEquivalents + (v.shortTermDeposits || 0)) / v.currentLiabilities,
     unit: "x", dir: "high", bands: [0.2, 0.5], typical: "0.2-0.5x.",
     plain: (r) => "Cash covers " + (r * 100).toFixed(0) + "% of current liabilities." },
-  { family: "Liquidity", name: "Working capital", formula: "Current assets \u2212 Current liabilities",
+  { family: "Liquidity", name: "Working capital", formula: "Current assets − Current liabilities",
     needs: ["currentAssets", "currentLiabilities"], calc: (v) => v.currentAssets - v.currentLiabilities,
     raw: true, typical: "Positive for most going concerns.",
     plain: (r) => r >= 0 ? "Buffer of " + Math.abs(r).toLocaleString("en-US") + "." : "Negative by " + Math.abs(r).toLocaleString("en-US") + "." },
-  { family: "Profitability", name: "Gross profit margin", formula: "Gross profit \u00f7 Revenue",
+  { family: "Profitability", name: "Gross profit margin", formula: "Gross profit ÷ Revenue",
     needs: ["grossProfit", "revenue"], calc: (v) => v.grossProfit / v.revenue,
     pct: true, dir: "high", bands: [0.2, 0.4], typical: "20-40% in industry.",
     plain: (r) => (r * 100).toFixed(1) + "% of revenue survives direct costs." },
-  { family: "Profitability", name: "Operating profit margin", formula: "Operating profit \u00f7 Revenue",
+  { family: "Profitability", name: "Operating profit margin", formula: "Operating profit ÷ Revenue",
     needs: ["operatingProfit", "revenue"], calc: (v) => v.operatingProfit / v.revenue,
     pct: true, dir: "high", bands: [0.1, 0.2], typical: "10-20% is solid.",
     plain: (r) => (r * 100).toFixed(1) + "% of revenue remains after operating costs." },
-  { family: "Profitability", name: "Net profit margin", formula: "Net profit \u00f7 Revenue",
+  { family: "Profitability", name: "Net profit margin", formula: "Net profit ÷ Revenue",
     needs: ["netProfit", "revenue"], calc: (v) => v.netProfit / v.revenue,
     pct: true, dir: "high", bands: [0.05, 0.15], typical: "5-15% across most industries.",
     plain: (r) => (r * 100).toFixed(1) + " fils of every dirham becomes final profit." },
-  { family: "Profitability", name: "EBITDA margin", formula: "EBITDA \u00f7 Revenue",
+  { family: "Profitability", name: "EBITDA margin", formula: "EBITDA ÷ Revenue",
     needs: ["ebitda", "revenue"], calc: (v) => v.ebitda / v.revenue,
     pct: true, dir: "high", bands: [0.15, 0.3], typical: "15-30%, higher for infrastructure.",
     plain: (r) => (r * 100).toFixed(1) + "% of revenue converts to EBITDA." },
-  { family: "Profitability", name: "Return on assets (ROA)", formula: "Net profit \u00f7 Total assets",
+  { family: "Profitability", name: "Return on assets (ROA)", formula: "Net profit ÷ Total assets",
     needs: ["netProfit", "totalAssets"], calc: (v) => v.netProfit / v.totalAssets,
     pct: true, dir: "high", bands: [0.03, 0.08], typical: "3-8% for asset-heavy businesses.",
     plain: (r) => "Every dirham of assets produced " + (r * 100).toFixed(1) + " fils of profit." },
-  { family: "Profitability", name: "Return on equity (ROE)", formula: "Net profit \u00f7 Total equity",
+  { family: "Profitability", name: "Return on equity (ROE)", formula: "Net profit ÷ Total equity",
     needs: ["netProfit", "totalEquity"], calc: (v) => v.netProfit / v.totalEquity,
     pct: true, dir: "high", bands: [0.08, 0.15], typical: "8-15% is respectable.",
     plain: (r) => "Shareholders earned " + (r * 100).toFixed(1) + "% on their equity." },
-  { family: "Solvency", name: "Interest coverage ratio", formula: "Operating profit \u00f7 Finance costs",
+  { family: "Solvency", name: "Interest coverage ratio", formula: "Operating profit ÷ Finance costs",
     needs: ["operatingProfit", "financeCosts"], calc: (v) => v.operatingProfit / v.financeCosts,
     unit: "x", dir: "high", bands: [2, 4], typical: "Above 3x is comfortable.",
     plain: (r) => "Operating profit covers finance costs " + r.toFixed(1) + " times." },
-  { family: "Solvency", name: "Net debt-to-EBITDA", formula: "Net debt \u00f7 EBITDA",
+  { family: "Solvency", name: "Net debt-to-EBITDA", formula: "Net debt ÷ EBITDA",
     needs: ["netDebt", "ebitda"], calc: (v) => v.netDebt / v.ebitda,
     unit: "x", dir: "low", bands: [3, 2], typical: "Under 3x is generally acceptable.",
     plain: (r) => r.toFixed(1) + " years of EBITDA would repay net debt." },
-  { family: "Solvency", name: "Debt ratio", formula: "Total liabilities \u00f7 Total assets",
+  { family: "Solvency", name: "Debt ratio", formula: "Total liabilities ÷ Total assets",
     needs: ["totalLiabilities", "totalAssets"], calc: (v) => v.totalLiabilities / v.totalAssets,
     pct: true, dir: "low", bands: [0.6, 0.4], typical: "0.4-0.6 in most sectors.",
     plain: (r) => (r * 100).toFixed(1) + "% of assets are funded by liabilities." },
-  { family: "Solvency", name: "Debt-to-equity", formula: "Total liabilities \u00f7 Total equity",
+  { family: "Solvency", name: "Debt-to-equity", formula: "Total liabilities ÷ Total equity",
     needs: ["totalLiabilities", "totalEquity"], calc: (v) => v.totalLiabilities / v.totalEquity,
     unit: "x", dir: "low", bands: [2, 1], typical: "1.0-2.0x in most sectors.",
     plain: (r) => "Creditors put in " + r.toFixed(2) + " for every 1.00 from shareholders." },
-  { family: "Solvency", name: "Equity ratio", formula: "Total equity \u00f7 Total assets",
+  { family: "Solvency", name: "Equity ratio", formula: "Total equity ÷ Total assets",
     needs: ["totalEquity", "totalAssets"], calc: (v) => v.totalEquity / v.totalAssets,
     pct: true, dir: "high", bands: [0.3, 0.5], typical: "0.3-0.6.",
     plain: (r) => (r * 100).toFixed(1) + "% of assets are owned outright." },
-  { family: "Efficiency", name: "Asset turnover", formula: "Revenue \u00f7 Total assets",
+  { family: "Efficiency", name: "Asset turnover", formula: "Revenue ÷ Total assets",
     needs: ["revenue", "totalAssets"], calc: (v) => v.revenue / v.totalAssets,
     unit: "x", dir: "high", bands: [0.5, 1.0], typical: "Under 0.5x for infrastructure.",
     plain: (r) => "Each dirham of assets generated " + r.toFixed(2) + " of revenue." },
-  { family: "Efficiency", name: "Fixed asset turnover", formula: "Revenue \u00f7 Fixed assets",
+  { family: "Efficiency", name: "Fixed asset turnover", formula: "Revenue ÷ Fixed assets",
     needs: ["revenue", "fixedAssets"], calc: (v) => v.revenue / v.fixedAssets,
     unit: "x", dir: "high", bands: [0.5, 1.5], typical: "Highly sector-dependent.",
     plain: (r) => "Each dirham of fixed assets generated " + r.toFixed(2) + " of revenue." },
-  { family: "Efficiency", name: "Receivable turnover", formula: "Revenue \u00f7 Trade receivables",
+  { family: "Efficiency", name: "Receivable turnover", formula: "Revenue ÷ Trade receivables",
     needs: ["revenue", "tradeReceivables"], calc: (v) => v.revenue / v.tradeReceivables,
     unit: "x", dir: "high", bands: [4, 8], typical: "6-12x, meaning 30-60 day terms.",
     plain: (r) => "Receivables collected and rebuilt " + r.toFixed(1) + " times." },
-  { family: "Efficiency", name: "Days sales outstanding", formula: "(Trade receivables \u00f7 Revenue) \u00d7 365",
+  { family: "Efficiency", name: "Days sales outstanding", formula: "(Trade receivables ÷ Revenue) × 365",
     needs: ["tradeReceivables", "revenue"], calc: (v) => (v.tradeReceivables / v.revenue) * 365,
     unit: " days", dir: "low", bands: [90, 45], typical: "30-60 days on standard terms.",
     plain: (r) => "On average " + r.toFixed(0) + " days between billing and collection." },
-  { family: "Cash conversion", name: "Operating cash-flow margin", formula: "Operating cash flow \u00f7 Revenue",
+  { family: "Cash conversion", name: "Operating cash-flow margin", formula: "Operating cash flow ÷ Revenue",
     needs: ["operatingCashFlow", "revenue"], calc: (v) => v.operatingCashFlow / v.revenue,
     pct: true, dir: "high", bands: [0.1, 0.2], typical: "10-20%.",
     plain: (r) => (r * 100).toFixed(1) + "% of revenue converted into operating cash." },
-  { family: "Cash conversion", name: "Cash conversion ratio", formula: "Operating cash flow \u00f7 Net profit",
+  { family: "Cash conversion", name: "Cash conversion ratio", formula: "Operating cash flow ÷ Net profit",
     needs: ["operatingCashFlow", "netProfit"], calc: (v) => v.operatingCashFlow / v.netProfit,
     unit: "x", dir: "high", bands: [0.8, 1.0], typical: "Around 1.0x or above.",
     plain: (r) => "Each dirham of profit backed by " + r.toFixed(2) + " of operating cash." },
-  { family: "Cash conversion", name: "Free cash flow", formula: "Operating cash flow \u2212 Capex",
+  { family: "Cash conversion", name: "Free cash flow", formula: "Operating cash flow − Capex",
     needs: ["operatingCashFlow", "capex"], calc: (v) => v.operatingCashFlow - v.capex,
     raw: true, typical: "Positive and growing for a mature business.",
     plain: (r) => r >= 0 ? "Generated " + Math.abs(r).toLocaleString("en-US") + " after reinvestment." : "Consumed " + Math.abs(r).toLocaleString("en-US") + " after reinvestment." },
-  { family: "Cash conversion", name: "Free cash flow margin", formula: "(Operating cash flow \u2212 Capex) \u00f7 Revenue",
+  { family: "Cash conversion", name: "Free cash flow margin", formula: "(Operating cash flow − Capex) ÷ Revenue",
     needs: ["operatingCashFlow", "capex", "revenue"], calc: (v) => (v.operatingCashFlow - v.capex) / v.revenue,
     pct: true, dir: "high", bands: [0.05, 0.15], typical: "5-15%.",
     plain: (r) => (r * 100).toFixed(1) + "% of revenue became free cash." },
-  { family: "Growth", name: "Revenue growth rate", formula: "(Revenue \u2212 Prior revenue) \u00f7 Prior revenue",
+  { family: "Growth", name: "Revenue growth rate", formula: "(Revenue − Prior revenue) ÷ Prior revenue",
     needs: ["revenue", "priorRevenue"], calc: (v) => (v.revenue - v.priorRevenue) / v.priorRevenue,
     pct: true, growth: true, dir: "high", bands: [0, 0.1], typical: "Mid-single digits is steady for a mature entity.",
     plain: (r) => "Revenue " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
-  { family: "Growth", name: "Net profit growth", formula: "(Net profit \u2212 Prior net profit) \u00f7 Prior net profit",
+  { family: "Growth", name: "Net profit growth", formula: "(Net profit − Prior net profit) ÷ Prior net profit",
     needs: ["netProfit", "priorNetProfit"], calc: (v) => (v.netProfit - v.priorNetProfit) / v.priorNetProfit,
     pct: true, growth: true, dir: "high", bands: [0, 0.1], typical: "Steady positive growth beats a volatile average.",
     plain: (r) => "Net profit " + (r >= 0 ? "grew" : "fell") + " " + Math.abs(r * 100).toFixed(1) + "% year on year." },
-  { family: "Growth", name: "Asset growth", formula: "(Total assets \u2212 Prior) \u00f7 Prior total assets",
+  { family: "Growth", name: "Asset growth", formula: "(Total assets − Prior) ÷ Prior total assets",
     needs: ["totalAssets", "priorTotalAssets"], calc: (v) => (v.totalAssets - v.priorTotalAssets) / v.priorTotalAssets,
     pct: true, growth: true, dir: "high", bands: [0, 0.05], typical: "In line with revenue growth.",
     plain: (r) => "The asset base " + (r >= 0 ? "expanded" : "contracted") + " " + Math.abs(r * 100).toFixed(1) + "%." },
-  { family: "Market value", name: "Earnings per share", formula: "Net profit \u00f7 Weighted-average shares",
+  { family: "Market value", name: "Earnings per share", formula: "Net profit ÷ Weighted-average shares",
     needs: ["netProfit", "sharesOutstanding"],
     // Profit is read in thousands; the share count is in whole shares. Without
     // this the result rounds to zero and gets blocked as a scale mismatch.
     calc: (v) => (v.netProfit * 1000) / v.sharesOutstanding,
     money: true, typical: "Only its trend matters.",
     plain: (r) => "AED " + r.toFixed(3) + " of profit per ordinary share." },
-  { family: "Market value", name: "Price-to-earnings ratio", formula: "Market price \u00f7 EPS",
+  { family: "Market value", name: "Price-to-earnings ratio", formula: "Market price ÷ EPS",
     needs: ["marketPrice", "netProfit", "sharesOutstanding"],
     calc: (v) => v.marketPrice / ((v.netProfit * 1000) / v.sharesOutstanding),
     unit: "x", dir: "low", bands: [25, 15], typical: "12-20x for mature businesses.",
     plain: (r) => "Investors pay " + r.toFixed(1) + " per dirham of earnings." },
-  { family: "Market value", name: "Dividend yield", formula: "Dividend per share \u00f7 Market price",
+  { family: "Market value", name: "Dividend yield", formula: "Dividend per share ÷ Market price",
     needs: ["dividendPerShare", "marketPrice"], calc: (v) => v.dividendPerShare / v.marketPrice,
     pct: true, dir: "high", bands: [0.02, 0.04], typical: "2-5% for income stocks.",
     plain: (r) => (r * 100).toFixed(2) + "% cash return relative to share price." },
-  { family: "Market value", name: "Dividend payout ratio", formula: "Dividend per share \u00f7 EPS",
+  { family: "Market value", name: "Dividend payout ratio", formula: "Dividend per share ÷ EPS",
     needs: ["dividendPerShare", "netProfit", "sharesOutstanding"],
     calc: (v) => v.dividendPerShare / ((v.netProfit * 1000) / v.sharesOutstanding),
     pct: true, dir: "low", bands: [0.9, 0.6], typical: "30-60%.",
@@ -720,7 +720,7 @@ function App() {
     if (!p || !docName) return p;
     const tag = (item) => {
       if (!item || typeof item !== "object") return item;
-      const ref = item.ref && !String(item.ref).startsWith(docName) ? docName + " \u00b7 " + item.ref : (item.ref || docName);
+      const ref = item.ref && !String(item.ref).startsWith(docName) ? docName + " · " + item.ref : (item.ref || docName);
       return { ...item, doc: docName, ref };
     };
     const out = { ...p, doc: docName };
@@ -1382,7 +1382,7 @@ function App() {
               ];
               return st.map((s, i) => (
                 <div key={i} className={"mz-stage " + (s.done ? "done" : s.now ? "now" : "")}>
-                  <span className="mz-stage-dot">{s.done ? "\u2713" : s.now ? "\u25c9" : "\u25cb"}</span>
+                  <span className="mz-stage-dot">{s.done ? "✓" : s.now ? "◉" : "○"}</span>
                   <span className="mz-stage-l">{s.l}</span>
                   <span className="mz-stage-s">{s.sub}</span>
                 </div>
@@ -1438,7 +1438,7 @@ function App() {
             <div className="mz-grid">
               {slices.map((s, i) => (
                 <div key={s.idx ?? i} className={"mz-cell " + s.status}
-                  title={(s.docName ? s.docName + " \u00b7 " : "") + "pages " + s.from + " to " + s.to + (s.why ? " \u00b7 " + s.why : "")}>
+                  title={(s.docName ? s.docName + " · " : "") + "pages " + s.from + " to " + s.to + (s.why ? " · " + s.why : "")}>
                   {s.from}
                 </div>
               ))}
@@ -1591,7 +1591,7 @@ function App() {
                         <div className="mz-trail-v">{s.v}</div>
                         <div className="mz-trail-l">{s.l}</div>
                         <div className="mz-trail-sub">{s.s}</div>
-                        {i < steps.length - 1 && <div className="mz-trail-arrow">\u2192</div>}
+                        {i < steps.length - 1 && <div className="mz-trail-arrow">→</div>}
                       </div>
                     ))}
                   </div>
@@ -1651,7 +1651,7 @@ function App() {
                     {data.classification?.lens === "public_sector" ? "Public sector entity" : "Corporate entity"}
                   </div>
                   <div className="mz-class-meta" style={{ marginTop: ".4rem", marginBottom: 0 }}>
-                    {[data.classification?.basis, data.entity?.name, data.entity?.period].filter(Boolean).join(" \u00b7 ")}
+                    {[data.classification?.basis, data.entity?.name, data.entity?.period].filter(Boolean).join(" · ")}
                   </div>
                 </div>
                 <p className="mz-class-why">{data.classification?.why}</p>
@@ -1809,8 +1809,8 @@ function App() {
                   <h2 className="mz-sec-title">Financial ratios</h2>
                   <span className="mz-sec-note">
                     {ratiosOk.length} computed &middot; {ratios.filter((r) => r.status === "missing").length} not computable
-                    {blocked.length ? " \u00b7 " + blocked.length + " blocked" : ""}
-                    {ratios.filter((r) => r.status === "market").length ? " \u00b7 " + ratios.filter((r) => r.status === "market").length + " need market data" : ""}
+                    {blocked.length ? " · " + blocked.length + " blocked" : ""}
+                    {ratios.filter((r) => r.status === "market").length ? " · " + ratios.filter((r) => r.status === "market").length + " need market data" : ""}
                   </span>
                 </div>
                 {FAMILIES.map((fam) => {
@@ -1849,7 +1849,7 @@ function App() {
                               <div className="mz-ratio-miss">
                                 <span className="mz-pill await">not yet computable</span>
                                 <div className="mz-ratio-need">
-                                  <b>Required</b> {(r.needs || []).map((k) => NEED_LABEL[k] || k).join(" \u00b7 ")}
+                                  <b>Required</b> {(r.needs || []).map((k) => NEED_LABEL[k] || k).join(" · ")}
                                 </div>
                                 <div className="mz-ratio-need">
                                   <b>Source</b> {r.reason.headline.replace(" not yet read.", "")}
@@ -1864,7 +1864,7 @@ function App() {
                           </div>
                           <div className="mz-ratio-right">
                             <div className="mz-ratio-right">
-                            <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "\u2014"}</div>
+                            <div className="mz-ratio-val">{r.status === "ok" ? r.shown : "-"}</div>
                             {r.status === "ok" && <div className="mz-tap-hint">{traceOf === r.name ? "hide trace" : "trace"}</div>}
                             {r.status === "ok" && r.bands && r.dir && !r.raw && (() => {
                               // Place the value on a scale running from clearly weak to
@@ -1905,13 +1905,13 @@ function App() {
                                     </div>
                                   );
                                 })}
-                                <div className="mz-node-arrow">\u2193</div>
+                                <div className="mz-node-arrow">↓</div>
                                 <div className="mz-node calc">
                                   <div className="mz-node-k">Computed in this browser</div>
                                   <div className="mz-node-v mono">{r.formula}</div>
                                   <div className="mz-node-s">no model performed this arithmetic</div>
                                 </div>
-                                <div className="mz-node-arrow">\u2193</div>
+                                <div className="mz-node-arrow">↓</div>
                                 <div className="mz-node out">
                                   <div className="mz-node-k">{r.name}</div>
                                   <div className="mz-node-v big">{r.shown}</div>
@@ -1919,7 +1919,7 @@ function App() {
                                 </div>
                               </div>
                               <div className="mz-trace-f">
-                                Source {(meta?.docs || []).map((d) => d.name).join(", ")} \u00b7 SHA-256 {(meta?.hash || "").slice(0, 16)}
+                                Source {(meta?.docs || []).map((d) => d.name).join(", ")} · SHA-256 {(meta?.hash || "").slice(0, 16)}
                               </div>
                             </div>
                           )}
@@ -1942,7 +1942,7 @@ function App() {
                   <h2 className="mz-sec-title">Performance evaluation</h2>
                   <span className="mz-sec-note">
                     {evalState === "working" ? "writing" : evalState === "error" ? "unavailable"
-                      : (meta && meta.failed > 0 ? "PARTIAL COVERAGE \u00b7 not final" : "AI analysis \u00b7 not arithmetic")}
+                      : (meta && meta.failed > 0 ? "PARTIAL COVERAGE · not final" : "AI analysis · not arithmetic")}
                   </span>
                 </div>
                 {evalState === "working" && (
@@ -2016,7 +2016,7 @@ function App() {
                       {(f.evidence || []).length > 0 && (
                         <ul className="mz-f-ev">
                           {f.evidence.slice(0, 4).map((x, j) => (
-                            <li key={j}>{x.text}{x.ref ? " \u00b7 " + x.ref : ""}</li>
+                            <li key={j}>{x.text}{x.ref ? " · " + x.ref : ""}</li>
                           ))}
                         </ul>
                       )}
@@ -2055,7 +2055,7 @@ function App() {
                           </span>
                           <span className="mz-q-t">{e.title}</span>
                           <span className="mz-q-ref">{e.ref}</span>
-                          <span className="mz-q-x">{open ? "\u2212" : "+"}</span>
+                          <span className="mz-q-x">{open ? "−" : "+"}</span>
                         </div>
                         {open && (
                           <div className="mz-q-body">
@@ -2067,7 +2067,7 @@ function App() {
                             {(e.evidence || []).length > 0 && (
                               <ul className="mz-q-ev">
                                 {e.evidence.map((x, j) => (
-                                  <li key={j}>{x.text}{x.ref ? " \u00b7 " + x.ref : ""}</li>
+                                  <li key={j}>{x.text}{x.ref ? " · " + x.ref : ""}</li>
                                 ))}
                               </ul>
                             )}
